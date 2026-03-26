@@ -985,7 +985,7 @@ export function GameSheetModal({ game, open, onClose }: GameSheetModalProps) {
                   <Clock className="w-4 h-4" />
                   <span className="font-bold text-sm">{displayGame.time}</span>
                 </div>
-                <FacilityMapLink venueName={venueName} className="font-bold text-sm" />
+                <FacilityMapLink venueName={venueName} className="font-bold text-sm text-white hover:text-blue-100" />
               </div>
               <span
                 className={`text-xs font-bold px-3 py-1 rounded ${
