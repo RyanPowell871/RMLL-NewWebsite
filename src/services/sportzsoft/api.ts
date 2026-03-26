@@ -790,7 +790,7 @@ export async function fetchDivisionScheduleStatus(
     throw new Error('API key not initialized. Cannot make API call.');
   }
 
-  const url = `${BASE_URL}/SportsDivision/${divisionId}?LimiterCode=S`;
+  const url = `${BASE_URL}/SportsDivision/${divisionId}?LimiterCode=BS`;
 
   try {
     const data = await cachedFetch(url, {
@@ -808,6 +808,8 @@ export async function fetchDivisionScheduleStatus(
 
     // Log first fetch for diagnostics
     console.log(`%c[DivScheduleStatus] Div ${divisionId} keys: ${JSON.stringify(Object.keys(raw))}`, 'color: cyan; font-weight: bold');
+    console.log(`%c[DivScheduleStatus] Div ${divisionId} FULL RAW DATA:`, 'color: cyan; font-weight: bold');
+    console.log(raw);
     console.log(`%c[DivScheduleStatus] Div ${divisionId} GameScheduleReady=${raw.GameScheduleReady} (${typeof raw.GameScheduleReady}), GameScheduleFinal=${raw.GameScheduleFinal} (${typeof raw.GameScheduleFinal})`, 'color: cyan; font-weight: bold');
 
     // Robust boolean parsing — API may return true, "true", "True", 1, "1", "Y", "Yes", etc.
