@@ -93,7 +93,7 @@ app.post("/upload-image", async (c) => {
 
     console.log(`[Images] Uploaded image: ${imageData.id} - ${imageData.title}`);
 
-    return c.json({ success: true, image: imageData });
+    return c.json({ success: true, url: file_url, image: imageData });
   } catch (error) {
     console.error('Error in image upload:', error);
     return c.json({ success: false, error: error.message }, 500);
@@ -163,7 +163,7 @@ app.post("/images", async (c) => {
 
     console.log(`[Images] Uploaded image: ${imageData.id} - ${imageData.title}`);
 
-    return c.json({ success: true, image: imageData });
+    return c.json({ success: true, url: file_url, image: imageData });
   } catch (error) {
     console.error('Error uploading image:', error);
     return c.json({ success: false, error: error.message }, 500);
