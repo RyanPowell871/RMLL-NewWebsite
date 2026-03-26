@@ -73,7 +73,7 @@ async function initializeStorage() {
 // Initialize storage in background
 initializeStorage();
 
-// Mount routes - For Supabase edge functions, we receive the full path including the function name
+// Mount routes
 const basePath = '/make-server-9a1ba23f';
 
 app.route(basePath, authRoutes);
@@ -87,7 +87,7 @@ app.route(basePath, suspensionsRoutes);
 app.route(basePath, linkCheckerRoutes);
 
 // ============================================
-// COMPONENT EDITOR ROUTES (defined directly)
+// COMPONENT EDITOR ROUTES
 // ============================================
 const supabase = createClient(
   Deno.env.get('SUPABASE_URL')!,
@@ -95,9 +95,9 @@ const supabase = createClient(
 );
 const COMPONENT_CONTENT_TABLE = 'rmll_component_content';
 
-// GET /make-server-9a1ba23f/component-editor - List components
-app.get(`${basePath}/component-editor`, (c) => {
-  console.log('[Component Editor] GET /component-editor - listing components');
+// Try multiple mount points for component-editor
+app.get('/component-editor', (c) => {
+  console.log('[Component Editor] GET /component-editor (root)');
   try {
     const components = getEditableSchemas().map((schema) => ({
       pageId: schema.pageId,
@@ -107,7 +107,6 @@ app.get(`${basePath}/component-editor`, (c) => {
       fieldCount: schema.editableFields.length,
     }));
 
-    console.log(`[Component Editor] Found ${components.length} editable components`);
     return c.json({
       success: true,
       data: components,
@@ -121,15 +120,37 @@ app.get(`${basePath}/component-editor`, (c) => {
   }
 });
 
-// GET /make-server-9a1ba23f/component-editor/:pageId - Get component
-app.get(`${basePath}/component-editor/:pageId`, async (c) => {
+app.get(`${basePath}/component-editor`, (c) => {
+  console.log(`[Component Editor] GET ${basePath}/component-editor (basePath)`);
+  try {
+    const components = getEditableSchemas().map((schema) => ({
+      pageId: schema.pageId,
+      title: schema.title,
+      description: schema.description,
+      componentFile: schema.componentFile,
+      fieldCount: schema.editableFields.length,
+    }));
+
+    return c.json({
+      success: true,
+      data: components,
+    });
+  } catch (error) {
+    console.error('[Component Editor] Error listing components:', error);
+    return c.json(
+      { success: false, error: 'Failed to list components' },
+      500
+    );
+  }
+});
+
+app.get('/component-editor/:pageId', async (c) => {
   const pageId = c.req.param('pageId');
-  console.log(`[Component Editor] GET /component-editor/${pageId} - fetching component`);
+  console.log(`[Component Editor] GET /component-editor/${pageId} (root)`);
 
   try {
     const schema = getSchemaByPageId(pageId);
     if (!schema) {
-      console.log(`[Component Editor] Component not found: ${pageId}`);
       return c.json(
         { success: false, error: 'Component not found' },
         404
@@ -144,7 +165,6 @@ app.get(`${basePath}/component-editor/:pageId`, async (c) => {
       }, 400);
     }
 
-    // Initialize with default empty data
     const extractedData: Record<string, unknown> = {};
     for (const field of schema.editableFields) {
       if (field.type === 'array') {
@@ -166,8 +186,6 @@ app.get(`${basePath}/component-editor/:pageId`, async (c) => {
         },
         content: '',
         extractedData: extractedData,
-        parseSuccess: true,
-        parseErrors: [],
       },
     });
   } catch (error) {
@@ -179,8 +197,60 @@ app.get(`${basePath}/component-editor/:pageId`, async (c) => {
   }
 });
 
-// POST /make-server-9a1ba23f/component-editor/:pageId - Save component
-app.post(`${basePath}/component-editor/:pageId`, async (c) => {
+app.get(`${basePath}/component-editor/:pageId`, async (c) => {
+  const pageId = c.req.param('pageId');
+  console.log(`[Component Editor] GET ${basePath}/component-editor/${pageId} (basePath)`);
+
+  try {
+    const schema = getSchemaByPageId(pageId);
+    if (!schema) {
+      return c.json(
+        { success: false, error: 'Component not found' },
+        404
+      );
+    }
+
+    if (schema.notEditableReason) {
+      return c.json({
+        success: false,
+        error: 'Component is not editable',
+        reason: schema.notEditableReason,
+      }, 400);
+    }
+
+    const extractedData: Record<string, unknown> = {};
+    for (const field of schema.editableFields) {
+      if (field.type === 'array') {
+        extractedData[field.name] = [];
+      } else if (field.type === 'simple' && field.defaultValue) {
+        extractedData[field.name] = field.defaultValue;
+      }
+    }
+
+    return c.json({
+      success: true,
+      data: {
+        schema: {
+          pageId: schema.pageId,
+          componentFile: schema.componentFile,
+          title: schema.title,
+          description: schema.description,
+          editableFields: schema.editableFields,
+        },
+        content: '',
+        extractedData: extractedData,
+      },
+    });
+  } catch (error) {
+    console.error('Error getting component:', error);
+    return c.json(
+      { success: false, error: error instanceof Error ? error.message : 'Failed to get component' },
+      500
+    );
+  }
+});
+
+app.post('/component-editor/:pageId', async (c) => {
   const pageId = c.req.param('pageId');
   const body = await c.req.json();
   const { data } = body;
@@ -193,7 +263,6 @@ app.post(`${basePath}/component-editor/:pageId`, async (c) => {
     );
   }
 
-  // Store in database
   const { error: upsertError } = await supabase
     .from(COMPONENT_CONTENT_TABLE)
     .upsert({
@@ -208,7 +277,173 @@ app.post(`${basePath}/component-editor/:pageId`, async (c) => {
     });
 
   if (upsertError) {
-    console.error('Error storing component data:', upsertError);
+    return c.json(
+      { success: false, error: `Database error: ${upsertError.message}` },
+      500
+    );
+  }
+
+  return c.json({
+    success: true,
+    message: 'Component saved successfully',
+  });
+});
+
+app.post(`${basePath}/component-editor/:pageId`, async (c) => {
+  const pageId = c.req.param('pageId');
+  const body = await c.req.json();
+  const { data } = body;
+
+  const schema = getSchemaByPageId(pageId);
+  if (!schema) {
+    return c.json(
+      { success: false, error: 'Component not found' },
+      404
+    );
+  }
+
+  const { error: upsertError } = await supabase
+    .from(COMPONENT_CONTENT_TABLE)
+    .upsert({
+      page_id: pageId,
+      component_file: schema.componentFile,
+      title: schema.title,
+      content: `// Content for ${schema.title}`,
+      extracted_data: data || {},
+      updated_at: new Date().toISOString(),
+    }, {
+      onConflict: 'page_id',
+    });
+
+  if (upsertError) {
+    return c.json(
+      { success: false, error: `Database error: ${upsertError.message}` },
+      500
+    );
+  }
+
+  return c.json({
+    success: true,
+    message: 'Component saved successfully',
+  });
+});
+
+// ============================================
+// COMPONENT EDITOR ROUTES
+// ============================================
+const supabase = createClient(
+  Deno.env.get('SUPABASE_URL')!,
+  Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
+);
+const COMPONENT_CONTENT_TABLE = 'rmll_component_content';
+
+// GET /component-editor - List components
+app.get('/component-editor', (c) => {
+  console.log('[Component Editor] GET /component-editor - listing components');
+  try {
+    const components = getEditableSchemas().map((schema) => ({
+      pageId: schema.pageId,
+      title: schema.title,
+      description: schema.description,
+      componentFile: schema.componentFile,
+      fieldCount: schema.editableFields.length,
+    }));
+
+    return c.json({
+      success: true,
+      data: components,
+    });
+  } catch (error) {
+    console.error('[Component Editor] Error listing components:', error);
+    return c.json(
+      { success: false, error: 'Failed to list components' },
+      500
+    );
+  }
+});
+
+// GET /component-editor/:pageId - Get component
+app.get('/component-editor/:pageId', async (c) => {
+  const pageId = c.req.param('pageId');
+  console.log(`[Component Editor] GET /component-editor/${pageId} - fetching component`);
+
+  try {
+    const schema = getSchemaByPageId(pageId);
+    if (!schema) {
+      return c.json(
+        { success: false, error: 'Component not found' },
+        404
+      );
+    }
+
+    if (schema.notEditableReason) {
+      return c.json({
+        success: false,
+        error: 'Component is not editable',
+        reason: schema.notEditableReason,
+      }, 400);
+    }
+
+    const extractedData: Record<string, unknown> = {};
+    for (const field of schema.editableFields) {
+      if (field.type === 'array') {
+        extractedData[field.name] = [];
+      } else if (field.type === 'simple' && field.defaultValue) {
+        extractedData[field.name] = field.defaultValue;
+      }
+    }
+
+    return c.json({
+      success: true,
+      data: {
+        schema: {
+          pageId: schema.pageId,
+          componentFile: schema.componentFile,
+          title: schema.title,
+          description: schema.description,
+          editableFields: schema.editableFields,
+        },
+        content: '',
+        extractedData: extractedData,
+      },
+    });
+  } catch (error) {
+    console.error('Error getting component:', error);
+    return c.json(
+      { success: false, error: error instanceof Error ? error.message : 'Failed to get component' },
+      500
+    );
+  }
+});
+
+// POST /component-editor/:pageId - Save component
+app.post('/component-editor/:pageId', async (c) => {
+  const pageId = c.req.param('pageId');
+  const body = await c.req.json();
+  const { data } = body;
+
+  const schema = getSchemaByPageId(pageId);
+  if (!schema) {
+    return c.json(
+      { success: false, error: 'Component not found' },
+      404
+    );
+  }
+
+  const { error: upsertError } = await supabase
+    .from(COMPONENT_CONTENT_TABLE)
+    .upsert({
+      page_id: pageId,
+      component_file: schema.componentFile,
+      title: schema.title,
+      content: `// Content for ${schema.title}`,
+      extracted_data: data || {},
+      updated_at: new Date().toISOString(),
+    }, {
+      onConflict: 'page_id',
+    });
+
+  if (upsertError) {
     return c.json(
       { success: false, error: `Database error: ${upsertError.message}` },
       500
