@@ -838,18 +838,39 @@ export function GameSheetModal({ game, open, onClose }: GameSheetModalProps) {
             shots: g.TotalShots || 0,
             saves: g.ShotsStopped || 0,
           })) || [],
-        scoringDetails: gameDetails?.ScoringStats?.map((goal: any) => {
+        scoringDetails: gameDetails?.ScoringStats?.map((goal: any, idx: number) => {
+          // Log first goal to see structure
+          if (idx === 0) {
+            console.log('[GameSheet] First goal data structure:', goal);
+            console.log('[GameSheet] First goal keys:', Object.keys(goal));
+          }
           const scorer = gameDetails.Roster?.find((r: any) => (r.PlayerId || r.PersonId) === goal.PlayerId);
           const scoringTeamId = scorer?.TeamId ? String(scorer.TeamId) : (goal.ScoringTeamId ? String(goal.ScoringTeamId) : String(goal.TeamId || ''));
           const a1 = goal.AssistedByTeamPlayerId1 ? gameDetails.Roster?.find((r: any) => r.TeamPlayerId === goal.AssistedByTeamPlayerId1) : null;
           const a2 = goal.AssistedByTeamPlayerId2 ? gameDetails.Roster?.find((r: any) => r.TeamPlayerId === goal.AssistedByTeamPlayerId2) : null;
+
+          // Try different nested paths for GoalTypeCd
+          const goalTypeCd = goal.GoalTypeCd
+            || goal.GoalTypeCode
+            || goal.GoalType
+            || goal.TypeCd
+            || goal.GoalType
+            || goal.Goal?.GoalTypeCd
+            || goal.GoalType?.GoalTypeCd
+            || goal.Type?.GoalTypeCd
+            || '';
+
+          if (idx === 0) {
+            console.log('[GameSheet] Extracted goal type:', goalTypeCd);
+          }
+
           return {
             period: goal.Period || 0,
             time: goal.TimeIn || goal.Time || '',
             scorerNum: scorer ? String(scorer.JerseyNumber || scorer.PlayerNumber || '?') : String(goal.PlayerNo || '?'),
             a1Num: a1 ? String(a1.JerseyNumber || a1.PlayerNumber || '?') : '',
             a2Num: a2 ? String(a2.JerseyNumber || a2.PlayerNumber || '?') : '',
-            type: goal.GoalTypeCd || goal.GoalTypeCode || goal.GoalType || '',
+            type: goalTypeCd,
             isHome: scoringTeamId === String(homeTeamId),
           };
         }) || [],
@@ -1240,8 +1261,23 @@ export function GameSheetModal({ game, open, onClose }: GameSheetModalProps) {
                                 .filter(Boolean)
                                 .map(a => `#${a!.JerseyNumber || a!.PlayerNumber || '?'} ${a!.FirstName?.[0]}. ${a!.LastName}`)
                                 .join(', ');
-                              
-                              const goalType = goal.GoalTypeCode || goal.GoalType || '';
+
+                              // Try different nested paths for GoalTypeCd
+                              const goalType = goal.GoalTypeCd
+                                || goal.GoalTypeCode
+                                || goal.GoalType
+                                || goal.TypeCd
+                                || goal.GoalType
+                                || goal.Goal?.GoalTypeCd
+                                || goal.GoalType?.GoalTypeCd
+                                || goal.Type?.GoalTypeCd
+                                || '';
+
+                              // Log first goal for debugging
+                              if (idx === 0) {
+                                console.log('[GameSheet UI] First goal data:', goal);
+                                console.log('[GameSheet UI] First goal type extracted:', goalType);
+                              }
                               
                               return (
                                 <tr key={idx} className={`border-b border-gray-200 ${idx % 2 === 0 ? 'bg-gray-50' : 'bg-white'}`}>
