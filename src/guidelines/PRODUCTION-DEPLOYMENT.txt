@@ -1,0 +1,791 @@
+================================================================================
+  RMLL WEBSITE — PRODUCTION DEPLOYMENT GUIDE
+  rockymountainlax.com | InMotion Hosting VPS
+  Last updated: March 2026
+================================================================================
+
+
+TABLE OF CONTENTS
+─────────────────
+  1. Architecture Overview
+  2. What Lives Where
+  3. Pre-Deployment Checklist
+  4. Option A: Recommended — Static SPA on VPS + Supabase Backend
+  5. Option B: Alternative — Cloudflare Pages (Free) + Supabase Backend
+  6. Option C: Alternative — Vercel / Netlify + Supabase Backend
+  7. Building the Frontend
+  8. VPS Server Configuration (Apache / Nginx)
+  9. WordPress Migration Strategy
+  10. DNS & SSL
+  11. Supabase Production Hardening
+  12. Environment Variables & Secrets Reference
+  13. Post-Deployment Verification Checklist
+  14. Ongoing Maintenance
+  15. Rollback Plan
+  16. Troubleshooting
+
+
+================================================================================
+1. ARCHITECTURE OVERVIEW
+================================================================================
+
+This project is a two-tier architecture:
+
+  [ Browser ]  ──>  [ Static React SPA ]  ──>  [ Supabase (managed) ]
+                     served from your VPS       ├── Edge Functions (Hono/Deno API server)
+                     (HTML/CSS/JS files)        ├── PostgreSQL (KV store)
+                                                ├── Auth (user management)
+                                                ├── Storage (images, documents)
+                                                └── Secrets (API keys)
+
+  External APIs called by the Edge Functions:
+    - SportzSoft API (league data): https://www.sportzsoft.com/ssRest/TeamRest.dll
+    - Resend API (transactional email)
+    - OpenAI API (AI features)
+
+KEY POINT: Your VPS only needs to serve static files. All dynamic logic,
+authentication, database, and storage are handled by Supabase's managed
+infrastructure. This makes deployment simple and the VPS load minimal.
+
+
+================================================================================
+2. WHAT LIVES WHERE
+================================================================================
+
+  YOUR VPS (InMotion):
+    - Built React SPA (index.html + JS/CSS bundles)
+    - Web server config (Apache or Nginx)
+    - SSL certificate
+    - That's it — no Node.js server, no database on VPS
+
+  SUPABASE (Managed — already running):
+    - Project ID: nkfbehspyjookipapdbp
+    - Edge Functions: /supabase/functions/server/* (Hono API)
+    - PostgreSQL: kv_store_9a1ba23f table
+    - Storage buckets: make-9a1ba23f-images, make-9a1ba23f-documents
+    - Auth: admin/editor/viewer user management
+    - Secrets: SPORTZSOFT_API_KEY, RESEND_API_KEY, OPENAI_API_KEY
+
+  SPORTZSOFT (External — no action needed):
+    - League data API, called from Supabase Edge Functions
+
+
+================================================================================
+3. PRE-DEPLOYMENT CHECKLIST
+================================================================================
+
+  [ ] Supabase project is on a paid plan (Free tier has limits that will
+      cause issues in production — see Section 11)
+  [ ] All Supabase secrets are set (SPORTZSOFT_API_KEY, RESEND_API_KEY,
+      OPENAI_API_KEY)
+  [ ] Admin user account created via /cms
+  [ ] DNS access available for rockymountainlax.com
+  [ ] SSH access to InMotion VPS confirmed
+  [ ] Current WordPress site backed up (files + database)
+  [ ] SSL certificate available or Let's Encrypt configured
+  [ ] Test the Supabase Edge Function health check:
+      curl https://nkfbehspyjookipapdbp.supabase.co/functions/v1/make-server-9a1ba23f/../health
+
+
+================================================================================
+4. OPTION A (RECOMMENDED): Static SPA on VPS + Supabase Backend
+================================================================================
+
+WHY THIS IS BEST FOR YOU:
+  - You already pay for the InMotion VPS
+  - No additional hosting costs
+  - Full control over the domain and SSL
+  - Minimal VPS resources needed (static files only)
+  - WordPress can stay running during transition (see Section 9)
+
+OVERVIEW:
+  1. Export/build the React app into static files (see Section 7)
+  2. Upload the build output (dist/ folder) to your VPS
+  3. Configure Apache or Nginx to serve the SPA (see Section 8)
+  4. Point DNS to VPS (already done if WordPress is there)
+  5. Set up SSL (already done if WordPress has it)
+
+DIFFICULTY: Easy
+COST: $0 additional (uses existing VPS)
+PERFORMANCE: Excellent — static files are fast, cached by browsers
+
+
+================================================================================
+5. OPTION B: Cloudflare Pages (Free) + Supabase Backend
+================================================================================
+
+WHY CONSIDER THIS:
+  - Global CDN — fastest possible load times worldwide
+  - Automatic SSL
+  - Automatic deploys from Git (push to deploy)
+  - Generous free tier (unlimited bandwidth, 500 builds/month)
+  - DDoS protection included
+
+OVERVIEW:
+  1. Push your code to a GitHub/GitLab repository
+  2. Connect Cloudflare Pages to the repository
+  3. Set build command and output directory
+  4. Point rockymountainlax.com DNS to Cloudflare
+
+SETUP:
+  a. Sign up at https://pages.cloudflare.com
+  b. Connect your Git repo
+  c. Build settings:
+       Framework preset: None (or Vite if available)
+       Build command: npm run build
+       Build output directory: dist
+  d. Add custom domain: rockymountainlax.com
+  e. Cloudflare will handle SSL automatically
+
+DIFFICULTY: Easy
+COST: Free
+PERFORMANCE: Best (global CDN edge network)
+
+NOTE: Your VPS would only run WordPress if you keep it alongside. You could
+also move WordPress to a subdomain like blog.rockymountainlax.com.
+
+
+================================================================================
+6. OPTION C: Vercel / Netlify + Supabase Backend
+================================================================================
+
+Similar to Cloudflare Pages but with slightly different tradeoffs:
+
+  VERCEL:
+    - Excellent React/Next.js support
+    - Free tier: 100GB bandwidth/month
+    - Automatic preview deployments for branches
+    - https://vercel.com
+
+  NETLIFY:
+    - Free tier: 100GB bandwidth/month
+    - Form handling built-in
+    - https://netlify.com
+
+Both work the same way: connect Git repo, set build command, deploy.
+
+DIFFICULTY: Easy
+COST: Free tier available, paid plans for more bandwidth
+PERFORMANCE: Excellent (CDN)
+
+
+================================================================================
+7. BUILDING THE FRONTEND
+================================================================================
+
+The Figma Make environment uses Vite under the hood. To build for production,
+you need to set up a standard Vite + React project locally.
+
+STEP 1: SET UP LOCAL PROJECT
+─────────────────────────────
+  mkdir rmll-website && cd rmll-website
+  npm create vite@latest . -- --template react-ts
+  npm install
+
+STEP 2: INSTALL DEPENDENCIES
+─────────────────────────────
+  Based on the imports used throughout the codebase, install:
+
+  npm install react react-dom
+  npm install tailwindcss @tailwindcss/vite     # Tailwind CSS v4
+  npm install lucide-react                       # Icons
+  npm install recharts                           # Charts
+  npm install sonner@2.0.3                       # Toast notifications
+  npm install @radix-ui/react-dialog             # UI primitives (dialogs)
+  npm install @radix-ui/react-accordion          # UI primitives (accordion)
+  npm install @radix-ui/react-dropdown-menu      # UI primitives (dropdowns)
+  npm install @radix-ui/react-select             # UI primitives (select)
+  npm install @radix-ui/react-tabs               # UI primitives (tabs)
+  npm install @radix-ui/react-checkbox           # UI primitives (checkbox)
+  npm install @radix-ui/react-switch             # UI primitives (switch)
+  npm install @radix-ui/react-tooltip            # UI primitives (tooltip)
+  npm install @radix-ui/react-popover            # UI primitives (popover)
+  npm install @radix-ui/react-scroll-area        # UI primitives (scroll)
+  npm install @radix-ui/react-separator          # UI primitives (separator)
+  npm install @radix-ui/react-slot               # UI primitives (slot)
+  npm install @radix-ui/react-label              # UI primitives (label)
+  npm install @radix-ui/react-collapsible        # UI primitives (collapsible)
+  npm install @radix-ui/react-alert-dialog       # UI primitives (alert dialog)
+  npm install @radix-ui/react-avatar             # UI primitives (avatar)
+  npm install @radix-ui/react-hover-card         # UI primitives (hover card)
+  npm install @radix-ui/react-context-menu       # UI primitives (context menu)
+  npm install @radix-ui/react-menubar            # UI primitives (menubar)
+  npm install @radix-ui/react-navigation-menu    # UI primitives (nav menu)
+  npm install @radix-ui/react-radio-group        # UI primitives (radio)
+  npm install @radix-ui/react-toggle             # UI primitives (toggle)
+  npm install @radix-ui/react-toggle-group       # UI primitives (toggle group)
+  npm install @radix-ui/react-progress           # UI primitives (progress)
+  npm install @radix-ui/react-slider             # UI primitives (slider)
+  npm install @radix-ui/react-aspect-ratio       # UI primitives (aspect ratio)
+  npm install @supabase/supabase-js              # Supabase client
+  npm install class-variance-authority            # shadcn/ui utility
+  npm install clsx tailwind-merge                 # Tailwind utilities
+  npm install date-fns                           # Date formatting (if used)
+  npm install react-hook-form@7.55.0             # Form handling
+  npm install cmdk                               # Command menu (shadcn)
+  npm install embla-carousel-react               # Carousel (shadcn)
+  npm install input-otp                          # OTP input (shadcn)
+  npm install react-day-picker                   # Calendar (shadcn)
+  npm install react-resizable-panels             # Resizable panels (shadcn)
+  npm install motion                             # Animations
+  npm install vaul                               # Drawer (shadcn)
+
+  npm install -D @types/react @types/react-dom typescript
+
+STEP 3: COPY SOURCE FILES
+──────────────────────────
+  Copy these directories/files from the Figma Make project into your
+  local project's src/ directory:
+
+    /App.tsx                    → src/App.tsx
+    /components/                → src/components/
+    /contexts/                  → src/contexts/
+    /hooks/                     → src/hooks/
+    /pages/                     → src/pages/
+    /services/                  → src/services/
+    /utils/                     → src/utils/
+    /styles/globals.css         → src/styles/globals.css
+    /imports/                   → src/imports/
+
+  NOTE: Do NOT copy /supabase/ — those are Edge Functions deployed
+  separately to Supabase (see Section 11).
+
+STEP 4: FIX IMPORT PATHS
+─────────────────────────
+  In the Figma Make environment, imports use bare paths like:
+    import { Header } from './components/Header'
+
+  These should work as-is in a Vite project. However:
+
+  a. The sonner import uses a version suffix in Figma Make:
+       import { toast } from 'sonner@2.0.3'
+     Change ALL occurrences to:
+       import { toast } from 'sonner'
+     (You installed the correct version via npm already.)
+
+  b. The react-hook-form import similarly:
+       import { ... } from 'react-hook-form@7.55.0'
+     Change to:
+       import { ... } from 'react-hook-form'
+
+  A quick find-and-replace across all files will handle this:
+    Find:    sonner@2.0.3
+    Replace: sonner
+
+    Find:    react-hook-form@7.55.0
+    Replace: react-hook-form
+
+STEP 5: CONFIGURE VITE
+───────────────────────
+  vite.config.ts:
+
+    import { defineConfig } from 'vite'
+    import react from '@vitejs/plugin-react'
+    import tailwindcss from '@tailwindcss/vite'
+
+    export default defineConfig({
+      plugins: [react(), tailwindcss()],
+      build: {
+        outDir: 'dist',
+        sourcemap: false,
+      },
+    })
+
+STEP 6: CONFIGURE TAILWIND CSS v4
+──────────────────────────────────
+  In your main CSS entry point (src/index.css or src/styles/globals.css),
+  ensure it starts with:
+
+    @import "tailwindcss";
+
+  Then include the rest of your globals.css content (custom properties,
+  fonts, etc.)
+
+STEP 7: SET UP index.html
+──────────────────────────
+  Your index.html (in project root) should look like:
+
+    <!DOCTYPE html>
+    <html lang="en">
+      <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Rocky Mountain Lacrosse League</title>
+        <meta name="description" content="Official website of the Rocky Mountain Lacrosse League (RMLL) - Alberta's premier box lacrosse league." />
+        <link rel="icon" type="image/x-icon" href="/favicon.ico" />
+      </head>
+      <body>
+        <div id="root"></div>
+        <script type="module" src="/src/main.tsx"></script>
+      </body>
+    </html>
+
+STEP 8: CREATE ENTRY POINT
+───────────────────────────
+  src/main.tsx:
+
+    import React from 'react'
+    import ReactDOM from 'react-dom/client'
+    import App from './App'
+    import './styles/globals.css'
+
+    ReactDOM.createRoot(document.getElementById('root')!).render(
+      <React.StrictMode>
+        <App />
+      </React.StrictMode>
+    )
+
+STEP 9: BUILD
+─────────────
+  npm run build
+
+  This creates a dist/ folder containing:
+    - index.html
+    - assets/  (JS bundles, CSS, etc.)
+
+  The dist/ folder is what gets uploaded to your VPS.
+
+STEP 10: TEST LOCALLY
+─────────────────────
+  npm run preview
+
+  This starts a local server serving the production build.
+  Verify all pages work, API calls succeed, images load, etc.
+
+
+================================================================================
+8. VPS SERVER CONFIGURATION
+================================================================================
+
+Your InMotion VPS likely runs Apache (cPanel) or you can install Nginx.
+The key requirement: ALL routes must serve index.html because this is a
+Single Page Application (SPA) with client-side routing.
+
+─────────────────────────────────────
+OPTION 8A: APACHE (most likely on InMotion)
+─────────────────────────────────────
+
+  Upload the contents of dist/ to your web root, e.g.:
+    /home/yourusername/public_html/
+
+  Create or edit .htaccess in that directory:
+
+    RewriteEngine On
+    RewriteBase /
+
+    # If the request is for an existing file or directory, serve it directly
+    RewriteCond %{REQUEST_FILENAME} !-f
+    RewriteCond %{REQUEST_FILENAME} !-d
+
+    # Otherwise, serve index.html (SPA routing)
+    RewriteRule ^ index.html [QSA,L]
+
+    # Enable gzip compression
+    <IfModule mod_deflate.c>
+      AddOutputFilterByType DEFLATE text/html text/css application/javascript application/json image/svg+xml
+    </IfModule>
+
+    # Cache static assets aggressively (Vite adds content hashes to filenames)
+    <IfModule mod_expires.c>
+      ExpiresActive On
+      ExpiresByType text/html "access plus 0 seconds"
+      ExpiresByType text/css "access plus 1 year"
+      ExpiresByType application/javascript "access plus 1 year"
+      ExpiresByType image/png "access plus 1 year"
+      ExpiresByType image/jpeg "access plus 1 year"
+      ExpiresByType image/svg+xml "access plus 1 year"
+      ExpiresByType image/webp "access plus 1 year"
+      ExpiresByType font/woff2 "access plus 1 year"
+    </IfModule>
+
+    # Security headers
+    <IfModule mod_headers.c>
+      Header always set X-Content-Type-Options "nosniff"
+      Header always set X-Frame-Options "SAMEORIGIN"
+      Header always set Referrer-Policy "strict-origin-when-cross-origin"
+    </IfModule>
+
+  Ensure mod_rewrite is enabled:
+    sudo a2enmod rewrite
+    sudo systemctl restart apache2
+
+─────────────────────────────────────
+OPTION 8B: NGINX (if you prefer or install it)
+─────────────────────────────────────
+
+  Upload dist/ contents to, e.g., /var/www/rmll/
+
+  Nginx config (/etc/nginx/sites-available/rockymountainlax.com):
+
+    server {
+        listen 80;
+        server_name rockymountainlax.com www.rockymountainlax.com;
+        return 301 https://$host$request_uri;
+    }
+
+    server {
+        listen 443 ssl http2;
+        server_name rockymountainlax.com www.rockymountainlax.com;
+
+        root /var/www/rmll;
+        index index.html;
+
+        # SSL (Let's Encrypt)
+        ssl_certificate /etc/letsencrypt/live/rockymountainlax.com/fullchain.pem;
+        ssl_certificate_key /etc/letsencrypt/live/rockymountainlax.com/privkey.pem;
+
+        # SPA routing — serve index.html for all non-file routes
+        location / {
+            try_files $uri $uri/ /index.html;
+        }
+
+        # Cache static assets (Vite hashes filenames, safe to cache forever)
+        location /assets/ {
+            expires 1y;
+            add_header Cache-Control "public, immutable";
+        }
+
+        # Gzip
+        gzip on;
+        gzip_types text/css application/javascript application/json image/svg+xml;
+        gzip_min_length 1000;
+
+        # Security headers
+        add_header X-Content-Type-Options "nosniff" always;
+        add_header X-Frame-Options "SAMEORIGIN" always;
+        add_header Referrer-Policy "strict-origin-when-cross-origin" always;
+    }
+
+  Enable and restart:
+    sudo ln -s /etc/nginx/sites-available/rockymountainlax.com /etc/nginx/sites-enabled/
+    sudo nginx -t
+    sudo systemctl restart nginx
+
+
+================================================================================
+9. WORDPRESS MIGRATION STRATEGY
+================================================================================
+
+You have several options for transitioning from WordPress:
+
+─────────────────────────────────────
+STRATEGY A: CLEAN CUTOVER (Simplest)
+─────────────────────────────────────
+  1. Back up current WordPress site (files + database)
+  2. Set up the new React site in a test location first:
+       - Upload to a subdomain: test.rockymountainlax.com
+       - Or use a temporary domain to verify everything works
+  3. Once verified, replace WordPress files with React build files
+  4. Update .htaccess for SPA routing
+  5. WordPress is fully replaced
+
+  TIMELINE: 1-2 hours of downtime during cutover
+
+─────────────────────────────────────
+STRATEGY B: PARALLEL RUN (Safer)
+─────────────────────────────────────
+  1. Move WordPress to a subdomain:
+       - old.rockymountainlax.com or wp.rockymountainlax.com
+       - Update WordPress Settings > General > WordPress Address
+  2. Deploy React app to the main domain
+  3. Keep WordPress running for reference / content migration
+  4. Shut down WordPress when comfortable
+
+  TIMELINE: Zero downtime
+
+─────────────────────────────────────
+STRATEGY C: SUBDIRECTORY (Advanced, not recommended)
+─────────────────────────────────────
+  Run both side by side with Apache routing rules. Not recommended due
+  to complexity and potential routing conflicts with the SPA.
+
+─────────────────────────────────────
+WORDPRESS CONTENT TO MIGRATE:
+─────────────────────────────────────
+  Before shutting down WordPress, ensure you've migrated:
+  [ ] Any news/blog posts → CMS News Manager
+  [ ] Uploaded images → CMS Image Manager (Supabase Storage)
+  [ ] Documents/PDFs → CMS Document Manager (Supabase Storage)
+  [ ] Contact form recipients → CMS Settings
+  [ ] Any SEO metadata/redirects you want to preserve
+
+
+================================================================================
+10. DNS & SSL
+================================================================================
+
+DNS:
+  If you're staying on InMotion VPS, DNS probably doesn't need to change.
+  Your A record already points to your VPS IP.
+
+  If moving to Cloudflare Pages (Option B):
+    - Change nameservers to Cloudflare
+    - Add CNAME record for @ pointing to your-project.pages.dev
+
+SSL:
+  OPTION 1 — InMotion's free SSL (cPanel > SSL/TLS):
+    InMotion provides AutoSSL through cPanel. This should already be set up
+    if your WordPress site uses HTTPS.
+
+  OPTION 2 — Let's Encrypt (if managing manually):
+    sudo apt install certbot
+    sudo certbot --apache  (or --nginx)
+    # Certbot auto-renews via systemd timer
+
+  OPTION 3 — Cloudflare (if using Option B):
+    Automatic and free. No action needed.
+
+
+================================================================================
+11. SUPABASE PRODUCTION HARDENING
+================================================================================
+
+Your Supabase project is already set up and running. Here's what to verify
+and harden for production:
+
+PLAN:
+  - The Free plan limits: 500MB database, 1GB storage, 50K Edge Function
+    invocations/month, 2 million auth requests/month
+  - For a league website with moderate traffic, the Pro plan ($25/month)
+    is recommended for: higher limits, daily backups, no pausing after
+    1 week of inactivity, email support
+  - Upgrade at: https://supabase.com/dashboard/project/nkfbehspyjookipapdbp/settings/billing
+
+EDGE FUNCTIONS:
+  The Edge Functions in /supabase/functions/server/ are already deployed
+  and running. If you need to redeploy after changes:
+
+  1. Install Supabase CLI:
+       npm install -g supabase
+  2. Login:
+       supabase login
+  3. Link your project:
+       supabase link --project-ref nkfbehspyjookipapdbp
+  4. Deploy the edge function:
+       supabase functions deploy server --no-verify-jwt
+
+  NOTE: The edge function is named "server" and contains all routes via
+  the Hono framework. The --no-verify-jwt flag is needed because the
+  function handles its own auth verification internally.
+
+SECRETS (already configured):
+  Verify all secrets are set in the Supabase dashboard under
+  Project Settings > Edge Functions > Secrets:
+
+  - SPORTZSOFT_API_KEY    (SportzSoft league data API)
+  - RESEND_API_KEY        (Transactional email via Resend)
+  - OPENAI_API_KEY        (AI features)
+
+  These are automatically available as:
+  - SUPABASE_URL          (auto-set by Supabase)
+  - SUPABASE_ANON_KEY     (auto-set by Supabase)
+  - SUPABASE_SERVICE_ROLE_KEY (auto-set by Supabase)
+  - SUPABASE_DB_URL       (auto-set by Supabase)
+
+ROW LEVEL SECURITY (RLS):
+  The kv_store_9a1ba23f table should have RLS enabled with appropriate
+  policies. Check the Supabase dashboard > Table Editor > kv_store_9a1ba23f
+  > RLS Policies. Since all database access goes through Edge Functions
+  (which use the service role key), RLS can be permissive for the service
+  role, but should block direct client access.
+
+STORAGE:
+  The buckets make-9a1ba23f-images and make-9a1ba23f-documents are created
+  automatically by the server on startup. Verify storage policies in the
+  dashboard allow public read access for images but restrict uploads to
+  authenticated requests through the Edge Function.
+
+BACKUPS:
+  - Pro plan includes daily backups with 7-day retention
+  - For additional safety, periodically export KV data via the CMS
+  - Document storage files are in Supabase Storage (replicated)
+
+
+================================================================================
+12. ENVIRONMENT VARIABLES & SECRETS REFERENCE
+================================================================================
+
+  FRONTEND (hardcoded in /utils/supabase/info.tsx — these are public):
+  ───────────────────────────────────────────────────────
+  projectId        = "nkfbehspyjookipapdbp"
+  publicAnonKey    = "eyJhbG..." (Supabase anon key — safe to expose)
+
+  NOTE: These values are baked into the frontend bundle at build time.
+  The anon key is designed to be public — it only grants access that
+  Row Level Security policies allow. The service role key is NEVER
+  exposed to the frontend.
+
+  BACKEND (Supabase Edge Function secrets — NEVER expose these):
+  ───────────────────────────────────────────────────────
+  SUPABASE_URL              Auto-set by Supabase
+  SUPABASE_ANON_KEY         Auto-set by Supabase
+  SUPABASE_SERVICE_ROLE_KEY Auto-set by Supabase (DANGER: full DB access)
+  SUPABASE_DB_URL           Auto-set by Supabase
+  SPORTZSOFT_API_KEY        Your SportzSoft API key
+  RESEND_API_KEY            Your Resend email API key
+  OPENAI_API_KEY            Your OpenAI API key
+
+
+================================================================================
+13. POST-DEPLOYMENT VERIFICATION CHECKLIST
+================================================================================
+
+  After deploying, test each of these:
+
+  PAGES:
+  [ ] Homepage loads (/) — scores ticker, standings, news
+  [ ] League Info hub (/league-info) — all sub-pages render
+  [ ] Contact page (/contact) — form submits successfully
+  [ ] CMS login (/cms) — admin can sign in
+  [ ] Direct URL access works (e.g., navigate directly to /league-info)
+  [ ] Browser back/forward buttons work correctly
+
+  API CONNECTIVITY:
+  [ ] SportzSoft data loads (standings, schedules, stats)
+  [ ] Score ticker shows recent games
+  [ ] Team pages load rosters and schedules
+
+  CMS:
+  [ ] Admin login works
+  [ ] News creation/editing works
+  [ ] Image upload works
+  [ ] Document upload works
+  [ ] League Info content editing works (structured content system)
+  [ ] Announcement creation works
+  [ ] Settings save correctly
+
+  STORAGE:
+  [ ] Uploaded images display correctly
+  [ ] Documents can be downloaded
+  [ ] New uploads succeed
+
+  EMAIL:
+  [ ] Contact form sends email via Resend
+  [ ] Newsletter signup works (if configured)
+
+  MOBILE:
+  [ ] Responsive layout works on mobile devices
+  [ ] Mobile navigation menu works
+  [ ] Score ticker scrolls properly
+
+  PERFORMANCE:
+  [ ] Page loads in under 3 seconds on average connection
+  [ ] Lighthouse score is acceptable (aim for 90+ performance)
+  [ ] No console errors in browser dev tools
+
+
+================================================================================
+14. ONGOING MAINTENANCE
+================================================================================
+
+  ROUTINE TASKS:
+  - Monitor Supabase usage dashboard monthly (Edge Function invocations,
+    storage usage, database size)
+  - Renew SSL certificate (automatic with Let's Encrypt / cPanel AutoSSL)
+  - Update SportzSoft season IDs when new seasons start
+    (in /services/sportzsoft/constants.ts — SEASON_IDS)
+  - Clear old news/announcements periodically via CMS
+
+  DEPLOYING UPDATES:
+  1. Make changes in Figma Make (or locally)
+  2. Build: npm run build
+  3. Upload new dist/ files to VPS (overwrite old ones)
+  4. If Edge Functions changed, redeploy via Supabase CLI:
+       supabase functions deploy server --no-verify-jwt
+  5. Hard-refresh browser (Ctrl+Shift+R) to verify — users will get new
+     assets automatically because Vite hashes filenames
+
+  AUTOMATED DEPLOYMENT (OPTIONAL):
+  If you set up a Git repo, you can create a simple deploy script:
+
+    #!/bin/bash
+    # deploy.sh
+    npm run build
+    rsync -avz --delete dist/ user@your-vps-ip:/home/user/public_html/
+    echo "Frontend deployed!"
+
+  Or use GitHub Actions for automatic deployment on push.
+
+
+================================================================================
+15. ROLLBACK PLAN
+================================================================================
+
+  If something goes wrong after deployment:
+
+  FRONTEND ROLLBACK:
+    Keep the previous dist/ folder as a backup before each deploy.
+    To rollback: replace current files with the backup dist/ folder.
+
+    # Before deploying:
+    ssh user@vps "cp -r /home/user/public_html /home/user/public_html_backup_$(date +%Y%m%d)"
+
+    # To rollback:
+    ssh user@vps "rm -rf /home/user/public_html && mv /home/user/public_html_backup_YYYYMMDD /home/user/public_html"
+
+  WORDPRESS ROLLBACK:
+    If you kept the WordPress backup (you should!), you can restore it by:
+    1. Re-uploading WordPress files to public_html
+    2. Restoring the MySQL database
+    3. Removing the SPA .htaccess rules
+
+  SUPABASE ROLLBACK:
+    Edge Functions can be redeployed to any previous version.
+    Database changes through KV are additive (set/delete individual keys).
+    Pro plan includes point-in-time recovery.
+
+
+================================================================================
+16. TROUBLESHOOTING
+================================================================================
+
+  PROBLEM: Pages return 404 when accessing URLs directly
+  CAUSE:   .htaccess SPA rewrite rules not working
+  FIX:     Ensure mod_rewrite is enabled and AllowOverride All is set
+           in Apache config for your directory
+
+  PROBLEM: API calls fail with CORS errors
+  CAUSE:   Supabase Edge Functions not returning CORS headers
+  FIX:     The Hono server already has CORS configured with origin: "*"
+           This should work. Check browser console for the actual error.
+
+  PROBLEM: SportzSoft data not loading
+  CAUSE:   API key not configured or expired
+  FIX:     Check Supabase secrets, verify key at SportzSoft admin panel
+
+  PROBLEM: Images/documents not loading
+  CAUSE:   Supabase Storage bucket permissions
+  FIX:     Check bucket policies in Supabase dashboard; images bucket
+           should allow public read access
+
+  PROBLEM: CMS login fails
+  CAUSE:   Auth configuration or user not created
+  FIX:     Verify user exists in Supabase Auth dashboard; check KV for
+           user profile with admin role
+
+  PROBLEM: Blank page on load
+  CAUSE:   JavaScript bundle not loading; check browser console
+  FIX:     Verify index.html and assets/ are in the correct directory;
+           check that the script src path is correct
+
+  PROBLEM: Fonts not loading (Athletic Block, Bebas Neue, Montserrat)
+  CAUSE:   External font CDN blocked or slow
+  FIX:     These load from Google Fonts and cdnfonts.com via CSS @import;
+           consider self-hosting fonts for better performance
+
+  PROBLEM: Build fails locally
+  CAUSE:   Missing dependencies or TypeScript errors
+  FIX:     Run npm install, check for any Figma Make-specific imports
+           that need adjustment (sonner@2.0.3 → sonner, etc.)
+
+
+================================================================================
+  END OF DEPLOYMENT GUIDE
+================================================================================
+
+RECOMMENDED APPROACH SUMMARY:
+  1. Use Option A (VPS) if you want simplicity and already pay for hosting
+  2. Use Option B (Cloudflare Pages) if you want best performance + free
+  3. Either way, Supabase stays as your backend — no changes needed
+  4. Use Strategy B (Parallel Run) for WordPress migration — zero downtime
+  5. Upgrade Supabase to Pro plan ($25/month) for production reliability

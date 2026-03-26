@@ -1,0 +1,131 @@
+import logoImage from 'figma:asset/fdfcb8e6c2b97967b54febaebf3bb794e8d4e2db.png';
+import alteredDigitalLogo from 'figma:asset/2baddf2baa86c01b420e9c6124b17e6328e17b9c.png';
+import sportzSoftLogo from 'figma:asset/2683bb8a16900fe245c5e5fa594ec0686367ca0e.png';
+
+// X (Twitter) logo as inline SVG component
+function XLogo({ className }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 24 24" fill="currentColor" className={className}>
+      <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
+    </svg>
+  );
+}
+
+// Helper to navigate using the global navigateToPath
+function navLink(path: string) {
+  return {
+    href: path,
+    onClick: (e: React.MouseEvent) => {
+      e.preventDefault();
+      if ((window as any).navigateToPath) {
+        (window as any).navigateToPath(path);
+      } else {
+        window.location.href = path;
+      }
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    },
+  };
+}
+
+// Helper for in-page navigation (uses NavigationContext via sessionStorage)
+function pageNavLink(page: string) {
+  return {
+    href: '/',
+    onClick: (e: React.MouseEvent) => {
+      e.preventDefault();
+      if (window.location.pathname === '/') {
+        window.dispatchEvent(new CustomEvent('rmll-navigate', { detail: { page } }));
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      } else {
+        sessionStorage.setItem('rmll-navigate-to', page);
+        if ((window as any).navigateToPath) {
+          (window as any).navigateToPath('/');
+        } else {
+          window.location.href = '/';
+        }
+      }
+    },
+  };
+}
+
+export function Footer() {
+  return (
+    <footer className="bg-[#001741] text-white">
+      <div className="max-w-[1400px] mx-auto px-4 sm:px-6 py-8 sm:py-10 lg:py-12">
+        <nav aria-label="Footer navigation" className="grid grid-cols-2 md:grid-cols-4 gap-6 sm:gap-8 mb-6 sm:mb-8">
+          {/* Logo and Description */}
+          <div className="col-span-2 md:col-span-1">
+            <a {...navLink('/')} className="inline-block">
+              <img src={logoImage} alt="RMLL Logo" className="h-16 sm:h-20 w-auto mb-3 sm:mb-4" />
+            </a>
+            <p className="text-sm sm:text-base text-gray-400 font-semibold">
+              Alberta's Premier Lacrosse League
+            </p>
+          </div>
+
+          {/* League */}
+          <div>
+            <h3 className="text-xs sm:text-sm mb-3 sm:mb-4 font-bold tracking-wider">LEAGUE</h3>
+            <ul className="space-y-1.5 sm:space-y-2 text-xs sm:text-sm text-gray-400">
+              <li><a {...pageNavLink('teams')} className="hover:text-white transition-colors font-semibold">Teams</a></li>
+              <li><a {...pageNavLink('schedule')} className="hover:text-white transition-colors font-semibold">Schedule</a></li>
+              <li><a {...pageNavLink('standings')} className="hover:text-white transition-colors font-semibold">Standings</a></li>
+              <li><a {...pageNavLink('stats')} className="hover:text-white transition-colors font-semibold">Stats</a></li>
+            </ul>
+          </div>
+
+          {/* Fan Zone */}
+          <div>
+            <h3 className="text-xs sm:text-sm mb-3 sm:mb-4 font-bold tracking-wider">FAN ZONE</h3>
+            <ul className="space-y-1.5 sm:space-y-2 text-xs sm:text-sm text-gray-400">
+              <li><a {...pageNavLink('news')} className="hover:text-white transition-colors font-semibold">News</a></li>
+              <li><a {...pageNavLink('division-info')} className="hover:text-white transition-colors font-semibold">Divisions</a></li>
+            </ul>
+          </div>
+
+          {/* About */}
+          <div className="col-span-2 md:col-span-1">
+            <h3 className="text-xs sm:text-sm mb-3 sm:mb-4 font-bold tracking-wider">ABOUT</h3>
+            <ul className="space-y-1.5 sm:space-y-2 text-xs sm:text-sm text-gray-400">
+              <li><a {...navLink('/league-info')} className="hover:text-white transition-colors font-semibold">About RMLL</a></li>
+              <li><a {...navLink('/contact')} className="hover:text-white transition-colors font-semibold">Contact Us</a></li>
+              <li><a {...navLink('/privacy-policy')} className="hover:text-white transition-colors font-semibold">Privacy Policy</a></li>
+              <li><a {...navLink('/terms-of-service')} className="hover:text-white transition-colors font-semibold">Terms of Service</a></li>
+              <li><a href="https://www.sportzsoft.com/Team/teamWeb.dll/Login?OrgId=520" target="_blank" rel="noopener noreferrer" className="hover:text-white transition-colors font-semibold">SportzSoft Admin Login</a></li>
+              <li><a href="https://www.sportzsoft.com/tv/tv.dll/TeamView?Id=520&page=League" target="_blank" rel="noopener noreferrer" className="hover:text-white transition-colors font-semibold">Box Scores (SportzSoft)</a></li>
+            </ul>
+          </div>
+        </nav>
+
+        {/* Social Media and Copyright */}
+        <div className="pt-6 sm:pt-8 border-t border-gray-700 flex flex-col md:flex-row justify-between items-center gap-3 sm:gap-4">
+          <div className="flex gap-4 sm:gap-6">
+            <a href="https://x.com/RMLaxL" target="_blank" rel="noopener noreferrer" className="hover:text-red-500 transition-colors" aria-label="X (formerly Twitter)">
+              <XLogo className="w-5 h-5 sm:w-6 sm:h-6" />
+            </a>
+          </div>
+          <div className="flex flex-col md:flex-row items-center gap-2">
+            <p className="text-xs sm:text-sm text-gray-400 font-semibold text-center">
+              &copy; {new Date().getFullYear()} Rocky Mountain Lacrosse League. All Rights Reserved.
+            </p>
+            <span className="hidden md:inline text-gray-600">&bull;</span>
+            <p className="text-xs text-gray-600">v1.0.7</p>
+          </div>
+        </div>
+
+        {/* Built By & Data Provider */}
+        <div className="pt-4 sm:pt-6 mt-4 sm:mt-6 border-t border-gray-700/50 flex flex-col sm:flex-row justify-center items-center gap-4 sm:gap-8">
+          <a href="https://altereddigital.com/" target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 group">
+            <span className="text-[11px] text-gray-500 font-semibold uppercase tracking-wide">Built by</span>
+            <img src={alteredDigitalLogo} alt="Altered Digital" className="h-6 opacity-70 group-hover:opacity-100 transition-opacity" />
+          </a>
+          <span className="hidden sm:inline text-gray-700">|</span>
+          <a href="https://www.sportzsoft.com/" target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 group">
+            <span className="text-[11px] text-gray-500 font-semibold uppercase tracking-wide">Sports Data</span>
+            <img src={sportzSoftLogo} alt="SportzSoft" className="h-8 opacity-70 group-hover:opacity-100 transition-opacity" />
+          </a>
+        </div>
+      </div>
+    </footer>
+  );
+}

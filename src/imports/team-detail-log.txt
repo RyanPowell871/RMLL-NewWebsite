@@ -1,0 +1,50 @@
+[TeamDetailPage] Loaded 0 separate skater stats
+code_components_preview_iframe-a2dfb1811c456f43.min.js.br:28 [TeamDetailPage] Loaded 31 practices
+code_components_preview_iframe-a2dfb1811c456f43.min.js.br:28 [apiCache] HIT  .../TeamFranchise/1038?LimiterCode=C&ChildCodes=P
+code_components_preview_iframe-a2dfb1811c456f43.min.js.br:28 [apiCache] HIT  .../Team/153634?LimiterCode=BI&ChildCodes=G
+code_components_preview_iframe-a2dfb1811c456f43.min.js.br:28 [useTeamTransactions] teamId results: 0, division results: 0
+code_components_preview_iframe-a2dfb1811c456f43.min.js.br:28 [useTeamTransactions] Processed 0 unique transaction entries
+code_components_preview_iframe-a2dfb1811c456f43.min.js.br:28 [parseProtectedPlayersForTeam] Okotoks Marauders - Top-level keys: Success, SessionId, Response
+code_components_preview_iframe-a2dfb1811c456f43.min.js.br:28 [parseProtectedPlayersForTeam] Okotoks Marauders - Response keys: TeamFranchise
+code_components_preview_iframe-a2dfb1811c456f43.min.js.br:28 [parseProtectedPlayersForTeam] Okotoks Marauders - TeamFranchise keys: TeamFranchiseId, ProtectedList
+code_components_preview_iframe-a2dfb1811c456f43.min.js.br:28 [parseProtectedPlayersForTeam] Okotoks Marauders - Found 29 entries at "Response.TeamFranchise.ProtectedList"
+code_components_preview_iframe-a2dfb1811c456f43.min.js.br:28 [parseProtectedPlayersForTeam] Sample keys: BirthDate, EffectiveDate, ExpiryDate, FirstName, FranchiseRoleCd, LastName, Name, PersonId, TeamFranchiseId, TeamFranchiseRoleId
+code_components_preview_iframe-a2dfb1811c456f43.min.js.br:28 [parseProtectedPlayersForTeam] Sample entry: {"BirthDate":"2006-01-03T01:00:00.000Z","FirstName":"Caleb","LastName":"Armitage","PersonId":924675,"EffectiveDate":"2026-02-18T01:00:00.000Z","ExpiryDate":null,"FranchiseRoleCd":"PROT","TeamFranchiseId":1038,"TeamFranchiseRoleId":158,"Name":"Caleb Armitage"}
+code_components_preview_iframe-a2dfb1811c456f43.min.js.br:28 [parseProtectedPlayersForTeam] Okotoks Marauders - Filtered to 29 PROT/active entries (from 29 total roles)
+code_components_preview_iframe-a2dfb1811c456f43.min.js.br:28 [useTeamTransactions] Protected list: 29 players for Okotoks Marauders
+code_components_preview_iframe-a2dfb1811c456f43.min.js.br:28 [TeamDetailPage] Goalie response Success: true
+code_components_preview_iframe-a2dfb1811c456f43.min.js.br:28 [TeamDetailPage] Goalie response keys: ['Team']
+code_components_preview_iframe-a2dfb1811c456f43.min.js.br:28 [TeamDetailPage] Goalie teamData keys: (22) ['ActiveFlag', 'ClubFlag', 'DivisionId', 'ExternalId', 'ImportTeamName', 'OrganizationId', 'SeasonId', 'ShortName', 'SignupStatus', 'TeamCode', 'TeamFranchiseId', 'TeamId', 'TeamName', 'TeamNumber', 'TournamentFee', 'DisplayString', 'FullTeamName', 'PrimaryTeamLogoURL', 'SeasonName', 'SeasonStartYear', 'TeamDisplayName', 'PlayerStats']
+code_components_preview_iframe-a2dfb1811c456f43.min.js.br:28 [TeamDetailPage] Goalie teamData.PlayerStats: array[0] []
+code_components_preview_iframe-a2dfb1811c456f43.min.js.br:28 [TeamDetailPage] Loaded 0 goalie entries from G child code
+code_components_preview_iframe-a2dfb1811c456f43.min.js.br:28 [TeamDetailPage] No goalie stats found in G child code response.
+code_components_preview_iframe-a2dfb1811c456f43.min.js.br:28 [TeamDetailPage] Processing comprehensive team data: {ActiveFlag: true, ClubFlag: true, DivisionId: 81986, ExternalId: null, ImportTeamName: 'Okotoks Marauders Junior B Tier I South', …}
+code_components_preview_iframe-a2dfb1811c456f43.min.js.br:28 [TeamDetailPage] Loaded 2 games
+code_components_preview_iframe-a2dfb1811c456f43.min.js.br:28 [TeamDetailPage] Updated SeasonTeamIdMap: {896: 18618, 1128: 23316, 1474: 31148, 1835: 41488, 2247: 48893, 2905: 60086, 3428: 69456, 3784: 76877, 4424: 84739, 4956: 95890, 5620: 111105, 6628: 128041, 7235: 141464, 7757: 153634}
+code_components_preview_iframe-a2dfb1811c456f43.min.js.br:28 [TeamDetailPage] Fetching separate stats for TeamId 153634
+code_components_preview_iframe-a2dfb1811c456f43.min.js.br:28 [apiCache] HIT  .../Team/153634?LimiterCode=BI&ChildCodes=P
+code_components_preview_iframe-a2dfb1811c456f43.min.js.br:28 [apiCache] HIT  .../Season/7757/Team?LimiterCode=B
+code_components_preview_iframe-a2dfb1811c456f43.min.js.br:28 [TeamDetailPage] Loaded 0 separate skater stats
+code_components_preview_iframe-a2dfb1811c456f43.min.js.br:28 [apiCache] HIT  .../Team/153634?LimiterCode=BI&ChildCodes=G
+code_components_preview_iframe-a2dfb1811c456f43.min.js.br:28 [TeamDetailPage] Goalie response Success: true
+code_components_preview_iframe-a2dfb1811c456f43.min.js.br:28 [TeamDetailPage] Goalie response keys: ['Team']
+code_components_preview_iframe-a2dfb1811c456f43.min.js.br:28 [TeamDetailPage] Goalie teamData keys: (22) ['ActiveFlag', 'ClubFlag', 'DivisionId', 'ExternalId', 'ImportTeamName', 'OrganizationId', 'SeasonId', 'ShortName', 'SignupStatus', 'TeamCode', 'TeamFranchiseId', 'TeamId', 'TeamName', 'TeamNumber', 'TournamentFee', 'DisplayString', 'FullTeamName', 'PrimaryTeamLogoURL', 'SeasonName', 'SeasonStartYear', 'TeamDisplayName', 'PlayerStats']
+code_components_preview_iframe-a2dfb1811c456f43.min.js.br:28 [TeamDetailPage] Goalie teamData.PlayerStats: array[0] []
+code_components_preview_iframe-a2dfb1811c456f43.min.js.br:28 [TeamDetailPage] Loaded 0 goalie entries from G child code
+code_components_preview_iframe-a2dfb1811c456f43.min.js.br:28 [TeamDetailPage] No goalie stats found in G child code response.
+code_components_preview_iframe-a2dfb1811c456f43.min.js.br:28 [apiCache] MISS .../Team/153634?LimiterCode=C&ChildCodes=R
+code_components_preview_iframe-a2dfb1811c456f43.min.js.br:28 [useTeamTransactions] teamId results: 0, division results: 0
+code_components_preview_iframe-a2dfb1811c456f43.min.js.br:28 [useTeamTransactions] Processed 0 unique transaction entries
+code_components_preview_iframe-a2dfb1811c456f43.min.js.br:28 [FranchiseCert] ===== TEAM DETAIL (C/R) FIELD DUMP =====
+code_components_preview_iframe-a2dfb1811c456f43.min.js.br:28 [FranchiseCert] TeamDetail.Team = Object(2 keys)
+code_components_preview_iframe-a2dfb1811c456f43.min.js.br:28 [FranchiseCert] TeamDetail.Team.TeamId = 153634
+code_components_preview_iframe-a2dfb1811c456f43.min.js.br:28 [FranchiseCert] TeamDetail.Team.Roster = Array(0)
+code_components_preview_iframe-a2dfb1811c456f43.min.js.br:28 [FranchiseCert] TeamFranchiseId=null
+code_components_preview_iframe-a2dfb1811c456f43.min.js.br:28 [FranchiseCert] Fetching team data for teamId=153634
+code_components_preview_iframe-a2dfb1811c456f43.min.js.br:28 [apiCache] HIT  .../Team/153634?LimiterCode=C
+code_components_preview_iframe-a2dfb1811c456f43.min.js.br:28 [apiCache] HIT  .../Team/153634?LimiterCode=C&ChildCodes=R
+code_components_preview_iframe-a2dfb1811c456f43.min.js.br:28 [FranchiseCert] ===== TEAM DETAIL (C/R) FIELD DUMP =====
+code_components_preview_iframe-a2dfb1811c456f43.min.js.br:28 [FranchiseCert] TeamDetail.Team = Object(2 keys)
+code_components_preview_iframe-a2dfb1811c456f43.min.js.br:28 [FranchiseCert] TeamDetail.Team.TeamId = 153634
+code_components_preview_iframe-a2dfb1811c456f43.min.js.br:28 [FranchiseCert] TeamDetail.Team.Roster = Array(0)
+code_components_preview_iframe-a2dfb1811c456f43.min.js.br:28 [FranchiseCert] TeamFranchiseId=null
