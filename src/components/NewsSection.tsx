@@ -142,11 +142,11 @@ export function NewsSection() {
             <div key={item.id} className="lg:col-span-2">
               <button onClick={() => handleArticleClick(item)} className="w-full text-left group block relative overflow-hidden rounded-lg">
                 <div className="grid lg:grid-cols-2 gap-0 lg:gap-6 bg-gray-50 rounded-lg overflow-hidden hover:shadow-xl transition-shadow">
-                  <div className="relative h-[200px] sm:h-[250px] lg:h-[400px] overflow-hidden">
+                  <div className="relative h-[200px] sm:h-[250px] lg:h-[400px] overflow-hidden bg-gray-100">
                     <ImageWithFallback
                       src={item.image}
                       alt={item.title}
-                      className="w-full h-full group-hover:scale-105 transition-transform duration-300 object-cover"
+                      className="w-full h-full object-contain group-hover:scale-105 transition-transform duration-300"
                     />
                   </div>
                   <div className="p-4 sm:p-6 lg:p-8 flex flex-col justify-center">
@@ -179,11 +179,11 @@ export function NewsSection() {
               onClick={() => handleArticleClick(item)}
               className="text-left group flex flex-col bg-white border border-gray-200 rounded-lg overflow-hidden hover:shadow-lg transition-shadow"
             >
-              <div className="relative h-[180px] sm:h-[200px] lg:h-[240px] overflow-hidden flex-shrink-0">
+              <div className="relative h-[180px] sm:h-[200px] lg:h-[240px] overflow-hidden flex-shrink-0 bg-gray-100">
                 <ImageWithFallback
                   src={item.image}
                   alt={item.title}
-                  className="w-full h-full group-hover:scale-105 transition-transform duration-300 object-cover"
+                  className="w-full h-full object-contain group-hover:scale-105 transition-transform duration-300"
                 />
               </div>
               <div className="p-3 sm:p-4 lg:p-6 flex flex-col flex-1 min-h-0">

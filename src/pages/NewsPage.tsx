@@ -40,17 +40,6 @@ function resolveImage(article: NewsArticle, index: number): string {
   return fallbackImages[index % fallbackImages.length];
 }
 
-function isLogoImage(article: NewsArticle): boolean {
-  return false; // Logo detection removed - images from CMS are standard images
-}
-
-function getImagePositionClass(article: NewsArticle): string {
-  const pos = article.image_position || 'center';
-  if (pos === 'top') return 'object-top';
-  if (pos === 'bottom') return 'object-bottom';
-  return 'object-center';
-}
-
 function formatDate(dateStr: string): string {
   return new Date(dateStr).toLocaleDateString('en-US', {
     year: 'numeric',
@@ -132,15 +121,11 @@ function NewsListing({ onSelectArticle }: { onSelectArticle: (slug: string) => v
               className="w-full text-left group"
             >
               <div className="grid lg:grid-cols-2 gap-0 lg:gap-8 bg-white border border-gray-200 rounded-xl overflow-hidden hover:shadow-xl transition-all duration-300">
-                <div className={`relative h-[220px] sm:h-[280px] lg:h-[380px] overflow-hidden ${
-                  isLogoImage(filtered[0]) ? 'bg-gray-50 flex items-center justify-center' : ''
-                }`}>
+                <div className="relative h-[220px] sm:h-[280px] lg:h-[380px] overflow-hidden bg-gray-100">
                   <ImageWithFallback
                     src={resolveImage(filtered[0], 0)}
                     alt={filtered[0].title}
-                    className={`w-full h-full group-hover:scale-105 transition-transform duration-500 ${
-                      isLogoImage(filtered[0]) ? 'object-contain p-8 max-h-[260px]' : `object-cover ${getImagePositionClass(filtered[0])}`
-                    }`}
+                    className="w-full h-full object-contain group-hover:scale-105 transition-transform duration-500"
                   />
                 </div>
                 <div className="p-5 sm:p-6 lg:p-8 flex flex-col justify-center">
@@ -190,15 +175,11 @@ function NewsListing({ onSelectArticle }: { onSelectArticle: (slug: string) => v
                   onClick={() => onSelectArticle(article.slug)}
                   className="text-left group bg-white border border-gray-200 rounded-xl overflow-hidden hover:shadow-lg transition-all duration-300"
                 >
-                  <div className={`relative h-[180px] sm:h-[200px] overflow-hidden ${
-                    isLogoImage(article) ? 'bg-gray-50 flex items-center justify-center' : ''
-                  }`}>
+                  <div className="relative h-[180px] sm:h-[200px] overflow-hidden bg-gray-100">
                     <ImageWithFallback
                       src={resolveImage(article, idx + 1)}
                       alt={article.title}
-                      className={`w-full h-full group-hover:scale-105 transition-transform duration-500 ${
-                        isLogoImage(article) ? 'object-contain p-6 max-h-[160px]' : `object-cover ${getImagePositionClass(article)}`
-                      }`}
+                      className="w-full h-full object-contain group-hover:scale-105 transition-transform duration-500"
                     />
                   </div>
                   <div className="p-4 sm:p-5">
@@ -278,7 +259,6 @@ function ArticleDetail({ slug, onBack }: { slug: string; onBack: () => void }) {
   }
 
   const heroImage = resolveImage(article, 0);
-  const isLogo = isLogoImage(article);
   const tags = article.tags || [];
 
   return (
@@ -293,13 +273,11 @@ function ArticleDetail({ slug, onBack }: { slug: string; onBack: () => void }) {
       </button>
 
       {/* Hero image */}
-      <div className={`relative rounded-xl overflow-hidden mb-8 ${
-        isLogo ? 'bg-gray-50 h-[200px] sm:h-[260px] flex items-center justify-center' : 'h-[250px] sm:h-[350px] lg:h-[420px]'
-      }`}>
+      <div className="relative rounded-xl overflow-hidden mb-8 h-[250px] sm:h-[350px] lg:h-[420px] bg-gray-100">
         <ImageWithFallback
           src={heroImage}
           alt={article.title}
-          className={`w-full h-full ${isLogo ? 'object-contain p-8 max-h-[220px]' : `object-cover ${getImagePositionClass(article)}`}`}
+          className="w-full h-full object-contain"
         />
       </div>
 
