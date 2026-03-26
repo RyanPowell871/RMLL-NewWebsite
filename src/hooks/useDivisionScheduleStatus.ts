@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useMemo } from 'react';
 import { 
   fetchAllDivisionScheduleStatuses,
   isApiKeyReady,
@@ -83,12 +83,15 @@ export function useDivisionScheduleStatus(divisionIds: number[]): UseDivisionSch
   };
 
   // Precompute in-progress division IDs (GameScheduleFinal=false) — show "in progress" indicator
-  const inProgressDivisionIds = new Set<number>();
-  statusMap.forEach((status, divId) => {
-    if (!status.gameScheduleFinal) {
-      inProgressDivisionIds.add(divId);
-    }
-  });
+  const inProgressDivisionIds = useMemo(() => {
+    const ids = new Set<number>();
+    statusMap.forEach((status, divId) => {
+      if (!status.gameScheduleFinal) {
+        ids.add(divId);
+      }
+    });
+    return ids;
+  }, [statusMap]);
 
   return {
     statusMap,

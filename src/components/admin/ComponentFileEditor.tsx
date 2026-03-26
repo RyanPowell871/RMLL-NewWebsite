@@ -31,9 +31,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../ui
 import { Badge } from '../ui/badge';
 import { Label } from '../ui/label';
 import { toast } from 'sonner@2.0.3';
-import { COMPONENT_SCHEMAS, getEditableSchemas, isComponentEditable, type ComponentSchema, type EditableField, type ArrayField } from '../../utils/component-schemas';
-import { parseComponentFile, validateParsedData } from '../../utils/component-parser';
-import { updateComponentFileFromSchema, validateSyntax } from '../../utils/component-writer';
+import { COMPONENT_SCHEMAS, getEditableSchemas, type ComponentSchema, type EditableField, type ArrayField } from '../../utils/component-schemas';
 
 interface ComponentData {
   [fieldName: string]: unknown;
@@ -75,13 +73,23 @@ export function ComponentFileEditor() {
       const dbResponse = await fetch(`/make-server-9a1ba23f/component-editor/${schema.pageId}`);
 
       if (!dbResponse.ok) {
-        throw new Error('Failed to load from database');
+        const contentType = dbResponse.headers.get('content-type');
+        if (contentType && contentType.includes('text/html')) {
+          // Got HTML instead of JSON - likely 404 or server error page
+          throw new Error(`Server error: Received HTML response. The edge function may not be deployed or may have an error.`);
+        }
+        throw new Error(`Server error: ${dbResponse.status} ${dbResponse.statusText}`);
       }
 
-      const dbResult = await dbResponse.json();
+      let dbResult;
+      try {
+        dbResult = await dbResponse.json();
+      } catch (e) {
+        throw new Error(`Invalid JSON response from server. The edge function may not be deployed correctly.`);
+      }
 
       if (!dbResult.success || !dbResult.data?.extractedData) {
-        throw new Error('No data found for this component');
+        throw new Error(dbResult.error || 'No data found for this component');
       }
 
       const extractedData = dbResult.data.extractedData;
@@ -123,10 +131,19 @@ export function ComponentFileEditor() {
       });
 
       if (!response.ok) {
-        throw new Error('Failed to save component');
+        const contentType = response.headers.get('content-type');
+        if (contentType && contentType.includes('text/html')) {
+          throw new Error('Server error: Received HTML response. The edge function may not be deployed correctly.');
+        }
+        throw new Error(`Server error: ${response.status} ${response.statusText}`);
       }
 
-      const result = await response.json();
+      let result;
+      try {
+        result = await response.json();
+      } catch (e) {
+        throw new Error('Invalid JSON response from server');
+      }
 
       if (!result.success) {
         throw new Error(result.error || 'Failed to save component');

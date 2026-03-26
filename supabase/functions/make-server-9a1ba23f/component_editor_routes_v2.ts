@@ -8,8 +8,6 @@
 import { Hono } from "npm:hono";
 import { createClient } from "npm:@supabase/supabase-js@2";
 import { COMPONENT_SCHEMAS, getEditableSchemas, getSchemaByPageId } from "./component_schemas.ts";
-import { parseComponentFile } from "./component_parser.ts";
-import { updateComponentFileFromSchema, validateSyntax } from "./component_writer.ts";
 
 const app = new Hono();
 
@@ -60,6 +58,7 @@ function getTableName(): string {
 // List all editable components
 // ============================================
 app.get('/', (c) => {
+  console.log('[Component Editor] GET / - listing components');
   try {
     const components = getEditableSchemas().map((schema) => ({
       pageId: schema.pageId,
@@ -69,12 +68,13 @@ app.get('/', (c) => {
       fieldCount: schema.editableFields.length,
     }));
 
+    console.log(`[Component Editor] Found ${components.length} editable components`);
     return c.json({
       success: true,
       data: components,
     });
   } catch (error) {
-    console.error('Error listing components:', error);
+    console.error('[Component Editor] Error listing components:', error);
     return c.json(
       { success: false, error: 'Failed to list components' },
       500
@@ -87,19 +87,24 @@ app.get('/', (c) => {
 // Get component data for editing
 // ============================================
 app.get('/:pageId', async (c) => {
-  try {
-    const { pageId } = c.req.param();
+  const { pageId } = c.req.param();
+  console.log(`[Component Editor] GET /${pageId} - fetching component`);
 
+  try {
     const schema = getSchemaByPageId(pageId);
     if (!schema) {
+      console.log(`[Component Editor] Component not found: ${pageId}`);
       return c.json(
         { success: false, error: 'Component not found' },
         404
       );
     }
 
+    console.log(`[Component Editor] Found schema for: ${schema.title}`);
+
     // Check if component is editable
     if (schema.notEditableReason) {
+      console.log(`[Component Editor] Component not editable: ${schema.notEditableReason}`);
       return c.json({
         success: false,
         error: 'Component is not editable',
@@ -281,6 +286,17 @@ app.post('/:pageId/preview', async (c) => {
       500
     );
   }
+});
+
+// ============================================
+// Catch-all route for debugging
+// ============================================
+app.get('/*', (c) => {
+  console.log(`[Component Editor] Unmatched GET: ${c.req.path}`);
+  return c.json(
+    { success: false, error: 'Route not found', path: c.req.path },
+    404
+  );
 });
 
 export default app;

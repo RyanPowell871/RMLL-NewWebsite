@@ -38,14 +38,13 @@ import { EmailManager } from './admin/EmailManager';
 import { AnnouncementManager } from './admin/AnnouncementManager';
 import { DivisionManager } from './admin/DivisionManager';
 import { SuspensionsManager } from './admin/SuspensionsManager';
-import { LeagueInfoContentEditor } from './admin/LeagueInfoContentEditor';
 import { BrokenLinkChecker } from './admin/BrokenLinkChecker';
 import { ContactInfoManager } from './admin/ContactInfoManager';
 import { ComponentFileEditor } from './admin/ComponentFileEditor';
 import { fetchNews, fetchDocuments, fetchUsers as fetchCmsUsers } from '../services/cms-api';
 import { fetchAllAnnouncements } from '../services/announcements-api';
 
-type TabType = 'overview' | 'news' | 'pages' | 'league-info' | 'documents' | 'images' | 'email' | 'announcements' | 'divisions' | 'suspensions' | 'contacts' | 'link-checker' | 'settings' | 'users' | 'component-editor';
+type TabType = 'overview' | 'news' | 'pages' | 'documents' | 'images' | 'email' | 'announcements' | 'divisions' | 'suspensions' | 'contacts' | 'link-checker' | 'settings' | 'users' | 'component-editor';
 
 export function CMSDashboard() {
   const { user, signOut, isAdmin, isEditor } = useAuth();
@@ -67,7 +66,6 @@ export function CMSDashboard() {
     { id: 'overview' as TabType, label: 'Overview', icon: LayoutDashboard, requiredRole: 'viewer' },
     { id: 'news' as TabType, label: 'News Articles', icon: FileText, requiredRole: 'editor' },
     { id: 'pages' as TabType, label: 'Pages', icon: FileText, requiredRole: 'editor' },
-    { id: 'league-info' as TabType, label: 'League Info', icon: Edit, requiredRole: 'editor' },
     { id: 'component-editor' as TabType, label: 'Component Editor', icon: Code, requiredRole: 'editor' },
     { id: 'documents' as TabType, label: 'Documents', icon: FolderOpen, requiredRole: 'editor' },
     { id: 'images' as TabType, label: 'Images', icon: Image, requiredRole: 'editor' },
@@ -224,7 +222,6 @@ export function CMSDashboard() {
           {activeTab === 'overview' && <CMSOverview user={user} onNavigate={navigateToTab} />}
           {activeTab === 'news' && <NewsManager />}
           {activeTab === 'pages' && <PageManager />}
-          {activeTab === 'league-info' && <LeagueInfoContentEditor />}
           {activeTab === 'component-editor' && <ComponentFileEditor />}
           {activeTab === 'documents' && <DocumentManager />}
           {activeTab === 'images' && <ImageManager />}
@@ -317,16 +314,6 @@ function CMSOverview({ user, onNavigate }: { user: any; onNavigate: (tab: TabTyp
       iconBg: 'bg-green-100',
       title: 'Pages',
       description: 'Manage page navigation structure',
-      stat: null,
-      statLabel: '',
-    },
-    {
-      tab: 'league-info' as TabType,
-      icon: Edit,
-      iconColor: 'text-indigo-600',
-      iconBg: 'bg-indigo-100',
-      title: 'League Info Content',
-      description: 'Edit League Info page content block-by-block',
       stat: null,
       statLabel: '',
     },

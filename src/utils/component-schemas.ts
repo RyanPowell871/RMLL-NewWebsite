@@ -55,6 +55,7 @@ export interface ComponentSchema {
   title: string;
   description?: string;
   editableFields: EditableField[];
+  notEditableReason?: string;
 }
 
 // ============================================
