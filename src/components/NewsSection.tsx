@@ -8,19 +8,9 @@ import lacrosseImage2 from 'figma:asset/0916161549f601551450d7c8f472187de0cba509
 import lacrosseImage3 from 'figma:asset/4b404a1e3765d57f2e701ffafd068a1707429b83.png';
 import lacrosseImage4 from 'figma:asset/fd786c6823cd81f78208937f436155d975c7d0e0.png';
 import lacrosseImage5 from 'figma:asset/b7c4d1c972d03a3755fa2e8e5160f8475603344c.png';
-import calgaryIrishLogo from 'figma:asset/20b3d6476fbcd987de5d32696e43ad208f867633.png';
-import intentToPlayImg from 'figma:asset/fb92f556df5ab3ca43f7c34cdf316f8049336fad.png';
-import axemenLogo from 'figma:asset/64eedd4b445409e8ce842a49079db7489b16d71c.png';
 
 // Fallback images for articles without featured images
 const fallbackImages = [lacrosseImage1, lacrosseImage2, lacrosseImage3, lacrosseImage4, lacrosseImage5];
-
-// Map of known image asset keys to imported assets
-const IMAGE_ASSET_MAP: Record<string, string> = {
-  'calgary-irish-logo': calgaryIrishLogo,
-  'intent-to-play-2026': intentToPlayImg,
-  'axemen-logo': axemenLogo,
-};
 
 interface NewsItem {
   id: string;
@@ -30,7 +20,6 @@ interface NewsItem {
   category: string;
   date: string;
   image: string;
-  isLogo?: boolean;
   isSpotlight?: boolean;
   featured?: boolean;
 }
@@ -88,12 +77,8 @@ export function NewsSection() {
       if (articles.length > 0) {
         // Convert CMS articles to NewsItem format
         const converted: NewsItem[] = articles.map((article, index) => {
-          // Resolve image: check for asset key mapping, then featured_image_url, then fallback
-          const assetKey = (article as any)._image_asset_key;
-          const resolvedImage = (assetKey && IMAGE_ASSET_MAP[assetKey])
-            ? IMAGE_ASSET_MAP[assetKey]
-            : article.featured_image_url || fallbackImages[index % fallbackImages.length];
-          const isLogo = !!(assetKey && IMAGE_ASSET_MAP[assetKey]);
+          // Resolve image: use featured_image_url from CMS, otherwise fallback
+          const resolvedImage = article.featured_image_url || fallbackImages[index % fallbackImages.length];
 
           return {
             id: article.id,
@@ -107,7 +92,6 @@ export function NewsSection() {
               day: 'numeric',
             }),
             image: resolvedImage,
-            isLogo,
             isSpotlight: !!article.is_spotlight,
             featured: index === 0, // First article is featured
           };
@@ -158,15 +142,11 @@ export function NewsSection() {
             <div key={item.id} className="lg:col-span-2">
               <button onClick={() => handleArticleClick(item)} className="w-full text-left group block relative overflow-hidden rounded-lg">
                 <div className="grid lg:grid-cols-2 gap-0 lg:gap-6 bg-gray-50 rounded-lg overflow-hidden hover:shadow-xl transition-shadow">
-                  <div className={`relative h-[200px] sm:h-[250px] lg:h-[400px] overflow-hidden ${
-                    item.isLogo ? 'bg-gray-50 flex items-center justify-center' : ''
-                  }`}>
+                  <div className="relative h-[200px] sm:h-[250px] lg:h-[400px] overflow-hidden">
                     <ImageWithFallback
                       src={item.image}
                       alt={item.title}
-                      className={`w-full h-full group-hover:scale-105 transition-transform duration-300 ${
-                        item.isLogo ? 'object-contain p-8' : 'object-cover'
-                      }`}
+                      className="w-full h-full group-hover:scale-105 transition-transform duration-300 object-cover"
                     />
                   </div>
                   <div className="p-4 sm:p-6 lg:p-8 flex flex-col justify-center">
@@ -199,15 +179,11 @@ export function NewsSection() {
               onClick={() => handleArticleClick(item)}
               className="text-left group flex flex-col bg-white border border-gray-200 rounded-lg overflow-hidden hover:shadow-lg transition-shadow"
             >
-              <div className={`relative h-[180px] sm:h-[200px] lg:h-[240px] overflow-hidden flex-shrink-0 ${
-                item.isLogo ? 'bg-gray-50 flex items-center justify-center' : ''
-              }`}>
+              <div className="relative h-[180px] sm:h-[200px] lg:h-[240px] overflow-hidden flex-shrink-0">
                 <ImageWithFallback
                   src={item.image}
                   alt={item.title}
-                  className={`w-full h-full group-hover:scale-105 transition-transform duration-300 ${
-                    item.isLogo ? 'object-contain p-6' : 'object-cover'
-                  }`}
+                  className="w-full h-full group-hover:scale-105 transition-transform duration-300 object-cover"
                 />
               </div>
               <div className="p-3 sm:p-4 lg:p-6 flex flex-col flex-1 min-h-0">

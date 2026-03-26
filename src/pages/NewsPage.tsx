@@ -6,19 +6,10 @@ import { useNavigation } from '../contexts/NavigationContext';
 import { fetchNews, fetchNewsArticle, type NewsArticle } from '../services/cms-api';
 import { ArrowLeft, Calendar, User, Tag, ChevronRight, Star } from 'lucide-react';
 
-// Team logo imports for image asset resolution
-import calgaryIrishLogo from 'figma:asset/20b3d6476fbcd987de5d32696e43ad208f867633.png';
-import intentToPlayImg from 'figma:asset/fb92f556df5ab3ca43f7c34cdf316f8049336fad.png';
-import axemenLogo from 'figma:asset/64eedd4b445409e8ce842a49079db7489b16d71c.png';
+// Fallback images for articles without featured images
 import lacrosseImage1 from 'figma:asset/80f15548150c7733db009ecee4e155e65049cc24.png';
 import lacrosseImage2 from 'figma:asset/0916161549f601551450d7c8f472187de0cba509.png';
 import lacrosseImage3 from 'figma:asset/4b404a1e3765d57f2e701ffafd068a1707429b83.png';
-
-const IMAGE_ASSET_MAP: Record<string, string> = {
-  'calgary-irish-logo': calgaryIrishLogo,
-  'intent-to-play-2026': intentToPlayImg,
-  'axemen-logo': axemenLogo,
-};
 
 const fallbackImages = [lacrosseImage1, lacrosseImage2, lacrosseImage3];
 
@@ -45,15 +36,12 @@ const CATEGORY_COLORS: Record<string, string> = {
 };
 
 function resolveImage(article: NewsArticle, index: number): string {
-  const assetKey = (article as any)._image_asset_key;
-  if (assetKey && IMAGE_ASSET_MAP[assetKey]) return IMAGE_ASSET_MAP[assetKey];
   if (article.featured_image_url) return article.featured_image_url;
   return fallbackImages[index % fallbackImages.length];
 }
 
 function isLogoImage(article: NewsArticle): boolean {
-  const assetKey = (article as any)._image_asset_key;
-  return !!assetKey;
+  return false; // Logo detection removed - images from CMS are standard images
 }
 
 function getImagePositionClass(article: NewsArticle): string {
