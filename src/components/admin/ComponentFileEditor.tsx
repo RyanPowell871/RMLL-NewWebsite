@@ -6,6 +6,10 @@
  */
 
 import { useState, useEffect, useCallback } from 'react';
+import { projectId } from '../../utils/supabase/info';
+import { getAccessToken } from '../../utils/supabase-client';
+
+const EDGE_FUNCTION_BASE_URL = `https://${projectId}.supabase.co/functions/v1/make-server-9a1ba23f`;
 import {
   Save,
   Plus,
@@ -70,7 +74,12 @@ export function ComponentFileEditor() {
 
     try {
       // Fetch stored data from the database
-      const dbResponse = await fetch(`/make-server-9a1ba23f/component-editor/${schema.pageId}`);
+      const dbResponse = await fetch(`${EDGE_FUNCTION_BASE_URL}/component-editor/${schema.pageId}`, {
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${await getAccessToken()}`,
+        },
+      });
 
       console.log('[ComponentFileEditor] Response status:', dbResponse.status, dbResponse.statusText);
       console.log('[ComponentFileEditor] Response headers:', Object.fromEntries(dbResponse.headers.entries()));
@@ -130,9 +139,12 @@ export function ComponentFileEditor() {
     setState((prev) => ({ ...prev, isSaving: true }));
 
     try {
-      const response = await fetch(`/make-server-9a1ba23f/component-editor/${state.schema.pageId}`, {
+      const response = await fetch(`${EDGE_FUNCTION_BASE_URL}/component-editor/${state.schema.pageId}`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${await getAccessToken()}`,
+        },
         body: JSON.stringify({
           fieldName: null, // Update all fields
           data: state.componentData,
