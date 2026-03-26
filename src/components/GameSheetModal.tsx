@@ -1,5 +1,5 @@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from './ui/dialog';
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { Calendar as CalendarIcon, Clock, MapPin, Users, Download, FileText, Loader2, Video } from 'lucide-react';
 import { FacilityMapLink } from './FacilityMapLink';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs';
@@ -7,7 +7,7 @@ import { exportGameToCalendar, type GameForCalendar } from '../utils/calendar';
 import { exportGameSheetPDF, type GameSheetPDFData } from '../utils/gameSheetPdf';
 import rmllShieldLogo from 'figma:asset/fdfcb8e6c2b97967b54febaebf3bb794e8d4e2db.png';
 import { useGameDetails } from '../hooks/useGameDetails';
-import { getPlayerPhotoUrl, parseDateAsLocal, type ScoringStats, type GoalieStats, type PenaltyStats, type RosterPlayer as APIRosterPlayer } from '../services/sportzsoft';
+import { fetchTeamRoster, getPlayerPhotoUrl, parseDateAsLocal, type ScoringStats, type GoalieStats, type PenaltyStats, type RosterPlayer as APIRosterPlayer } from '../services/sportzsoft';
 
 // Parse a datetime string's TIME portion as local (avoids UTC timezone shift).
 // SportzSoft returns e.g. "2025-06-15T19:00:00" or "2025-06-15T19:00:00.000Z"
@@ -416,215 +416,64 @@ function calculateTeamStats(
 }
 
 /**
- * Extract coaching staff from roster data AND Game-level fields
- * 
- * Coaches can appear in multiple places in the SportzSoft API:
- * 1. Direct Game object fields (HomeHeadCoach, VisitorHeadCoach, etc.)
- * 2. BenchPersonnel or BenchStaff arrays on the Game object
- * 3. RosterView entries with TeamPlayerId = null and role codes (HC, ASSTC, etc.)
+ * Extract coaching staff from TeamRoles array (bench personnel)
+ * This matches the data structure used by the Team Detail Page
  */
-function extractCoachingStaff(
-  rosterPlayers: any[] | undefined,
-  teamId: number,
-  gameObj?: any,
-  isHome?: boolean
-): CoachingStaff {
-  // ── Strategy 1: Try Game-level fields first (most reliable) ──
-  if (gameObj) {
-    const prefix = isHome ? 'Home' : 'Visitor';
-    const altPrefix = isHome ? 'Home' : 'Away';
-    
-    // Log coaching-related keys for diagnostics
-    const coachKeys = Object.keys(gameObj).filter(k => 
-      /coach|bench|staff|trainer|manager|personnel/i.test(k)
-    );
-    if (coachKeys.length > 0) {
-      console.log(`[GameSheet] Game coaching-related keys:`, coachKeys);
-      console.log(`[GameSheet] Game coaching values:`, Object.fromEntries(coachKeys.map(k => [k, gameObj[k]])));
-    } else {
-      // Dump all Game keys so we can find the right field names
-      console.log(`[GameSheet] No coaching keys found. All Game keys:`, Object.keys(gameObj));
-    }
-    
-    // Try common SportzSoft Game-level coaching fields
-    const hcField = gameObj[`${prefix}HeadCoach`] || gameObj[`${prefix}Coach`] || 
-                     gameObj[`${altPrefix}HeadCoach`] || gameObj[`${altPrefix}Coach`] ||
-                     gameObj[`${prefix}HeadCoachName`] || gameObj[`${altPrefix}HeadCoachName`];
-    
-    // Try BenchPersonnel/BenchStaff arrays on Game object
-    const benchKey = Object.keys(gameObj).find(k => /bench/i.test(k));
-    const benchData = benchKey ? gameObj[benchKey] : null;
-    
-    // If we found a head coach name directly on the Game object, use it
-    if (hcField && typeof hcField === 'string' && hcField.trim()) {
-      console.log(`[GameSheet] Using Game-level HC for ${prefix}: "${hcField}"`);
-      const result: CoachingStaff = {
-        headCoach: hcField.trim().toUpperCase(),
-        assistantCoaches: [],
-        trainer: '',
-        manager: '',
-        allStaff: []
-      };
-      
-      result.allStaff.push({ role: 'COACH', name: hcField.trim().toUpperCase() });
-      
-      // Look for assistant coaches, trainer, manager at Game level
-      const ac1 = gameObj[`${prefix}AssistantCoach`] || gameObj[`${prefix}AssistantCoach1`] || 
-                   gameObj[`${altPrefix}AssistantCoach`] || gameObj[`${altPrefix}AssistantCoach1`];
-      const ac2 = gameObj[`${prefix}AssistantCoach2`] || gameObj[`${altPrefix}AssistantCoach2`];
-      const ac3 = gameObj[`${prefix}AssistantCoach3`] || gameObj[`${altPrefix}AssistantCoach3`];
-      const tr = gameObj[`${prefix}Trainer`] || gameObj[`${altPrefix}Trainer`] || 
-                 gameObj[`${prefix}TrainerName`] || gameObj[`${altPrefix}TrainerName`];
-      const mgr = gameObj[`${prefix}Manager`] || gameObj[`${altPrefix}Manager`];
-      
-      if (ac1 && String(ac1).trim()) { result.assistantCoaches.push(String(ac1).trim().toUpperCase()); result.allStaff.push({ role: 'COACH', name: String(ac1).trim().toUpperCase() }); }
-      if (ac2 && String(ac2).trim()) { result.assistantCoaches.push(String(ac2).trim().toUpperCase()); result.allStaff.push({ role: 'COACH', name: String(ac2).trim().toUpperCase() }); }
-      if (ac3 && String(ac3).trim()) { result.assistantCoaches.push(String(ac3).trim().toUpperCase()); result.allStaff.push({ role: 'COACH', name: String(ac3).trim().toUpperCase() }); }
-      if (tr && String(tr).trim()) { result.trainer = String(tr).trim().toUpperCase(); result.allStaff.push({ role: 'TRAINER', name: String(tr).trim().toUpperCase() }); }
-      if (mgr && String(mgr).trim()) { result.manager = String(mgr).trim().toUpperCase(); result.allStaff.push({ role: 'MANAGER', name: String(mgr).trim().toUpperCase() }); }
-      
-      return result;
-    }
-    
-    // Strategy 1b: BenchPersonnel array
-    if (Array.isArray(benchData) && benchData.length > 0) {
-      const teamBench = benchData.filter((b: any) => 
-        String(b.TeamId) === String(teamId) || b.IsHome === isHome
-      );
-      if (teamBench.length > 0) {
-        console.log(`[GameSheet] Using BenchPersonnel for team ${teamId}:`, teamBench);
-        const hc = teamBench.find((b: any) => /head\s*coach|^hc$/i.test(b.Role || b.Position || ''));
-        const acs = teamBench.filter((b: any) => /asst|assistant|^ac/i.test(b.Role || b.Position || ''));
-        const trn = teamBench.find((b: any) => /trainer|^tr$/i.test(b.Role || b.Position || ''));
-        const mg = teamBench.find((b: any) => /manager|^mgr$|^tprm$/i.test(b.Role || b.Position || ''));
-        
-        const allStaff: { role: string; name: string }[] = [];
-        if (hc) allStaff.push({ role: 'COACH', name: `${hc.FirstName || ''} ${hc.LastName || hc.Name || ''}`.trim().toUpperCase() });
-        acs.forEach((a: any) => allStaff.push({ role: 'COACH', name: `${a.FirstName || ''} ${a.LastName || a.Name || ''}`.trim().toUpperCase() }));
-        if (trn) allStaff.push({ role: 'TRAINER', name: `${trn.FirstName || ''} ${trn.LastName || trn.Name || ''}`.trim().toUpperCase() });
-        if (mg) allStaff.push({ role: 'MANAGER', name: `${mg.FirstName || ''} ${mg.LastName || mg.Name || ''}`.trim().toUpperCase() });
-        
-        return {
-          headCoach: hc ? `${hc.FirstName || ''} ${hc.LastName || hc.Name || ''}`.trim().toUpperCase() || 'TBD' : 'TBD',
-          assistantCoaches: acs.map((a: any) => `${a.FirstName || ''} ${a.LastName || a.Name || ''}`.trim().toUpperCase()).filter(Boolean),
-          trainer: trn ? `${trn.FirstName || ''} ${trn.LastName || trn.Name || ''}`.trim().toUpperCase() : '',
-          manager: mg ? `${mg.FirstName || ''} ${mg.LastName || mg.Name || ''}`.trim().toUpperCase() : '',
-          allStaff
-        };
+function extractCoachingStaffFromTeamRoles(teamRoles: any[]): CoachingStaff {
+  if (!teamRoles || !Array.isArray(teamRoles)) {
+    return { headCoach: 'TBD', assistantCoaches: [], trainer: '', manager: '', allStaff: [] };
+  }
+
+  // Filter for bench personnel only
+  const benchStaff = teamRoles.filter((role: any) =>
+    role.TeamRoleClassification === 'Bench'
+  );
+
+  // Clean name - remove role codes in parentheses like "(CHH)", "(CH3)", "(BMVP)", etc.
+  function cleanName(name: string): string {
+    return name.replace(/\s*\([^)]+\)\s*$/g, '').trim();
+  }
+
+  // Sort priority: Head Coach first, then Asst Coaches, Trainers, Managers, then others
+  function getRolePriority(roleName: string): number {
+    if (roleName === 'Head Coach') return 1;
+    if (roleName.includes('Asst Coach')) return 2;
+    if (roleName.includes('Trainer')) return 3;
+    if (roleName.includes('Manager')) return 4;
+    return 5;
+  }
+
+  const sortedStaff = benchStaff
+    .map((role: any) => {
+      const roleName = role.Role || '';
+      // Use FirstName + LastName if available, otherwise use Name and clean it
+      let personName = '';
+      if (role.FirstName && role.LastName) {
+        personName = `${role.FirstName} ${role.LastName}`.trim();
+      } else if (role.Name) {
+        personName = cleanName(role.Name);
       }
-    }
-  }
+      return { role: roleName, name: personName || 'TBD', priority: getRolePriority(roleName) };
+    })
+    .sort((a: any, b: any) => a.priority - b.priority);
 
-  // ── Strategy 2: Extract from Roster array (original approach) ──
-  if (!rosterPlayers || rosterPlayers.length === 0) {
-    console.log(`[GameSheet] Team ${teamId}: No roster data and no Game-level coaching fields found.`);
-    return {
-      headCoach: 'TBD',
-      assistantCoaches: [],
-      trainer: '',
-      manager: '',
-      allStaff: []
-    };
-  }
+  const headCoach = sortedStaff.find((s: any) => s.role === 'Head Coach');
+  const assistantCoaches = sortedStaff.filter((s: any) => s.role.includes('Asst Coach'));
+  const trainer = sortedStaff.find((s: any) => s.role.includes('Trainer'));
+  const manager = sortedStaff.find((s: any) => s.role.includes('Manager'));
 
-  // Filter for staff members of this team
-  // Staff can have TeamPlayerId === null OR have non-numeric PlayerNumber codes
-  const teamStaff = rosterPlayers.filter(p => {
-    if (String(p.TeamId) !== String(teamId)) return false;
-    // Null TeamPlayerId = definitely staff
-    if (p.TeamPlayerId === null) return true;
-    // Non-numeric PlayerNumber = likely a role code (HC, ASSTC, etc.)
-    const playerNum = p.JerseyNumber || p.PlayerNumber || '';
-    if (playerNum && isNaN(parseInt(playerNum))) return true;
-    // Check for IsCoach / IsStaff / StaffType fields
-    if (p.IsCoach === true || p.IsStaff === true || p.StaffType) return true;
-    return false;
-  });
-
-  // Log all staff for debugging coaching TBD issues
-  if (teamStaff.length > 0) {
-    console.log(`[GameSheet] Team ${teamId} staff from Roster (${teamStaff.length}):`, 
-      teamStaff.map(s => `${s.PlayerNumber || s.JerseyNumber || '?'}: ${s.FirstName} ${s.LastName}`));
-  } else {
-    // Expanded diagnostics: log ALL entries for this team to see what fields exist
-    const teamEntries = rosterPlayers.filter(p => String(p.TeamId) === String(teamId));
-    console.log(`[GameSheet] Team ${teamId}: No staff found in Roster. Total team entries: ${teamEntries.length}`);
-    if (teamEntries.length > 0) {
-      console.log(`[GameSheet] Sample roster entry keys:`, Object.keys(teamEntries[0]));
-      console.log(`[GameSheet] First 3 roster entries:`, teamEntries.slice(0, 3).map(p => ({
-        PlayerNumber: p.PlayerNumber, JerseyNumber: p.JerseyNumber,
-        TeamPlayerId: p.TeamPlayerId, PersonId: p.PersonId,
-        FirstName: p.FirstName, LastName: p.LastName,
-        Position: p.Position, Role: p.Role, StaffType: p.StaffType,
-        IsCoach: p.IsCoach, IsStaff: p.IsStaff,
-        RosterPosition: p.RosterPosition, PlayerType: p.PlayerType
-      })));
-    }
-  }
-
-  // Find head coach - look for specific role indicators in PlayerNumber, Role, Position, StaffType
-  const getRole = (p: any) => {
-    return [
-      p.PlayerNumber, p.JerseyNumber, p.Role, p.Position, p.StaffType, p.RosterPosition, p.PlayerType
-    ].filter(Boolean).map(String).join(' ').toUpperCase();
-  };
-
-  const headCoach = teamStaff.find(p => {
-    const role = getRole(p);
-    return /\bHC\b|\bHEADC\b|\bHEAD\s*COACH\b/.test(role);
-  });
-
-  // Find assistant coaches
-  const assistantCoaches = teamStaff.filter(p => {
-    const role = getRole(p);
-    return /\bASS?T?\s*C(?:OACH)?\b|\bAC\d?\b|\bASSIST/.test(role);
-  });
-
-  // Find trainer
-  const trainer = teamStaff.find(p => {
-    const role = getRole(p);
-    return /\bTR\b|\bTRAIN/.test(role);
-  });
-
-  // Find manager / team rep (TPRM = Team Primary Manager)
-  const manager = teamStaff.find(p => {
-    const role = getRole(p);
-    return /\bTPRM\b|\bMGR\b|\bTM\b|\bMANAG/.test(role);
-  });
-
-  // Collect any other staff not yet categorized
-  const categorized = new Set([headCoach, ...assistantCoaches, trainer, manager].filter(Boolean).map((p: any) => p.PersonId || p.PlayerId));
-  const otherStaff = teamStaff.filter(p => !categorized.has(p.PersonId || p.PlayerId));
-
+  // Build allStaff array
   const allStaff: { role: string; name: string }[] = [];
-  if (headCoach) allStaff.push({ role: 'COACH', name: `${headCoach.FirstName} ${headCoach.LastName}`.toUpperCase() });
-  assistantCoaches.forEach(ac => allStaff.push({ role: 'COACH', name: `${ac.FirstName} ${ac.LastName}`.toUpperCase() }));
-  if (trainer) allStaff.push({ role: 'TRAINER', name: `${trainer.FirstName} ${trainer.LastName}`.toUpperCase() });
-  if (manager) allStaff.push({ role: 'MANAGER', name: `${manager.FirstName} ${manager.LastName}`.toUpperCase() });
-  otherStaff.forEach(s => {
-    const roleCode = (s.PlayerNumber || s.JerseyNumber || '').toUpperCase();
-    const name = `${s.FirstName} ${s.LastName}`.toUpperCase();
-    const displayRole = /coach|^hc$|^ac/i.test(roleCode) ? 'COACH' : 
-                         /train|^tr$/i.test(roleCode) ? 'TRAINER' :
-                         /manag|^tprm$|^mgr$/i.test(roleCode) ? 'MANAGER' : roleCode || 'STAFF';
-    allStaff.push({ role: displayRole, name });
-  });
+  if (headCoach) allStaff.push({ role: 'COACH', name: headCoach.name.toUpperCase() });
+  assistantCoaches.forEach((ac: any) => allStaff.push({ role: 'COACH', name: ac.name.toUpperCase() }));
+  if (trainer) allStaff.push({ role: 'TRAINER', name: trainer.name.toUpperCase() });
+  if (manager) allStaff.push({ role: 'MANAGER', name: manager.name.toUpperCase() });
 
   return {
-    headCoach: headCoach 
-      ? `${headCoach.FirstName} ${headCoach.LastName}`.toUpperCase()
-      : 'TBD',
-    assistantCoaches: [
-      ...assistantCoaches.map(ac => `${ac.FirstName} ${ac.LastName}`.toUpperCase()),
-      ...otherStaff.map(s => {
-        const role = (s.PlayerNumber || s.JerseyNumber || '').toUpperCase();
-        const name = `${s.FirstName} ${s.LastName}`.toUpperCase();
-        if (role && role !== 'HC') return `${name} (${role})`;
-        return name;
-      })
-    ],
-    trainer: trainer ? `${trainer.FirstName} ${trainer.LastName}`.toUpperCase() : '',
-    manager: manager ? `${manager.FirstName} ${manager.LastName}`.toUpperCase() : '',
+    headCoach: headCoach ? headCoach.name.toUpperCase() : 'TBD',
+    assistantCoaches: assistantCoaches.map((ac: any) => ac.name.toUpperCase()),
+    trainer: trainer ? trainer.name.toUpperCase() : '',
+    manager: manager ? manager.name.toUpperCase() : '',
     allStaff
   };
 }
@@ -779,14 +628,7 @@ export function GameSheetModal({ game, open, onClose }: GameSheetModalProps) {
   const awayPenalties = gameDetails?.PenaltyStats && visitorTeamId !== 0 ?
     transformPenalties(gameDetails.PenaltyStats, gameDetails.Roster, visitorTeamId) :
     [];
-    
-  const homeCoaching = homeTeamId !== 0 ?
-    extractCoachingStaff(gameDetails?.Roster, homeTeamId, gameDetails?.Game, true) :
-    { headCoach: 'TBD', assistantCoaches: [], trainer: '', manager: '', allStaff: [] };
-  const awayCoaching = visitorTeamId !== 0 ?
-    extractCoachingStaff(gameDetails?.Roster, visitorTeamId, gameDetails?.Game, false) :
-    { headCoach: 'TBD', assistantCoaches: [], trainer: '', manager: '', allStaff: [] };
-    
+
   const homeGoalies = gameDetails?.GoalieStats && homeTeamId !== 0 ?
     transformGoalieStats(gameDetails.GoalieStats, homeTeamId) :
     [];
@@ -828,6 +670,92 @@ export function GameSheetModal({ game, open, onClose }: GameSheetModalProps) {
   };
 
   const [pdfExporting, setPdfExporting] = useState(false);
+  const [homeBenchPersonnel, setHomeBenchPersonnel] = useState<CoachingStaff | null>(null);
+  const [awayBenchPersonnel, setAwayBenchPersonnel] = useState<CoachingStaff | null>(null);
+
+  // Fetch bench personnel from team data (TeamRoles)
+  useEffect(() => {
+    const fetchBenchPersonnel = async () => {
+      if (!homeTeamId || !visitorTeamId) return;
+
+      console.log('[GameSheet] Fetching bench personnel - Home:', homeTeamId, 'Visitor:', visitorTeamId);
+
+      try {
+        // Fetch home team data with TeamRoles (childCode 'B')
+        if (homeTeamId !== 0) {
+          const homeResponse = await fetchTeamRoster(homeTeamId, 'B', 'B');
+          console.log('[GameSheet] Home team full response:', homeResponse);
+
+          // Try multiple paths to find TeamRoles
+          let homeTeamRoles = null;
+          if (homeResponse.Success) {
+            homeTeamRoles = homeResponse.Response?.Team?.TeamRoles
+              || homeResponse.Response?.TeamRoles
+              || homeResponse.TeamRoles
+              || (homeResponse as any).Response?.TeamRoles;
+
+            console.log('[GameSheet] Home team TeamRoles found at path:', homeTeamRoles ? 'YES' : 'NO');
+            console.log('[GameSheet] Home team Response keys:', homeResponse.Response ? Object.keys(homeResponse.Response) : 'N/A');
+            console.log('[GameSheet] Home team Response.Team keys:', homeResponse.Response?.Team ? Object.keys(homeResponse.Response.Team) : 'N/A');
+            if (homeTeamRoles) {
+              console.log('[GameSheet] Home team TeamRoles data:', homeTeamRoles);
+            }
+          }
+
+          if (homeTeamRoles && Array.isArray(homeTeamRoles)) {
+            const homeStaff = extractCoachingStaffFromTeamRoles(homeTeamRoles);
+            console.log('[GameSheet] Home bench personnel extracted:', homeStaff);
+            setHomeBenchPersonnel(homeStaff);
+          } else {
+            console.warn('[GameSheet] Home team: No valid TeamRoles array found');
+          }
+        }
+
+        // Fetch visitor team data with TeamRoles (childCode 'B')
+        if (visitorTeamId !== 0) {
+          const awayResponse = await fetchTeamRoster(visitorTeamId, 'B', 'B');
+          console.log('[GameSheet] Visitor team full response:', awayResponse);
+
+          // Try multiple paths to find TeamRoles
+          let awayTeamRoles = null;
+          if (awayResponse.Success) {
+            awayTeamRoles = awayResponse.Response?.Team?.TeamRoles
+              || awayResponse.Response?.TeamRoles
+              || awayResponse.TeamRoles
+              || (awayResponse as any).Response?.TeamRoles;
+
+            console.log('[GameSheet] Visitor team TeamRoles found at path:', awayTeamRoles ? 'YES' : 'NO');
+            console.log('[GameSheet] Visitor team Response keys:', awayResponse.Response ? Object.keys(awayResponse.Response) : 'N/A');
+            console.log('[GameSheet] Visitor team Response.Team keys:', awayResponse.Response?.Team ? Object.keys(awayResponse.Response.Team) : 'N/A');
+            if (awayTeamRoles) {
+              console.log('[GameSheet] Visitor team TeamRoles data:', awayTeamRoles);
+            }
+          }
+
+          if (awayTeamRoles && Array.isArray(awayTeamRoles)) {
+            const awayStaff = extractCoachingStaffFromTeamRoles(awayTeamRoles);
+            console.log('[GameSheet] Visitor bench personnel extracted:', awayStaff);
+            setAwayBenchPersonnel(awayStaff);
+          } else {
+            console.warn('[GameSheet] Visitor team: No valid TeamRoles array found');
+          }
+        }
+      } catch (err) {
+        console.error('[GameSheet] Error fetching bench personnel:', err);
+      }
+    };
+
+    if (open && homeTeamId && visitorTeamId) {
+      fetchBenchPersonnel();
+    }
+  }, [open, homeTeamId, visitorTeamId]);
+
+  // Use fetched bench personnel if available, otherwise fall back to TBD
+  const homeCoaching = homeBenchPersonnel || { headCoach: 'TBD', assistantCoaches: [], trainer: '', manager: '', allStaff: [] };
+  const awayCoaching = awayBenchPersonnel || { headCoach: 'TBD', assistantCoaches: [], trainer: '', manager: '', allStaff: [] };
+
+  console.log('[GameSheet] Render - homeCoaching:', homeCoaching);
+  console.log('[GameSheet] Render - awayCoaching:', awayCoaching);
 
   const handleExportPDF = async () => {
     setPdfExporting(true);
