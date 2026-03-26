@@ -793,8 +793,8 @@ const convertedAllGames = allSeasonGames.map((apiGame) => ({
       awayTeam: apiGame.VisitorTeamName || 'Away Team',
       homeTeamId: apiGame.HomeTeamId,
       visitorTeamId: apiGame.VisitorTeamId,
-      homeScore: hasScores ? apiGame.HomeScore : 0,
-      awayScore: hasScores ? apiGame.VisitorScore : 0,
+      homeScore: hasScores ? apiGame.HomeScore : undefined,
+      awayScore: hasScores ? apiGame.VisitorScore : undefined,
       homeRecord: formatRecord(apiGame.HomeTeamId),
       awayRecord: formatRecord(apiGame.VisitorTeamId),
       date: formatGameDate(apiGame.GameDate),
@@ -802,11 +802,11 @@ const convertedAllGames = allSeasonGames.map((apiGame) => ({
       time: parseGameTime(apiGame.StartTime) || parseGameTime(apiGame.GameDate),
       status: (apiGame.GameStatus?.toLowerCase() === 'final' ||
                 apiGame.GameStatus?.toLowerCase() === 'played' ||
-                apiGame.GameStatus?.toLowerCase() === 'completed') ? 'FINAL'
+                apiGame.GameStatus?.toLowerCase() === 'completed' ||
+                apiGame.GameStatus?.toLowerCase() === 'postponed') ? 'FINAL'
         : (apiGame.GameStatus?.toLowerCase() === 'in progress' ||
                 apiGame.GameStatus?.toLowerCase() === 'live' ||
                 apiGame.GameStatus?.toLowerCase() === 'in-progress') ? 'LIVE'
-        : (apiGame.StandingCategoryCode?.toLowerCase() === 'exhb') ? 'EXHIBITION'
         : 'UPCOMING',
       homeLogo: apiGame.HomeTeamLogoURL || getTeamLogo(apiGame.HomeTeamName || 'Home Team', undefined),
       awayLogo: apiGame.VisitorTeamLogoURL || getTeamLogo(apiGame.VisitorTeamName || 'Away Team', undefined),
@@ -854,7 +854,7 @@ const convertedAllGames = allSeasonGames.map((apiGame) => ({
     // 2. Division filter (Crossover support)
     if (selectedDivision !== 'All Divisions') {
       const divisionIds = divisionGroups[selectedDivision] || [];
-      const matchesDivision = divisionIds.includes(game.divisionId) ||
+      const matchesDivision = (game.divisionId && divisionIds.includes(game.divisionId)) ||
                               (game.homeTeamDivisionId && divisionIds.includes(game.homeTeamDivisionId)) ||
                               (game.visitorTeamDivisionId && divisionIds.includes(game.visitorTeamDivisionId));
       if (!matchesDivision) return false;
@@ -863,15 +863,16 @@ const convertedAllGames = allSeasonGames.map((apiGame) => ({
     // 3. SubDivision filter (Crossover support)
     if (selectedSubDivision !== 'All' && currentSubDivisions[selectedSubDivision]) {
       const subDivisionIds = currentSubDivisions[selectedSubDivision];
-      const matchesSubDivision = subDivisionIds.includes(game.divisionId) ||
+      const matchesSubDivision = (game.divisionId && subDivisionIds.includes(game.divisionId)) ||
                                  (game.homeTeamDivisionId && subDivisionIds.includes(game.homeTeamDivisionId)) ||
                                  (game.visitorTeamDivisionId && subDivisionIds.includes(game.visitorTeamDivisionId));
       if (!matchesSubDivision) return false;
     }
 
-    // 4. Team filter
+    // 4. Team filter (case-insensitive)
     if (selectedTeam !== 'All Teams') {
-      if (game.homeTeam !== selectedTeam && game.awayTeam !== selectedTeam) {
+      if (game.homeTeam?.toLowerCase() !== selectedTeam.toLowerCase() &&
+          game.awayTeam?.toLowerCase() !== selectedTeam.toLowerCase()) {
         return false;
       }
     }
@@ -1070,10 +1071,17 @@ const convertedAllGames = allSeasonGames.map((apiGame) => ({
   };
 
   const getGamesForDate = (date: Date) => {
-    const dateStr = date.toISOString().split('T')[0]; 
+    // Use local date string to avoid UTC conversion issues
+    const dateStr = date.getFullYear() + '-' +
+      String(date.getMonth() + 1).padStart(2, '0') + '-' +
+      String(date.getDate()).padStart(2, '0');
     return filteredGames.filter(game => {
-      const gameDate = game.fullDate.split('T')[0]; 
-      return gameDate === dateStr;
+      // Parse API date as local time and compare
+      const gameDate = parseDateAsLocal(game.fullDate);
+      const gameDateStr = gameDate.getFullYear() + '-' +
+        String(gameDate.getMonth() + 1).padStart(2, '0') + '-' +
+        String(gameDate.getDate()).padStart(2, '0');
+      return gameDateStr === dateStr;
     });
   };
 

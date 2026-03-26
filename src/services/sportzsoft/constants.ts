@@ -222,9 +222,13 @@ export const DIVISION_NAMES_DETAILED: Record<number, string> = {
 export const GAME_STATUS: Record<number, string> = {
   112: 'Scheduled',
   114: 'In Progress',
-  118: 'Final', // Changed from 'Scheduled' - this is the actual final status code
+  115: 'In Progress', // Some games may use 115
+  116: 'Completed',
+  117: 'Completed',
+  118: 'Final',
   120: 'Final',
   122: 'Cancelled',
+  123: 'Postponed',
   // Add more status codes as needed
 };
 

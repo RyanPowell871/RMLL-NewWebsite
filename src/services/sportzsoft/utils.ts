@@ -98,6 +98,7 @@ export function mapStandingCategoryCodeToName(code: string | null): string {
     'exhb': 'Exhibition',
     'regu': 'Regular Season',
     'plyo': 'Playoffs',
+    'play': 'Playoffs',
     'prov': 'Provincials',
     // Legacy uppercase codes (for backwards compatibility)
     'REG': 'Regular Season',
