@@ -2351,12 +2351,12 @@ export function TeamDetailPage({ teamId, teamName, season, teamLogo, divisionId,
                       <button
                         onClick={() => setScheduleFilter('all')}
                         className={`px-4 py-1.5 rounded-md text-sm font-bold transition-colors ${
-                          scheduleFilter === 'all' 
-                            ? 'bg-gray-900 text-white' 
+                          scheduleFilter === 'all'
+                            ? 'bg-gray-900 text-white'
                             : 'text-gray-600 hover:bg-gray-100'
                         }`}
                       >
-                        All Games
+                        All
                       </button>
                       <button
                         onClick={() => setScheduleFilter('home')}
@@ -2427,11 +2427,144 @@ export function TeamDetailPage({ teamId, teamName, season, teamLogo, divisionId,
                     }}
                   >
                     <CardTitle className="text-xl font-black text-white">
-                      {scheduleFilter === 'practices' ? `${currentSeason} Practices` : `${currentSeason} Schedule${scheduleGameType !== 'All Game Types' ? ` — ${scheduleGameType}` : ''}`}
+                      {scheduleFilter === 'all'
+                        ? `${currentSeason} Schedule — All${scheduleGameType !== 'All Game Types' ? ` (${scheduleGameType})` : ''}`
+                        : scheduleFilter === 'practices'
+                        ? `${currentSeason} Practices`
+                        : `${currentSeason} ${scheduleFilter === 'home' ? 'Home' : 'Away'} Games${scheduleGameType !== 'All Game Types' ? ` — ${scheduleGameType}` : ''}`
+                      }
                     </CardTitle>
                   </CardHeader>
                   <CardContent className="p-0">
-                    {scheduleFilter === 'practices' ? (
+                    {scheduleFilter === 'all' ? (
+                      /* ── Combined Games + Practices View ── */
+                      (() => {
+                        // Combine games and practices into a single sorted array
+                        const combinedSchedule = [
+                          ...apiGames.map(g => ({
+                            type: 'game' as const,
+                            id: g.GameId,
+                            date: g.GameDate,
+                            time: g.StartTime || '',
+                            homeTeam: g.HomeTeamId === currentTeamId ? getTeamName(g.HomeTeamId) : getTeamName(g.HomeTeamId),
+                            awayTeam: g.VisitorTeamId === currentTeamId ? getTeamName(g.VisitorTeamId) : getTeamName(g.VisitorTeamId),
+                            venue: g.FacilityName,
+                            isHome: g.HomeTeamId === currentTeamId,
+                            result: g.HomeScore !== null ? (g.HomeTeamId === currentTeamId ? g.HomeScore - g.VisitorTeam : g.VisitorTeam - g.HomeScore) : null,
+                            gameNumber: g.GameNumber,
+                            standingCategoryCode: g.StandingCategoryCode,
+                            schedulingComments: g.SchedulingComments,
+                            gameComments: g.GameComments,
+                            homeTeamDivisionId: g.HomeTeamDivisionId,
+                            visitorTeamDivisionId: g.VisitorTeamDivisionId,
+                          })),
+                          ...apiPractices.map(p => ({
+                            type: 'practice' as const,
+                            id: p.PracticeId,
+                            date: p.PracticeDate,
+                            time: p.StartTime || '',
+                            endTime: p.EndTime || '',
+                            practiceType: p.PracticeType || 'Practice',
+                            venue: p.FacilityName,
+                            duration: p.Duration,
+                            comments: p.PracticeComments,
+                          }))
+                        ].sort((a, b) => {
+                          const dateA = new Date(a.date).getTime();
+                          const dateB = new Date(b.date).getTime();
+                          if (dateA !== dateB) return dateA - dateB;
+                          // If same date, sort by time
+                          return a.time.localeCompare(b.time);
+                        });
+
+                        return combinedSchedule.length > 0 ? (
+                          <div className="overflow-x-auto">
+                            <table className="w-full">
+                              <thead>
+                                <tr style={{ backgroundColor: extractedColors.secondary }}>
+                                  <th className="text-center py-2.5 px-3 font-bold text-white">#</th>
+                                  <th className="text-left py-2.5 px-3 font-bold text-white">Date</th>
+                                  <th className="text-left py-2.5 px-3 font-bold text-white">Type</th>
+                                  <th className="text-left py-2.5 px-3 font-bold text-white">Description</th>
+                                  <th className="text-left py-2.5 px-3 font-bold text-white hidden md:table-cell">Location</th>
+                                  <th className="text-center py-2.5 px-3 font-bold text-white">Time</th>
+                                  <th className="text-center py-2.5 px-3 font-bold text-white">Result</th>
+                                </tr>
+                              </thead>
+                              <tbody>
+                                {combinedSchedule.map((item, idx) => (
+                                  <tr
+                                    key={`${item.type}-${item.id || idx}`}
+                                    className={`border-b border-gray-200 hover:bg-gray-50 ${
+                                      item.type === 'game' && item.isExhibition ? 'bg-amber-50/50' : ''
+                                    } ${item.type === 'practice' ? 'bg-green-50/30' : ''}`}
+                                  >
+                                    <td className="py-2.5 px-3 text-center text-sm text-gray-500 font-mono">
+                                      {item.type === 'game' ? (item.gameNumber || '-') : '-'}
+                                    </td>
+                                    <td className="py-2.5 px-3 font-semibold text-sm">
+                                      {formatGameDate(item.date)}
+                                    </td>
+                                    <td className="py-2.5 px-3">
+                                      {item.type === 'game' ? (
+                                        <Badge variant={item.isHome ? 'default' : 'outline'} className="text-xs">
+                                          {item.isHome ? 'vs' : '@'}
+                                        </Badge>
+                                      ) : (
+                                        <Badge className="bg-green-600 text-white text-[10px] px-1.5 py-0.5">
+                                          Practice
+                                        </Badge>
+                                      )}
+                                    </td>
+                                    <td className="py-2.5 px-3">
+                                      {item.type === 'game' ? (
+                                        <div className="flex items-center gap-2">
+                                          <span className="font-bold text-sm">{item.type === 'game' ? (item.isHome ? item.awayTeam : item.homeTeam) : ''}</span>
+                                          {item.standingCategoryCode?.toLowerCase() === 'exhb' && (
+                                            <Badge className="bg-amber-600 text-white text-[10px] px-1.5 py-0">Exhibition</Badge>
+                                          )}
+                                          {item.homeTeamDivisionId && item.visitorTeamDivisionId && item.homeTeamDivisionId !== item.visitorTeamDivisionId && (
+                                            <Badge className="bg-purple-100 text-purple-700 border border-purple-200 text-[10px] px-1.5 py-0">Crossover</Badge>
+                                          )}
+                                        </div>
+                                      ) : (
+                                        <div className="flex items-center gap-2">
+                                          <span className="text-sm">{item.practiceType || 'Practice'}</span>
+                                          {item.comments && (
+                                            <span className="text-xs text-gray-500 truncate max-w-[150px]">{item.comments}</span>
+                                          )}
+                                        </div>
+                                      )}
+                                    </td>
+                                    <td className="py-2.5 px-3 hidden md:table-cell">
+                                      <FacilityMapLink venueName={item.venue} className="text-xs" />
+                                    </td>
+                                    <td className="py-2.5 px-3 text-center text-sm">
+                                      {item.type === 'game' ? item.time : `${item.time} - ${item.endTime}`}
+                                    </td>
+                                    <td className="py-2.5 px-3 text-center text-sm font-bold">
+                                      {item.type === 'game' ? (
+                                        item.result !== null ? (
+                                          <span className={item.result > 0 ? 'text-green-600' : item.result < 0 ? 'text-red-600' : 'text-gray-500'}>
+                                            {item.result > 0 ? `W${item.result}` : item.result < 0 ? `L${Math.abs(item.result)}` : 'T'}
+                                          </span>
+                                        ) : '-'
+                                      ) : (
+                                        <span className="text-gray-400">-</span>
+                                      )}
+                                    </td>
+                                  </tr>
+                                ))}
+                              </tbody>
+                            </table>
+                          </div>
+                        ) : (
+                          <div className="text-center py-12 text-gray-500 italic">
+                            No schedule information available for {currentSeason}.
+                          </div>
+                        );
+                      })()
+                    ) : scheduleFilter === 'practices' ? (
                       /* ── Practices View ── */
                       apiPractices.length > 0 ? (
                         <div className="overflow-x-auto">
