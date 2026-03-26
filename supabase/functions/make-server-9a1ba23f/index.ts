@@ -71,7 +71,9 @@ async function initializeStorage() {
 // Initialize storage in background
 initializeStorage();
 
-// Mount routes under the base path
+// Mount routes - the edge function is at /functions/v1/make-server-9a1ba23f
+// In local/dev, we use /make-server-9a1ba23f, but in Supabase deployment, the path includes /functions/v1/
+// We'll mount all routes at the root since Supabase handles the function path prefix
 const basePath = '/make-server-9a1ba23f';
 
 app.route(basePath, authRoutes);
@@ -83,7 +85,10 @@ app.route(basePath, configRoutes);
 app.route(basePath, emailRoutes);
 app.route(basePath, suspensionsRoutes);
 app.route(basePath, linkCheckerRoutes);
+
+// Component editor - mount at both paths for compatibility
 app.route(basePath + '/component-editor', componentEditorRoutes);
+app.route('/component-editor', componentEditorRoutes);
 
 // Root health check (outside base path)
 app.get("/health", (c) => c.json({ status: "ok" }));
