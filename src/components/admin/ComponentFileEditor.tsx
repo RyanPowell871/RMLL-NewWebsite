@@ -72,8 +72,12 @@ export function ComponentFileEditor() {
       // Fetch stored data from the database
       const dbResponse = await fetch(`/make-server-9a1ba23f/component-editor/${schema.pageId}`);
 
+      console.log('[ComponentFileEditor] Response status:', dbResponse.status, dbResponse.statusText);
+      console.log('[ComponentFileEditor] Response headers:', Object.fromEntries(dbResponse.headers.entries()));
+
       if (!dbResponse.ok) {
         const contentType = dbResponse.headers.get('content-type');
+        console.log('[ComponentFileEditor] Content-Type:', contentType);
         if (contentType && contentType.includes('text/html')) {
           // Got HTML instead of JSON - likely 404 or server error page
           throw new Error(`Server error: Received HTML response. The edge function may not be deployed or may have an error.`);
@@ -82,9 +86,14 @@ export function ComponentFileEditor() {
       }
 
       let dbResult;
+      let responseText = '';
       try {
-        dbResult = await dbResponse.json();
+        responseText = await dbResponse.text();
+        console.log('[ComponentFileEditor] Response text:', responseText);
+        dbResult = JSON.parse(responseText);
       } catch (e) {
+        console.error('[ComponentFileEditor] Failed to parse JSON:', e);
+        console.error('[ComponentFileEditor] Response text (first 500 chars):', responseText?.substring(0, 500));
         throw new Error(`Invalid JSON response from server. The edge function may not be deployed correctly.`);
       }
 
