@@ -1,6 +1,7 @@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from './ui/dialog';
 import { useState, useMemo } from 'react';
 import { Calendar as CalendarIcon, Clock, MapPin, Users, Download, FileText, Loader2, Video } from 'lucide-react';
+import { FacilityMapLink } from './FacilityMapLink';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs';
 import { exportGameToCalendar, type GameForCalendar } from '../utils/calendar';
 import { exportGameSheetPDF, type GameSheetPDFData } from '../utils/gameSheetPdf';
@@ -984,10 +985,7 @@ export function GameSheetModal({ game, open, onClose }: GameSheetModalProps) {
                   <Clock className="w-4 h-4" />
                   <span className="font-bold text-sm">{displayGame.time}</span>
                 </div>
-                <div className="flex items-center gap-2">
-                  <MapPin className="w-4 h-4" />
-                  <span className="font-bold text-sm">{venueName}</span>
-                </div>
+                <FacilityMapLink venueName={venueName} className="font-bold text-sm" />
               </div>
               <span
                 className={`text-xs font-bold px-3 py-1 rounded ${

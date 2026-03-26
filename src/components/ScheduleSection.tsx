@@ -7,6 +7,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription, SheetTrigger } from './ui/sheet';
 import { Button } from './ui/button';
 import { GameSheetModal } from './GameSheetModal';
+import { FacilityMapLink } from './FacilityMapLink';
 import { useScheduleData } from '../hooks/useScheduleData';
 import { useSeasons } from '../hooks/useSeasons';
 import { useDivisionScheduleStatus } from '../hooks/useDivisionScheduleStatus';
@@ -1686,7 +1687,9 @@ const convertedAllGames = allSeasonGames.map((apiGame) => ({
                           <td className="px-3 py-3 text-xs font-semibold text-gray-700">{game.gameNumber || '-'}</td>
                           <td className="px-3 py-3 text-xs font-semibold text-gray-700">{game.date}</td>
                           <td className="px-3 py-3 text-xs font-semibold text-gray-700">{game.time}</td>
-                          <td className="px-3 py-3 text-xs font-semibold text-[#4b5baa]">{game.venue}</td>
+                          <td className="px-3 py-3">
+                            <FacilityMapLink venueName={game.venue} className="text-xs" />
+                          </td>
                           <td 
                             className={`px-3 py-3 text-xs font-bold ${
                               homeWon ? 'text-red-800' : 'text-gray-800'
@@ -2046,10 +2049,7 @@ const convertedAllGames = allSeasonGames.map((apiGame) => ({
 
                                     {/* Location */}
                                     <div className="flex flex-col gap-2 pt-2 border-t border-gray-200">
-                                      <div className="flex items-center gap-2">
-                                        <MapPin className="w-3 h-3 text-gray-500" />
-                                        <span className="font-bold text-xs text-gray-700 truncate">{game.venue}</span>
-                                      </div>
+                                      <FacilityMapLink venueName={game.venue} className="font-bold text-xs" />
                                       {isViewingCurrentSeason && game.schedulingComments && game.schedulingComments.trim() && (
                                         <div className="flex items-center gap-1.5">
                                           <MessageSquare className="w-3 h-3 text-amber-600 flex-shrink-0" />
@@ -2178,11 +2178,7 @@ const convertedAllGames = allSeasonGames.map((apiGame) => ({
                                     {/* Location */}
                                     <div className="flex flex-col gap-1 sm:w-56 flex-shrink-0 sm:text-right">
                                       <div className="flex items-center gap-2 sm:justify-end">
-                                        <MapPin className="w-4 h-4 text-gray-500" />
-                                        <div className="flex flex-col items-start sm:items-end">
-                                          <span className="font-bold text-sm text-gray-700">{game.venue}</span>
-                                          <span className="text-xs text-gray-500 font-semibold">{game.location}</span>
-                                        </div>
+                                        <FacilityMapLink venueName={game.venue} className="font-bold text-sm" showText={game.venue} />
                                       </div>
                                     </div>
                                   </div>
@@ -2330,10 +2326,7 @@ const convertedAllGames = allSeasonGames.map((apiGame) => ({
 
                           {/* Location and Division */}
                           <div className="flex flex-col gap-2 pt-2 border-t border-gray-200">
-                            <div className="flex items-center gap-2">
-                              <MapPin className="w-3 h-3 text-gray-500" />
-                              <span className="font-bold text-xs text-gray-700 truncate">{game.venue}</span>
-                            </div>
+                            <FacilityMapLink venueName={game.venue} className="font-bold text-xs" />
                             {isViewingCurrentSeason && game.schedulingComments && game.schedulingComments.trim() && (
                               <div className="flex items-center gap-1.5">
                                 <MessageSquare className="w-3 h-3 text-amber-600 flex-shrink-0" />
@@ -2460,11 +2453,7 @@ const convertedAllGames = allSeasonGames.map((apiGame) => ({
                           {/* Location and Division */}
                           <div className="flex flex-col gap-1 sm:w-56 flex-shrink-0 sm:text-right">
                             <div className="flex items-center gap-2 sm:justify-end">
-                              <MapPin className="w-4 h-4 text-gray-500" />
-                              <div className="flex flex-col items-start sm:items-end">
-                                <span className="font-bold text-sm text-gray-700">{game.venue}</span>
-                                <span className="text-xs text-gray-500 font-semibold">{game.location}</span>
-                              </div>
+                              <FacilityMapLink venueName={game.venue} className="font-bold text-sm" showText={game.venue} />
                             </div>
                             <div className="flex items-center gap-2 flex-wrap sm:justify-end">
                               <span className="text-xs font-bold text-red-600 bg-red-50 px-2 py-1 rounded inline-block w-fit">

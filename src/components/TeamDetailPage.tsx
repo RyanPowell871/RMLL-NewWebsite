@@ -1,6 +1,7 @@
 import { useState, useMemo, useEffect, Fragment } from 'react';
 import { MapPin, ArrowLeft, Download, Calendar as CalendarIcon, Trophy, Shield, Users, Info, ChevronLeft, ChevronRight, Loader2, ExternalLink, TrendingUp, Clock, User, Facebook, Instagram, Youtube, Globe, MessageSquare, FileText, FileSpreadsheet } from 'lucide-react';
 import { GameSheetModal } from './GameSheetModal';
+import { FacilityMapLink } from './FacilityMapLink';
 import { useTeamRoster } from '../hooks/useTeamRoster';
 import { useSeasons } from '../hooks/useSeasons';
 import { fetchTeams, fetchTeamRoster, fetchPlayerStats, DIVISION_NAMES, getPlayerPhotoUrl } from '../services/sportzsoft';
@@ -1917,8 +1918,7 @@ export function TeamDetailPage({ teamId, teamName, season, teamLogo, divisionId,
                               <CalendarIcon className="w-3 h-3" />
                               <span>{formatGameDate(lastGame.GameDate)}</span>
                               <span className="text-gray-300">|</span>
-                              <MapPin className="w-3 h-3" />
-                              <span className="truncate">{lastGame.FacilityName}</span>
+                              <FacilityMapLink venueName={lastGame.FacilityName} className="text-xs truncate" />
                             </div>
                           </div>
                         );
@@ -1984,8 +1984,7 @@ export function TeamDetailPage({ teamId, teamName, season, teamLogo, divisionId,
                               <Clock className="w-3 h-3" />
                               <span>{parseGameTime(next.StartTime)}</span>
                               <span className="text-gray-300">|</span>
-                              <MapPin className="w-3 h-3" />
-                              <span className="truncate">{next.FacilityName}</span>
+                              <FacilityMapLink venueName={next.FacilityName} className="text-xs truncate" />
                             </div>
                           </div>
                         );
@@ -2476,7 +2475,9 @@ export function TeamDetailPage({ teamId, teamName, season, teamLogo, divisionId,
                                           )}
                                         </div>
                                       </td>
-                                      <td className="py-2 px-3 text-sm text-gray-600 hidden md:table-cell">{practice.FacilityName}</td>
+                                      <td className="py-2 px-3 hidden md:table-cell">
+                                        <FacilityMapLink venueName={practice.FacilityName} className="text-sm" />
+                                      </td>
                                       <td className="py-2 px-3 text-center text-sm">{parseGameTime(practice.StartTime)}</td>
                                       <td className="py-2 px-3 text-center text-sm">{parseGameTime(practice.EndTime)}</td>
                                       <td className="py-2 px-3 text-center text-sm hidden sm:table-cell">{practice.Duration} min</td>
@@ -2565,7 +2566,9 @@ export function TeamDetailPage({ teamId, teamName, season, teamLogo, divisionId,
                                         )}
                                       </div>
                                     </td>
-                                    <td className="py-2 px-3 text-sm text-gray-600 hidden md:table-cell">{game.FacilityName}</td>
+                                    <td className="py-2 px-3 hidden md:table-cell">
+                                      <FacilityMapLink venueName={game.FacilityName} className="text-sm" />
+                                    </td>
                                     <td className="py-2 px-3 text-center text-sm">{parseGameTime(game.StartTime)}</td>
                                     <td className="py-2 px-3 text-center font-black" style={{ color: extractedColors.primary }}>{result}</td>
                                   </tr>
