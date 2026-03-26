@@ -187,7 +187,8 @@ export function ScheduleSection() {
   const matchesGameType = (gameCode: string | undefined, selectedType: string): boolean => {
     const gameType = getGameTypeFromCode(gameCode);
     if (!gameType) {
-      return selectedType === 'All Game Types';
+      // If we can't determine the game type, show it (don't filter it out)
+      return true;
     }
     return gameType === selectedType;
   };
@@ -217,11 +218,11 @@ export function ScheduleSection() {
     viewMode,
     selectedMonth,
     selectedWeek,
-    division: selectedDivision,
-    // OVERRIDE: Force 'All' so the API doesn't strip crossover games. 
-    // Our robust client-side logic below will handle the actual filtering.
-    subDivision: 'All', 
-    team: selectedTeam,
+    // Use 'All Divisions' to let our robust client-side logic handle filtering
+    // This ensures we get all games including crossover games
+    division: 'All Divisions',
+    subDivision: 'All',
+    team: 'All Teams',
     currentSeason: currentSeason,
     subDivisionMap: undefined,
     divisionGroupMap: divisionGroups
