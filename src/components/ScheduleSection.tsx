@@ -799,8 +799,12 @@ const convertedAllGames = allSeasonGames.map((apiGame) => ({
       date: formatGameDate(apiGame.GameDate),
       fullDate: apiGame.GameDate,
       time: parseGameTime(apiGame.StartTime) || parseGameTime(apiGame.GameDate),
-      status: apiGame.GameStatus === 'Final' ? 'FINAL' 
-        : apiGame.GameStatus === 'In Progress' ? 'LIVE' 
+      status: (apiGame.GameStatus?.toLowerCase() === 'final' ||
+                apiGame.GameStatus?.toLowerCase() === 'played' ||
+                apiGame.GameStatus?.toLowerCase() === 'completed') ? 'FINAL'
+        : (apiGame.GameStatus?.toLowerCase() === 'in progress' ||
+                apiGame.GameStatus?.toLowerCase() === 'live' ||
+                apiGame.GameStatus?.toLowerCase() === 'in-progress') ? 'LIVE'
         : (apiGame.StandingCategoryCode?.toLowerCase() === 'exhb') ? 'EXHIBITION'
         : 'UPCOMING',
       homeLogo: apiGame.HomeTeamLogoURL || getTeamLogo(apiGame.HomeTeamName || 'Home Team', undefined),
