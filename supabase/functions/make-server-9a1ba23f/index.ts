@@ -13,11 +13,15 @@ import configRoutes from "./config_routes.ts";
 import emailRoutes from "./email_routes.ts";
 import suspensionsRoutes from "./suspensions_routes.ts";
 import linkCheckerRoutes from "./link_checker_routes.ts";
-// Note: component_editor_routes_v2.ts is imported but we'll define routes directly instead
 import { COMPONENT_SCHEMAS, getEditableSchemas, getSchemaByPageId } from "./component_schemas.ts";
-import { createClient } from "npm:@supabase/supabase-js@2";
 
 const app = new Hono();
+
+// Debug middleware - log ALL incoming requests
+app.use("*", async (c, next) => {
+  console.log(`[REQUEST] ${c.req.method} ${c.req.path}`);
+  await next();
+});
 
 // Middleware
 app.use("*", logger());
@@ -75,6 +79,26 @@ initializeStorage();
 
 // Mount routes
 const basePath = '/make-server-9a1ba23f';
+
+// TEST ROUTE - Simple response to test if routes work
+app.get('/test-route', (c) => {
+  console.log('[TEST] Route hit!');
+  return c.json({
+    success: true,
+    message: 'Test route works!',
+    path: c.req.path
+  });
+});
+
+app.get(`${basePath}/test-route`, (c) => {
+  console.log('[TEST] basePath route hit!');
+  return c.json({
+    success: true,
+    message: 'BasePath test route works!',
+    path: c.req.path,
+    basePath: basePath
+  });
+});
 
 app.route(basePath, authRoutes);
 app.route(basePath, contentRoutes);
