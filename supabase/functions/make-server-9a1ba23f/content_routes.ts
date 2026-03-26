@@ -8,6 +8,8 @@ import { tier2ChampionshipsData } from "./tier2_championships_data.ts";
 import { seniorBAwardsData } from "./seniorb_awards_data.ts";
 import { seniorBChampionshipsData } from "./seniorb_championships_data.ts";
 import { albertaMajorFemaleChampionshipsData } from "./albertamajorfemale_championships_data.ts";
+import { COMPONENT_SCHEMAS, getEditableSchemas, getSchemaByPageId } from "./component_schemas.ts";
+const COMPONENT_CONTENT_TABLE = 'rmll_component_content';
 
 const app = new Hono();
 
@@ -1487,8 +1489,6 @@ async function updatePage(slug: string, updates: any) {
 // ============================================
 // COMPONENT EDITOR ROUTES
 // ============================================
-import { COMPONENT_SCHEMAS, getEditableSchemas, getSchemaByPageId } from "./component_schemas.ts";
-const COMPONENT_CONTENT_TABLE = 'rmll_component_content';
 
 // GET /component-editor - List components
 app.get("/component-editor", (c) => {
@@ -1534,12 +1534,31 @@ app.get("/component-editor/:pageId", async (c) => {
       }, 400);
     }
 
-    const extractedData: Record<string, unknown> = {};
-    for (const field of schema.editableFields) {
-      if (field.type === 'array') {
-        extractedData[field.name] = [];
-      } else if (field.type === 'simple' && field.defaultValue) {
-        extractedData[field.name] = field.defaultValue;
+    // Try to read from database first
+    let content = '';
+    let extractedData: Record<string, unknown> = {};
+
+    const { data: storedData, error: readError } = await supabase
+      .from(COMPONENT_CONTENT_TABLE)
+      .select('content, extracted_data')
+      .eq('page_id', pageId)
+      .maybeSingle();
+
+    if (!readError && storedData) {
+      content = storedData.content || '';
+      extractedData = storedData.extracted_data || {};
+    } else {
+      // If not in database, return empty data
+      console.log(`[Component Editor] No stored data for ${pageId}, returning empty data`);
+      extractedData = {};
+
+      // Initialize with default empty arrays based on schema
+      for (const field of schema.editableFields) {
+        if (field.type === 'array') {
+          extractedData[field.name] = [];
+        } else if (field.type === 'simple' && field.defaultValue) {
+          extractedData[field.name] = field.defaultValue;
+        }
       }
     }
 
@@ -1553,8 +1572,10 @@ app.get("/component-editor/:pageId", async (c) => {
           description: schema.description,
           editableFields: schema.editableFields,
         },
-        content: '',
+        content: content,
         extractedData: extractedData,
+        parseSuccess: true,
+        parseErrors: [],
       },
     });
   } catch (error) {
