@@ -1,56 +1,42 @@
-import { ExternalLink } from 'lucide-react';
-import floorDiagramRMLL from "figma:asset/7525a496c2e88d72bba436ed3c0ab830b07c9c58.png";
-import floorDiagramCLA from "figma:asset/3de3b728b13433a6d66432daec883ad9a1e7ebe0.png";
-import netFront1 from "figma:asset/373d80c90f371ec3b6da24d2c25cc011d7b7b897.png";
-import netBack from "figma:asset/59bf06c097ec7547b95adb28a58dd9a6c4aa678f.png";
-import netCornerDetail from "figma:asset/8f46ae4ff875ed65b7071d58869f8759db448f86.png";
-import netMeshFloorContact from "figma:asset/9c61f0d1f2797245057c731f7e9a33605302080c.png";
-import netSideSlack from "figma:asset/2261fb2525a5170ae6511f8bd13c46ccc38f7844.png";
-import netSideView from "figma:asset/ed6c4fe14fe2d403367ca9fc944fc8d58e1b88ec.png";
-import netFront2 from "figma:asset/af1bd6b987d8d9eadc3dba6976c3900dc75017fe.png";
-import netCornerMesh from "figma:asset/424f4feb4302c62fed180230ec87b439d553d9ec.png";
-import netTopCorner from "figma:asset/650a3bb2089df026b1c81272dfa0aabdb5e1ed57.png";
-import netSideProfile from "figma:asset/101928d46b4c245f085961612efe6d35d05bc0b9.png";
+import { ExternalLink, Download } from 'lucide-react';
+import netFront1 from 'figma:asset/373d80c90f371ec3b6da24d2c25cc011d7b7b897.png';
+import netBack from 'figma:asset/59bf06c097ec7547b95adb28a58dd9a6c4aa678f.png';
+import netCornerDetail from 'figma:asset/8f46ae4ff875ed65b7071d58869f8759db448f86.png';
+import netMeshFloorContact from 'figma:asset/9c61f0d1f2797245057c731f7e9a33605302080c.png';
+import netSideSlack from 'figma:asset/2261fb2525a5170ae6511f8bd13c46ccc38f7844.png';
+import netSideView from 'figma:asset/ed6c4fe14fe2d403367ca9fc944fc8d58e1b88ec.png';
+import netFront2 from 'figma:asset/af1bd6b987d8d9eadc3dba6976c3900dc75017fe.png';
+import netCornerMesh from 'figma:asset/424f4feb4302c62fed180230ec87b439d553d9ec.png';
+import netTopCorner from 'figma:asset/650a3bb2089df026b1c81272dfa0aabdb5e1ed57.png';
+import netSideProfile from 'figma:asset/101928d46b4c245f085961612efe6d35d05bc0b9.png';
 
 export function OfficiatingFloorEquipmentPage() {
   return (
     <div>
       <h2>Floor Diagram & Line Markings</h2>
       <p>
-        The following diagrams illustrate the official floor layout and line markings for box lacrosse play
-        as specified by the CLA. The first diagram shows the markings specific to <strong>2024 RMLL Play</strong>,
-        and the second shows the standard <strong>CLA Play</strong> markings.
+        The official floor layout and line markings for box lacrosse play are specified by the CLA.
+        The following document provides detailed floor diagrams for both RMLL and CLA play.
       </p>
 
-      <div className="not-prose my-6 space-y-6">
-        {/* RMLL Floor Diagram */}
+      <div className="not-prose my-6">
         <div className="border-2 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] bg-white overflow-hidden">
           <div className="bg-gradient-to-r from-[#013fac] to-[#0149c9] text-white px-4 py-2 border-b-2 border-black">
-            <h3 className="text-sm font-bold tracking-wide m-0">FLOOR DIAGRAM — 2024 RMLL PLAY</h3>
+            <h3 className="text-sm font-bold tracking-wide m-0">FLOOR DIAGRAM & LINE MARKINGS</h3>
           </div>
-          <div className="p-4 flex justify-center bg-gray-50">
-            <img
-              src={floorDiagramRMLL}
-              alt="Floor Diagram and Line Markings for 2024 RMLL Play"
-              className="max-w-full h-auto"
-            />
-          </div>
-        </div>
-
-        {/* CLA Floor Diagram */}
-        <div className="border-2 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] bg-white overflow-hidden">
-          <div className="bg-gradient-to-r from-[#013fac] to-[#0149c9] text-white px-4 py-2 border-b-2 border-black">
-            <h3 className="text-sm font-bold tracking-wide m-0">FLOOR DIAGRAM — CLA PLAY</h3>
-          </div>
-          <div className="p-4 flex justify-center bg-gray-50 overflow-hidden">
-            <div className="w-full" style={{ paddingBottom: '70%', position: 'relative' }}>
-              <img
-                src={floorDiagramCLA}
-                alt="Floor Diagram and Line Markings for CLA Play"
-                className="absolute top-1/2 left-1/2 h-full"
-                style={{ transform: 'translate(-50%, -50%) rotate(90deg)' }}
-              />
-            </div>
+          <div className="p-6">
+            <p className="text-sm text-gray-700 mb-4">
+              Download the official floor diagram document showing detailed line markings for both RMLL and CLA play.
+            </p>
+            <a
+              href="https://nkfbehspyjookipapdbp.supabase.co/storage/v1/object/public/make-9a1ba23f-documents/1774025984303-bz6bwk3mt9.pdf"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-2 bg-[#013fac] hover:bg-[#0149c9] text-white font-bold px-6 py-3 rounded border-2 border-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] transition-colors"
+            >
+              <Download className="w-4 h-4" />
+              Download Floor Diagram PDF
+            </a>
           </div>
         </div>
       </div>
