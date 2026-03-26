@@ -71,56 +71,20 @@ export function ComponentFileEditor() {
     setState((prev) => ({ ...prev, isLoading: true }));
 
     try {
-      // First, try to fetch stored data from the database
-      let extractedData: Record<string, unknown> = {};
+      // Fetch stored data from the database
+      const dbResponse = await fetch(`/make-server-9a1ba23f/component-editor/${schema.pageId}`);
 
-      try {
-        const dbResponse = await fetch(`/make-server-9a1ba23f/component-editor/${schema.pageId}`);
-
-        if (dbResponse.ok) {
-          const dbResult = await dbResponse.json();
-          if (dbResult.success && dbResult.data?.extractedData) {
-            extractedData = dbResult.data.extractedData;
-          }
-        }
-      } catch (dbError) {
-        console.error('Error loading from database:', dbError);
+      if (!dbResponse.ok) {
+        throw new Error('Failed to load from database');
       }
 
-      // Then, try to fetch the actual component file and parse it
-      try {
-        // Use Vite's ?raw import to get the raw file content
-        const componentModule = await import(`../../components/league-info/${schema.componentFile}?raw`);
-        const componentContent = componentModule.default as string;
+      const dbResult = await dbResponse.json();
 
-        // Parse the component file to extract data
-        const parsed = parseComponentFile(componentContent, schema);
-
-        // Convert Map to object and use the parsed data as the base
-        const parsedData: Record<string, unknown> = {};
-        for (const [key, value] of parsed.extractedData.entries()) {
-          parsedData[key] = value;
-        }
-
-        // If we have database data, it takes precedence
-        // Otherwise use the parsed file data
-        for (const [key, value] of Object.entries(extractedData)) {
-          // Only use database data if it has content, otherwise use file data
-          if (Array.isArray(value) && value.length > 0) {
-            parsedData[key] = value;
-          } else if (value !== undefined && value !== null && value !== '') {
-            parsedData[key] = value;
-          }
-        }
-
-        extractedData = parsedData;
-      } catch (fileError) {
-        console.error('Error loading component file:', fileError);
-        // If we couldn't load the file, use any database data we have
-        if (Object.keys(extractedData).length === 0) {
-          throw new Error('Could not load component file');
-        }
+      if (!dbResult.success || !dbResult.data?.extractedData) {
+        throw new Error('No data found for this component');
       }
+
+      const extractedData = dbResult.data.extractedData;
 
       setState((prev) => ({
         ...prev,
