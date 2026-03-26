@@ -1484,4 +1484,125 @@ async function updatePage(slug: string, updates: any) {
   return await db.updatePage(slug, updates);
 }
 
+// ============================================
+// COMPONENT EDITOR ROUTES
+// ============================================
+import { COMPONENT_SCHEMAS, getEditableSchemas, getSchemaByPageId } from "./component_schemas.ts";
+const COMPONENT_CONTENT_TABLE = 'rmll_component_content';
+
+// GET /component-editor - List components
+app.get("/component-editor", (c) => {
+  try {
+    const components = getEditableSchemas().map((schema) => ({
+      pageId: schema.pageId,
+      title: schema.title,
+      description: schema.description,
+      componentFile: schema.componentFile,
+      fieldCount: schema.editableFields.length,
+    }));
+
+    return c.json({
+      success: true,
+      data: components,
+    });
+  } catch (error) {
+    return c.json(
+      { success: false, error: 'Failed to list components' },
+      500
+    );
+  }
+});
+
+// GET /component-editor/:pageId - Get component
+app.get("/component-editor/:pageId", async (c) => {
+  const pageId = c.req.param('pageId');
+
+  try {
+    const schema = getSchemaByPageId(pageId);
+    if (!schema) {
+      return c.json(
+        { success: false, error: 'Component not found' },
+        404
+      );
+    }
+
+    if (schema.notEditableReason) {
+      return c.json({
+        success: false,
+        error: 'Component is not editable',
+        reason: schema.notEditableReason,
+      }, 400);
+    }
+
+    const extractedData: Record<string, unknown> = {};
+    for (const field of schema.editableFields) {
+      if (field.type === 'array') {
+        extractedData[field.name] = [];
+      } else if (field.type === 'simple' && field.defaultValue) {
+        extractedData[field.name] = field.defaultValue;
+      }
+    }
+
+    return c.json({
+      success: true,
+      data: {
+        schema: {
+          pageId: schema.pageId,
+          componentFile: schema.componentFile,
+          title: schema.title,
+          description: schema.description,
+          editableFields: schema.editableFields,
+        },
+        content: '',
+        extractedData: extractedData,
+      },
+    });
+  } catch (error) {
+    return c.json(
+      { success: false, error: error instanceof Error ? error.message : 'Failed to get component' },
+      500
+    );
+  }
+});
+
+// POST /component-editor/:pageId - Save component
+app.post("/component-editor/:pageId", async (c) => {
+  const pageId = c.req.param('pageId');
+  const body = await c.req.json();
+  const { data } = body;
+
+  const schema = getSchemaByPageId(pageId);
+  if (!schema) {
+    return c.json(
+      { success: false, error: 'Component not found' },
+      404
+    );
+  }
+
+  const { error: upsertError } = await supabase
+    .from(COMPONENT_CONTENT_TABLE)
+    .upsert({
+      page_id: pageId,
+      component_file: schema.componentFile,
+      title: schema.title,
+      content: `// Content for ${schema.title}`,
+      extracted_data: data || {},
+      updated_at: new Date().toISOString(),
+    }, {
+      onConflict: 'page_id',
+    });
+
+  if (upsertError) {
+    return c.json(
+      { success: false, error: `Database error: ${upsertError.message}` },
+      500
+    );
+  }
+
+  return c.json({
+    success: true,
+    message: 'Component saved successfully',
+  });
+});
+
 export default app;
