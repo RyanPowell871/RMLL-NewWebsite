@@ -329,6 +329,25 @@ app.post(`${basePath}/component-editor/:pageId`, async (c) => {
 });
 
 // ============================================
+// DEBUG: Catch-all route to see what paths are being received
+// ============================================
+app.all('/*', (c) => {
+  console.log('[DEBUG] Unmatched request:', {
+    method: c.req.method,
+    path: c.req.path,
+    url: c.req.url,
+    urlObj: c.req.urlObj,
+  });
+  return c.json({
+    debug: true,
+    method: c.req.method,
+    path: c.req.path,
+    url: c.req.url,
+    message: 'Path not found in routes. Check Supabase edge function logs for details.',
+  }, 404);
+});
+
+// ============================================
 // COMPONENT EDITOR ROUTES
 // ============================================
 const supabase = createClient(
