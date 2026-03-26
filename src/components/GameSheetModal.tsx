@@ -551,7 +551,7 @@ export function GameSheetModal({ game, open, onClose }: GameSheetModalProps) {
     homeTeamId: game?.homeTeamId,
     visitorTeamId: game?.visitorTeamId,
     childCodes: 'SGPROT', // Fetch all data: Scoring, Goalie, Penalties, Roster, Officials, TimeOuts
-    limiterCode: 'BIS', // Basic info + Images + Scores
+    limiterCode: 'BS', // Basic info + Scores (includes GoalTypeCd)
     autoFetch: shouldFetch
   });
 
@@ -849,7 +849,7 @@ export function GameSheetModal({ game, open, onClose }: GameSheetModalProps) {
             scorerNum: scorer ? String(scorer.JerseyNumber || scorer.PlayerNumber || '?') : String(goal.PlayerNo || '?'),
             a1Num: a1 ? String(a1.JerseyNumber || a1.PlayerNumber || '?') : '',
             a2Num: a2 ? String(a2.JerseyNumber || a2.PlayerNumber || '?') : '',
-            type: goal.GoalTypeCode || goal.GoalType || '',
+            type: goal.GoalTypeCd || goal.GoalTypeCode || goal.GoalType || '',
             isHome: scoringTeamId === String(homeTeamId),
           };
         }) || [],
