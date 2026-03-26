@@ -475,7 +475,7 @@ export function ProjectTimesheetPage() {
   const invoiceSubtotal = 18620 + 2700 + 700 + maintenanceCost;
   const invoiceGst = invoiceSubtotal * 0.05;
   const invoiceTotal = invoiceSubtotal + invoiceGst;
-  const totalPayments = 24531.25; // Updated to include INV-007 + Change Requests CR-003 through CR-010 ($5,500)
+  const totalPayments = 19031.25; // Updated to include INV-007 only (CR-003 through CR-010 pending - INV-008)
   const balanceOwing = invoiceTotal - totalPayments;
 
   // Counts
@@ -1116,16 +1116,9 @@ export function ProjectTimesheetPage() {
                   <td className="p-3 border border-gray-200 text-right text-gray-500">+ $193.75 GST</td>
                   <td className="p-3 border border border-gray-200 text-right text-emerald-700 font-medium">($4,068.75)</td>
                 </tr>
-                <tr className="bg-gray-50">
-                  <td className="p-3 border border-gray-200 font-medium">INV-008 — Change Requests CR-003 through CR-010</td>
-                  <td className="p-3 border border-gray-200 text-xs text-gray-600">March 26, 2026</td>
-                  <td className="p-3 border border-gray-200 text-right text-gray-500">$5,238.10</td>
-                  <td className="p-3 border border-gray-200 text-right text-gray-500">+ $261.90 GST</td>
-                  <td className="p-3 border border-gray-200 text-right text-emerald-700 font-medium">($5,500.00)</td>
-                </tr>
                 <tr className="bg-emerald-50 font-semibold">
                   <td className="p-3 border border-gray-200" colSpan={4}>Total Payments Received</td>
-                  <td className="p-3 border border-gray-200 text-right text-emerald-800">($24,531.25)</td>
+                  <td className="p-3 border border-gray-200 text-right text-emerald-800">($19,031.25)</td>
                 </tr>
 
                 {/* Balance Owing */}
