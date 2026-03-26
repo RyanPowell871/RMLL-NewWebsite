@@ -1687,7 +1687,7 @@ const convertedAllGames = allSeasonGames.map((apiGame) => ({
                           <td className="px-3 py-3 text-xs font-semibold text-gray-700">{game.gameNumber || '-'}</td>
                           <td className="px-3 py-3 text-xs font-semibold text-gray-700">{game.date}</td>
                           <td className="px-3 py-3 text-xs font-semibold text-gray-700">{game.time}</td>
-                          <td className="px-3 py-3">
+                          <td className="px-3 py-3 align-bottom">
                             <FacilityMapLink venueName={game.venue} className="text-xs" />
                           </td>
                           <td 
