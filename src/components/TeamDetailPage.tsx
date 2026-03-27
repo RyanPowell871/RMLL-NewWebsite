@@ -2439,9 +2439,27 @@ export function TeamDetailPage({ teamId, teamName, season, teamLogo, divisionId,
                     {scheduleFilter === 'all' ? (
                       /* ── Combined Games + Practices View ── */
                       (() => {
+                        // Filter games by game type before combining
+                        const filteredGames = apiGames.filter(game => {
+                          if (scheduleGameType !== 'All Game Types') {
+                            const gameTypeName = mapStandingCategoryCodeToName(game.StandingCategoryCode || null);
+                            // Skip games with no matching game type (null/undefined codes map to "All Games")
+                            if (gameTypeName === 'All Games') return false;
+                            // Case-insensitive and partial matching
+                            const normalizedGameType = gameTypeName.toLowerCase().trim();
+                            const normalizedSelectedType = scheduleGameType.toLowerCase().trim();
+                            if (normalizedGameType !== normalizedSelectedType &&
+                                !normalizedGameType.includes(normalizedSelectedType) &&
+                                !normalizedSelectedType.includes(normalizedGameType)) {
+                              return false;
+                            }
+                          }
+                          return true;
+                        });
+
                         // Combine games and practices into a single sorted array
                         const combinedSchedule = [
-                          ...apiGames.map(g => ({
+                          ...filteredGames.map(g => ({
                             type: 'game' as const,
                             id: g.GameId,
                             date: g.GameDate,
