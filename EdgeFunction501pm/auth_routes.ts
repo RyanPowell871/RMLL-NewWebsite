@@ -35,6 +35,40 @@ async function verifyAdmin(authHeader: string | null): Promise<{ authorized: boo
   return { authorized: true, userId: user.id };
 }
 
+// Protected emails - cannot be modified by other admins
+const PROTECTED_EMAILS = ['ryan@altereddigital'];
+
+// Helper to check if current admin can modify target user
+async function canModifyUser(authHeader: string | null, targetUserId: string): Promise<{ allowed: boolean; error?: string }> {
+  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    return { allowed: false, error: 'No authorization token provided' };
+  }
+
+  const token = authHeader.substring(7);
+  const { data: { user }, error } = await supabase.auth.getUser(token);
+
+  if (error || !user) {
+    return { allowed: false, error: 'Invalid token' };
+  }
+
+  // User can always modify themselves
+  if (user.id === targetUserId) {
+    return { allowed: true };
+  }
+
+  // Check if target user is protected
+  const targetProfile = await db.getUserById(targetUserId);
+  if (!targetProfile) {
+    return { allowed: false, error: 'User not found' };
+  }
+
+  if (PROTECTED_EMAILS.includes(targetProfile.email?.toLowerCase())) {
+    return { allowed: false, error: 'Protected user: cannot be modified by other admins' };
+  }
+
+  return { allowed: true };
+}
+
 // Get current user profile
 app.get("/user/profile", async (c) => {
   try {
@@ -193,6 +227,12 @@ app.patch("/admin/users/:userId/role", async (c) => {
       return c.json({ success: false, error: 'Invalid role' }, 400);
     }
 
+    // Check if current admin can modify this user
+    const { allowed, error: modifyError } = await canModifyUser(authHeader, userId);
+    if (!allowed) {
+      return c.json({ success: false, error: modifyError }, 403);
+    }
+
     // Get existing user profile to check if exists
     const existingProfile = await db.getUserById(userId);
 
@@ -230,6 +270,12 @@ app.put("/admin/users/:userId", async (c) => {
 
     if (!existingProfile) {
       return c.json({ success: false, error: 'User not found' }, 404);
+    }
+
+    // Check if current admin can modify this user
+    const { allowed, error: modifyError } = await canModifyUser(authHeader, userId);
+    if (!allowed) {
+      return c.json({ success: false, error: modifyError }, 403);
     }
 
     // Build updates object
@@ -299,6 +345,12 @@ app.post("/admin/users/:userId/reset-password", async (c) => {
       return c.json({ success: false, error: 'User not found' }, 404);
     }
 
+    // Check if current admin can modify this user
+    const { allowed, error: modifyError } = await canModifyUser(authHeader, userId);
+    if (!allowed) {
+      return c.json({ success: false, error: modifyError }, 403);
+    }
+
     // Update password in Supabase Auth
     const { data, error } = await supabase.auth.admin.updateUserById(userId, { password });
 
@@ -331,6 +383,12 @@ app.delete("/admin/users/:userId", async (c) => {
     // Prevent admin from deleting themselves
     if (userId === adminId) {
       return c.json({ success: false, error: 'Cannot delete your own account' }, 400);
+    }
+
+    // Check if current admin can modify this user
+    const { allowed, error: modifyError } = await canModifyUser(authHeader, userId);
+    if (!allowed) {
+      return c.json({ success: false, error: modifyError }, 403);
     }
 
     // Delete from database (will cascade to app_users table)
