@@ -2446,6 +2446,7 @@ export function TeamDetailPage({ teamId, teamName, season, teamLogo, divisionId,
                             id: g.GameId,
                             date: g.GameDate,
                             time: g.StartTime || '',
+                            displayTime: parseGameTime(g.StartTime || ''),
                             homeTeam: g.HomeTeamId === currentTeamId ? getTeamName(g.HomeTeamId) : getTeamName(g.HomeTeamId),
                             awayTeam: g.VisitorTeamId === currentTeamId ? getTeamName(g.VisitorTeamId) : getTeamName(g.VisitorTeamId),
                             venue: g.FacilityName,
@@ -2464,6 +2465,8 @@ export function TeamDetailPage({ teamId, teamName, season, teamLogo, divisionId,
                             date: p.PracticeDate,
                             time: p.StartTime || '',
                             endTime: p.EndTime || '',
+                            displayTime: parseGameTime(p.StartTime || ''),
+                            displayEndTime: parseGameTime(p.EndTime || ''),
                             practiceType: p.PracticeType || 'Practice',
                             venue: p.FacilityName,
                             duration: p.Duration,
@@ -2540,7 +2543,7 @@ export function TeamDetailPage({ teamId, teamName, season, teamLogo, divisionId,
                                       <FacilityMapLink venueName={item.venue} className="text-xs" />
                                     </td>
                                     <td className="py-2.5 px-3 text-center text-sm">
-                                      {item.type === 'game' ? item.time : `${item.time} - ${item.endTime}`}
+                                      {item.type === 'game' ? item.displayTime : `${item.displayTime} - ${item.displayEndTime}`}
                                     </td>
                                     <td className="py-2.5 px-3 text-center text-sm font-bold">
                                       {item.type === 'game' ? (
@@ -2646,7 +2649,16 @@ export function TeamDetailPage({ teamId, teamName, season, teamLogo, divisionId,
                                 // Game type filter
                                 if (scheduleGameType !== 'All Game Types') {
                                   const gameTypeName = mapStandingCategoryCodeToName(game.StandingCategoryCode || null);
-                                  if (gameTypeName !== scheduleGameType) return false;
+                                  // Skip games with no matching game type (null/undefined codes map to "All Games")
+                                  if (gameTypeName === 'All Games') return false;
+                                  // Case-insensitive and partial matching
+                                  const normalizedGameType = gameTypeName.toLowerCase().trim();
+                                  const normalizedSelectedType = scheduleGameType.toLowerCase().trim();
+                                  if (normalizedGameType !== normalizedSelectedType &&
+                                      !normalizedGameType.includes(normalizedSelectedType) &&
+                                      !normalizedSelectedType.includes(normalizedGameType)) {
+                                    return false;
+                                  }
                                 }
                                 if (scheduleFilter === 'all') return true;
                                 const isHome = game.HomeTeamId === currentTeamId;
