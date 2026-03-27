@@ -316,7 +316,7 @@ export async function exportGameSheetPDF(data: GameSheetPDFData): Promise<void> 
 
     sz(3.5); bold(); setC(BLK);
     // Roster sub-headers
-    doc.text('', sx + flagW / 2, ry + 2.5, { align: 'center' }); // Flag has no label
+    doc.text('POS', sx + flagW / 2, ry + 2.5, { align: 'center' });
     doc.text('PLAYERS (First & Last)', sx + flagW + 1, ry + 2.5);
     doc.text('No.', sx + flagW + nameW + noW / 2, ry + 2.5, { align: 'center' });
     // Vertical lines for roster sub-cols

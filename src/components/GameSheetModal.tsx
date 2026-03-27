@@ -1325,7 +1325,7 @@ export function GameSheetModal({ game, open, onClose }: GameSheetModalProps) {
                           <tr className="bg-white border-b-2 border-black">
                             <th className="px-3 py-2 text-left font-bold text-xs">#</th>
                             <th className="px-3 py-2 text-left font-bold text-xs">PLAYER (Family Name, First)</th>
-                            <th className="px-3 py-2 text-center font-bold text-xs w-12">FLAGS</th>
+                            <th className="px-3 py-2 text-center font-bold text-xs w-12">POS</th>
                           </tr>
                         </thead>
                         <tbody>
@@ -1384,7 +1384,7 @@ export function GameSheetModal({ game, open, onClose }: GameSheetModalProps) {
                           <tr className="bg-white border-b-2 border-black">
                             <th className="px-3 py-2 text-left font-bold text-xs">#</th>
                             <th className="px-3 py-2 text-left font-bold text-xs">PLAYER (Family Name, First)</th>
-                            <th className="px-3 py-2 text-center font-bold text-xs w-12">FLAGS</th>
+                            <th className="px-3 py-2 text-center font-bold text-xs w-12">POS</th>
                           </tr>
                         </thead>
                         <tbody>
