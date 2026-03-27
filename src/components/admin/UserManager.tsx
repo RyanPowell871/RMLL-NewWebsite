@@ -7,13 +7,14 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '.
 import { Switch } from '../ui/switch';
 import { Badge } from '../ui/badge';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '../ui/alert-dialog';
-import { Plus, Edit, Trash2, Save, X, Search, Eye, EyeOff, Shield, UserCog } from 'lucide-react';
+import { Plus, Edit, Trash2, Save, X, Search, Eye, EyeOff, Shield, UserCog, KeyRound } from 'lucide-react';
 import { toast } from 'sonner@2.0.3';
 import {
   fetchUsers,
   createUser,
   updateUser,
   deleteUser,
+  resetUserPassword,
   type User,
 } from '../../services/cms-api';
 
@@ -26,7 +27,13 @@ export function UserManager() {
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
-  
+
+  // Password reset dialog state
+  const [resetPasswordUser, setResetPasswordUser] = useState<User | null>(null);
+  const [resetPassword, setResetPassword] = useState('');
+  const [showResetPassword, setShowResetPassword] = useState(false);
+  const [isResetting, setIsResetting] = useState(false);
+
   // Filters
   const [roleFilter, setRoleFilter] = useState<string>('all');
   const [statusFilter, setStatusFilter] = useState<string>('all');
@@ -144,6 +151,41 @@ export function UserManager() {
     setIsCreating(false);
     setEditingUser(null);
     setPassword('');
+  };
+
+  const handleResetPassword = async () => {
+    if (!resetPasswordUser) return;
+
+    if (!resetPassword || resetPassword.length < 6) {
+      toast.error('Password must be at least 6 characters');
+      return;
+    }
+
+    setIsResetting(true);
+    try {
+      await resetUserPassword(resetPasswordUser.id, resetPassword);
+      toast.success(`Password reset successfully for ${resetPasswordUser.name}`);
+      setResetPasswordUser(null);
+      setResetPassword('');
+      setShowResetPassword(false);
+    } catch (error) {
+      console.error('Error resetting password:', error);
+      toast.error(error instanceof Error ? error.message : 'Failed to reset password');
+    } finally {
+      setIsResetting(false);
+    }
+  };
+
+  const openResetPasswordDialog = (user: User) => {
+    setResetPasswordUser(user);
+    setResetPassword('');
+    setShowResetPassword(true);
+  };
+
+  const closeResetPasswordDialog = () => {
+    setResetPasswordUser(null);
+    setResetPassword('');
+    setShowResetPassword(false);
   };
 
   const getRoleBadge = (role: string) => {
@@ -412,6 +454,15 @@ export function UserManager() {
                       <Edit className="h-3.5 w-3.5" />
                       <span className="hidden sm:inline">Edit</span>
                     </Button>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => openResetPasswordDialog(user)}
+                      className="flex items-center gap-1.5"
+                    >
+                      <KeyRound className="h-3.5 w-3.5" />
+                      <span className="hidden sm:inline">Reset Password</span>
+                    </Button>
                     <AlertDialog>
                       <AlertDialogTrigger asChild>
                         <Button
@@ -448,6 +499,56 @@ export function UserManager() {
           ))}
         </div>
       )}
+
+      {/* Password Reset Dialog */}
+      <AlertDialog open={showResetPassword} onOpenChange={setShowResetPassword}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2">
+              <KeyRound className="w-5 h-5" />
+              Reset Password
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              Reset password for <strong>{resetPasswordUser?.name}</strong> ({resetPasswordUser?.email})
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <div className="py-4 space-y-4">
+            <div>
+              <Label htmlFor="reset-password">New Password *</Label>
+              <div className="relative mt-1.5">
+                <Input
+                  id="reset-password"
+                  type={showResetPassword ? 'text' : 'password'}
+                  value={resetPassword}
+                  onChange={(e) => setResetPassword(e.target.value)}
+                  placeholder="Min. 6 characters"
+                  className="pr-10"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowResetPassword(!showResetPassword)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                >
+                  {showResetPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                </button>
+              </div>
+              <p className="text-xs text-gray-500 mt-1">
+                The user will use this new password to log in at <code className="bg-gray-100 px-1 rounded">/cms</code>
+              </p>
+            </div>
+          </div>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={closeResetPasswordDialog}>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleResetPassword}
+              disabled={isResetting}
+              className="bg-[#013fac] hover:bg-[#0149c9]"
+            >
+              {isResetting ? 'Resetting...' : 'Reset Password'}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

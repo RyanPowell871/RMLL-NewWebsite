@@ -653,6 +653,19 @@ export async function deleteUser(id: string): Promise<void> {
   });
 }
 
+export async function resetUserPassword(id: string, password: string): Promise<{ success: boolean; message: string; user?: User }> {
+  const response = await apiCall<{ success: boolean; message: string; user?: User }>(`/admin/users/${id}/reset-password`, {
+    method: 'POST',
+    body: JSON.stringify({ password }),
+  });
+
+  if (!response.success) {
+    throw new Error(response.message || 'Failed to reset password');
+  }
+
+  return response;
+}
+
 // ============================================
 // LEAGUE CONTACTS API
 // ============================================

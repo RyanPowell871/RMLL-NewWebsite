@@ -274,6 +274,48 @@ app.put("/admin/users/:userId", async (c) => {
   }
 });
 
+// Reset user password (admin only)
+app.post("/admin/users/:userId/reset-password", async (c) => {
+  try {
+    const authHeader = c.req.header('Authorization');
+    const { authorized, error: authError } = await verifyAdmin(authHeader);
+
+    if (!authorized) {
+      return c.json({ success: false, error: authError || 'Unauthorized' }, 403);
+    }
+
+    const userId = c.req.param('userId');
+    const body = await c.req.json();
+    const { password } = body;
+
+    if (!password || password.length < 6) {
+      return c.json({ success: false, error: 'Password must be at least 6 characters' }, 400);
+    }
+
+    // Get existing user profile to check if exists
+    const existingProfile = await db.getUserById(userId);
+
+    if (!existingProfile) {
+      return c.json({ success: false, error: 'User not found' }, 404);
+    }
+
+    // Update password in Supabase Auth
+    const { data, error } = await supabase.auth.admin.updateUserById(userId, { password });
+
+    if (error) {
+      console.error('[Reset Password] Auth error:', error);
+      return c.json({ success: false, error: error.message }, 400);
+    }
+
+    console.log(`[Reset Password] Reset password for user: ${existingProfile.email}`);
+
+    return c.json({ success: true, message: 'Password reset successfully', user: existingProfile });
+  } catch (error) {
+    console.error('[Reset Password] Error:', error);
+    return c.json({ success: false, error: error.message }, 500);
+  }
+});
+
 // Delete user (admin only)
 app.delete("/admin/users/:userId", async (c) => {
   try {
