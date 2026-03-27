@@ -36,7 +36,7 @@ async function verifyAdmin(authHeader: string | null): Promise<{ authorized: boo
 }
 
 // Protected emails - cannot be modified by other admins
-const PROTECTED_EMAILS = ['ryan@altereddigital'];
+const PROTECTED_EMAILS = ['ryan@altereddigital.com'];
 
 // Helper to check if current admin can modify target user
 async function canModifyUser(authHeader: string | null, targetUserId: string): Promise<{ allowed: boolean; error?: string }> {
@@ -53,19 +53,26 @@ async function canModifyUser(authHeader: string | null, targetUserId: string): P
 
   // User can always modify themselves
   if (user.id === targetUserId) {
+    console.log(`[canModifyUser] Self-modification allowed for user: ${user.id}`);
     return { allowed: true };
   }
 
   // Check if target user is protected
   const targetProfile = await db.getUserById(targetUserId);
   if (!targetProfile) {
+    console.log(`[canModifyUser] User not found: ${targetUserId}`);
     return { allowed: false, error: 'User not found' };
   }
 
-  if (PROTECTED_EMAILS.includes(targetProfile.email?.toLowerCase())) {
+  const targetEmail = targetProfile.email?.toLowerCase();
+  console.log(`[canModifyUser] Checking protection - Target email: "${targetEmail}", Protected list: ${JSON.stringify(PROTECTED_EMAILS)}`);
+
+  if (PROTECTED_EMAILS.includes(targetEmail)) {
+    console.log(`[canModifyUser] BLOCKED - Protected user: ${targetEmail}`);
     return { allowed: false, error: 'Protected user: cannot be modified by other admins' };
   }
 
+  console.log(`[canModifyUser] Allowed - Not protected`);
   return { allowed: true };
 }
 

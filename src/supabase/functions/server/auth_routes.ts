@@ -36,7 +36,7 @@ async function verifyAdmin(authHeader: string | null): Promise<{ authorized: boo
 }
 
 // Protected emails - cannot be modified by other admins
-const PROTECTED_EMAILS = ['ryan@altereddigital'];
+const PROTECTED_EMAILS = ['ryan@altereddigital.com'];
 
 // Helper to check if current admin can modify target user
 async function canModifyUser(authHeader: string | null, targetUserId: string): Promise<{ allowed: boolean; error?: string }> {
