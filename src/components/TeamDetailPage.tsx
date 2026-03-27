@@ -2331,20 +2331,6 @@ export function TeamDetailPage({ teamId, teamName, season, teamLogo, divisionId,
 
               {/* Schedule Tab */}
               <TabsContent value="schedule" className="mt-0">
-                {/* Schedule Status Banner */}
-                {isTeamScheduleInProgress && (
-                  <div className="rounded-lg px-4 py-3 mb-4 flex items-center gap-2 text-sm font-semibold bg-yellow-50 text-yellow-800 border border-yellow-200">
-                    <span className="w-2.5 h-2.5 rounded-full flex-shrink-0 bg-yellow-500 animate-pulse" />
-                    Schedule is in progress — games and times are subject to change.
-                  </div>
-                )}
-                {!isTeamScheduleInProgress && isViewingCurrentSeason && teamDivisionIds.length > 0 && teamDivisionIds.some(id => teamStatusMap.has(id)) && teamDivisionIds.filter(id => teamStatusMap.has(id)).every(id => isTeamScheduleFinal(id)) && apiGames.length > 0 && (
-                  <div className="rounded-lg px-4 py-3 mb-4 flex items-center gap-2 text-sm font-semibold bg-green-50 text-green-800 border border-green-200">
-                    <span className="w-2.5 h-2.5 rounded-full flex-shrink-0 bg-green-500" />
-                    Schedule is complete for this division.
-                  </div>
-                )}
-
                 <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-4">
                   <div className="flex flex-wrap items-center gap-2">
                     <div className="flex bg-white rounded-lg border border-gray-200 p-1 shadow-sm">

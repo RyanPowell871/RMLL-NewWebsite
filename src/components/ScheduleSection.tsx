@@ -1582,23 +1582,6 @@ const convertedAllGames = allSeasonGames.map((apiGame) => ({
           {viewMode === 'season' ? (
             // Season View - Table Format
             <>
-            {isViewingCurrentSeason && divisionStatusMap.size > 0 && (() => {
-              const divIdsToCheck = selectedDivision === 'All Divisions'
-                ? Array.from(divisionStatusMap.keys())
-                : (divisionGroups[selectedDivision] || []).filter(id => divisionStatusMap.has(id));
-              if (divIdsToCheck.length === 0) return null;
-              const allFinal = divIdsToCheck.every(id => isScheduleFinal(id));
-              const anyInProgress = divIdsToCheck.some(id => inProgressDivisionIds.has(id));
-              if (!allFinal && anyInProgress) {
-                return (
-                  <div className="rounded-lg px-4 py-3 mb-4 flex items-center gap-2 text-sm font-semibold bg-yellow-50 text-yellow-800 border border-yellow-200">
-                    <span className="w-2.5 h-2.5 rounded-full flex-shrink-0 bg-yellow-500 animate-pulse" />
-                    Schedule is in progress — games are subject to change.
-                  </div>
-                );
-              }
-              return null;
-            })()}
             <div className="bg-white rounded-lg shadow overflow-hidden">
               <div className="overflow-x-auto">
                 <table className="w-full">
@@ -2260,25 +2243,6 @@ const convertedAllGames = allSeasonGames.map((apiGame) => ({
               </div>
             ) : (
               <>
-              {/* Schedule status banner for single division — only for current season */}
-              {isViewingCurrentSeason && divisionStatusMap.size > 0 && selectedDivision !== 'All Divisions' && (() => {
-                const selDivIds = divisionGroups[selectedDivision] || [];
-                if (selDivIds.length > 0) {
-                  const loadedDivIds = selDivIds.filter(id => divisionStatusMap.has(id));
-                  if (loadedDivIds.length === 0) return null;
-                  const allFinal = loadedDivIds.every(id => isScheduleFinal(id));
-                  const anyInProgress = loadedDivIds.some(id => inProgressDivisionIds.has(id));
-                  if (!allFinal && anyInProgress) {
-                    return (
-                      <div className="rounded-lg px-4 py-3 mb-4 flex items-center gap-2 text-sm font-semibold bg-yellow-50 text-yellow-800 border border-yellow-200">
-                        <span className="w-2.5 h-2.5 rounded-full flex-shrink-0 bg-yellow-500 animate-pulse" />
-                        Schedule is in progress — games are subject to change.
-                      </div>
-                    );
-                  }
-                }
-                return null;
-              })()}
               {dates.map((date) => (
               <div key={date} className="bg-white rounded-lg shadow overflow-hidden">
                 {/* Date Header */}
