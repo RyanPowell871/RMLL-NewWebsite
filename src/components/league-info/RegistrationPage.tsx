@@ -1,10 +1,13 @@
-import { ExternalLink, ClipboardCheck, AlertTriangle, Info, ChevronRight, Users, DollarSign, ShieldCheck } from 'lucide-react';
+'use client';
+
+import { useState, useEffect } from 'react';
+import { ExternalLink, ClipboardCheck, AlertTriangle, ChevronRight, Users, DollarSign, ShieldCheck } from 'lucide-react';
 import { createClient } from '@supabase/supabase-js';
 import { projectId, publicAnonKey } from '../../utils/supabase/info';
 
 const supabase = createClient(`https://${projectId}.supabase.co`, publicAnonKey);
 
-// Default data (used if nothing in database)
+// Default data
 const DEFAULT_DIVISIONS = [
   { name: 'Female Junior', dob: 'DOB 2009, 2008, 2007, 2006, 2005', color: 'bg-pink-50 border-pink-300' },
   { name: 'Female Senior', dob: 'DOB 2004 or earlier', color: 'bg-pink-50 border-pink-300' },
@@ -55,45 +58,48 @@ const DEFAULT_STEPS = [
   },
 ];
 
-// Fetch component data from database
-async function getComponentData() {
-  try {
-    const { data, error } = await supabase
-      .from('rmll_component_content')
-      .select('extracted_data')
-      .eq('page_id', 'registration')
-      .maybeSingle();
+export function RegistrationPage() {
+  const [data, setData] = useState({
+    DIVISIONS: DEFAULT_DIVISIONS,
+    STEPS: DEFAULT_STEPS,
+    REGISTRATION_FEE: '$87.00',
+    REGISTRATION_URL: 'http://rmll.rampregistrations.com',
+  });
+  const [loading, setLoading] = useState(true);
 
-    if (error || !data || !data.extracted_data) {
-      return {
-        DIVISIONS: DEFAULT_DIVISIONS,
-        STEPS: DEFAULT_STEPS,
-        REGISTRATION_FEE: '$87.00',
-        REGISTRATION_URL: 'http://rmll.rampregistrations.com',
-      };
+  useEffect(() => {
+    async function fetchData() {
+      try {
+        const { data: result, error } = await supabase
+          .from('rmll_component_content')
+          .select('extracted_data')
+          .eq('page_id', 'registration')
+          .maybeSingle();
+
+        if (!error && result && result.extracted_data) {
+          const extracted = result.extracted_data as Record<string, unknown>;
+          setData({
+            DIVISIONS: (extracted.DIVISIONS as typeof DEFAULT_DIVISIONS) || DEFAULT_DIVISIONS,
+            STEPS: (extracted.STEPS as typeof DEFAULT_STEPS) || DEFAULT_STEPS,
+            REGISTRATION_FEE: (extracted.REGISTRATION_FEE as string) || '$87.00',
+            REGISTRATION_URL: (extracted.REGISTRATION_URL as string) || 'http://rmll.rampregistrations.com',
+          });
+        }
+      } catch (error) {
+        console.error('[RegistrationPage] Error fetching data:', error);
+      } finally {
+        setLoading(false);
+      }
     }
 
-    const extracted = data.extracted_data as Record<string, unknown>;
-    return {
-      DIVISIONS: (extracted.DIVISIONS as typeof DEFAULT_DIVISIONS) || DEFAULT_DIVISIONS,
-      STEPS: (extracted.STEPS as typeof DEFAULT_STEPS) || DEFAULT_STEPS,
-      REGISTRATION_FEE: (extracted.REGISTRATION_FEE as string) || '$87.00',
-      REGISTRATION_URL: (extracted.REGISTRATION_URL as string) || 'http://rmll.rampregistrations.com',
-    };
-  } catch (error) {
-    console.error('[RegistrationPage] Error fetching data:', error);
-    return {
-      DIVISIONS: DEFAULT_DIVISIONS,
-      STEPS: DEFAULT_STEPS,
-      REGISTRATION_FEE: '$87.00',
-      REGISTRATION_URL: 'http://rmll.rampregistrations.com',
-    };
-  }
-}
+    fetchData();
+  }, []);
 
-export async function RegistrationPage() {
-  const data = await getComponentData();
   const { DIVISIONS, STEPS, REGISTRATION_FEE, REGISTRATION_URL } = data;
+
+  if (loading) {
+    return <div className="p-8 text-center text-gray-500">Loading...</div>;
+  }
 
   return (
     <div className="space-y-6">
