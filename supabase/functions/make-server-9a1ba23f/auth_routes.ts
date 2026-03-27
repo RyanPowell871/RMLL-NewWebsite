@@ -38,6 +38,45 @@ async function verifyAdmin(authHeader: string | null): Promise<{ authorized: boo
 // Protected emails - cannot be modified by other admins
 const PROTECTED_EMAILS = ['ryan@altereddigital.com'];
 
+// Debug endpoint to check protection status
+app.get("/admin/users/:userId/protection-check", async (c) => {
+  try {
+    const authHeader = c.req.header('Authorization');
+    const { authorized, userId: currentUserId } = await verifyAdmin(authHeader);
+
+    if (!authorized) {
+      return c.json({ success: false, error: 'Unauthorized' }, 403);
+    }
+
+    const targetUserId = c.req.param('userId');
+
+    // Get target user profile
+    const targetProfile = await db.getUserById(targetUserId);
+    if (!targetProfile) {
+      return c.json({ success: false, error: 'User not found' }, 404);
+    }
+
+    const targetEmail = targetProfile.email?.toLowerCase();
+    const isProtected = PROTECTED_EMAILS.includes(targetEmail);
+    const isSelf = currentUserId === targetUserId;
+
+    return c.json({
+      success: true,
+      protection: {
+        targetUserId,
+        targetEmail,
+        isProtected,
+        isSelf,
+        protectedEmails: PROTECTED_EMAILS,
+        canModify: isSelf || !isProtected,
+      }
+    });
+  } catch (error) {
+    console.error('[Protection Check] Error:', error);
+    return c.json({ success: false, error: error.message }, 500);
+  }
+});
+
 // Helper to check if current admin can modify target user
 async function canModifyUser(authHeader: string | null, targetUserId: string): Promise<{ allowed: boolean; error?: string }> {
   if (!authHeader || !authHeader.startsWith('Bearer ')) {

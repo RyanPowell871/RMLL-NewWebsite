@@ -185,12 +185,36 @@ export function ScheduleSection() {
   
   // Helper function to check if a game matches the selected game type
   const matchesGameType = (gameCode: string | undefined, selectedType: string): boolean => {
+    if (selectedType === 'All Game Types') {
+      return true;
+    }
+
     const gameType = getGameTypeFromCode(gameCode);
     if (!gameType) {
       // If we can't determine the game type, show it (don't filter it out)
       return true;
     }
-    return gameType === selectedType;
+
+    // Exact match
+    if (gameType === selectedType) {
+      return true;
+    }
+
+    // Fuzzy match - handle minor differences in capitalization, spacing, etc.
+    const normalizedGameType = gameType.toLowerCase().trim();
+    const normalizedSelectedType = selectedType.toLowerCase().trim();
+
+    if (normalizedGameType === normalizedSelectedType) {
+      return true;
+    }
+
+    // Check if one contains the other (e.g., 'Regular Season' matches 'Regular')
+    if (normalizedGameType.includes(normalizedSelectedType) ||
+        normalizedSelectedType.includes(normalizedGameType)) {
+      return true;
+    }
+
+    return false;
   };
 
   const isViewingCurrentSeason = parseInt(selectedSeasonYear) >= new Date().getFullYear();
@@ -837,11 +861,17 @@ const convertedAllGames = allSeasonGames.map((apiGame) => ({
   const getGameTypeFromCode = (code: string | undefined): string | null => {
     if (!code || code === 'null') return null;
     if (actualStandingsCategoryMapping[code]) return actualStandingsCategoryMapping[code];
-    
+
     const upperCode = code.toUpperCase().trim();
     if (actualStandingsCategoryMapping[upperCode]) return actualStandingsCategoryMapping[upperCode];
-    
-    return mapStandingCategoryCodeToName(code);
+
+    // Fallback: try to match using partial string comparison
+    const mappedName = mapStandingCategoryCodeToName(code);
+    if (mappedName && mappedName !== 'All Games') {
+      return mappedName;
+    }
+
+    return null;
   };
 
   // Filter games by game type, crossover divisions, and teams

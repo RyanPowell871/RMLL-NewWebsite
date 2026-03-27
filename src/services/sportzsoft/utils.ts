@@ -90,47 +90,57 @@ export function mapStandingCategoryCodeToName(code: string | null): string {
   if (!code || code === 'null') {
     return 'All Games';
   }
-  
+
+  const lowerCode = code.toLowerCase().trim();
+
   // Common standing category code mappings
   // Based on actual RMLL API responses from DivisionalStandingsCategories
   const knownMappings: Record<string, string> = {
     // RMLL API codes (lowercase)
     'exhb': 'Exhibition',
+    'exhibition': 'Exhibition',
+    'reg': 'Regular Season',
     'regu': 'Regular Season',
+    'regular': 'Regular Season',
+    'regseason': 'Regular Season',
     'plyo': 'Playoffs',
     'play': 'Playoffs',
+    'playoff': 'Playoffs',
+    'playoffs': 'Playoffs',
     'prov': 'Provincials',
+    'provincial': 'Provincials',
+    'tournament': 'Tournament',
     // Legacy uppercase codes (for backwards compatibility)
     'REG': 'Regular Season',
+    'REGU': 'Regular Season',
     'REG08': 'Regular Season',
+    'REGULAR': 'Regular Season',
     'PROSS': 'Playoffs',
+    'PLAYOFF': 'Playoffs',
+    'PLAYOFFS': 'Playoffs',
     'EXHB': 'Exhibition',
     'EXHIBITION': 'Exhibition',
-    'PLAYOFF': 'Playoffs',
-    '(Provincial)': 'Provincials',
+    '(PROVINCIAL)': 'Provincials',
     'PROVINCIAL': 'Provincials',
     'TOURNAMENT': 'Tournament',
+    // Additional variations
+    'reg season': 'Regular Season',
+    'regularseason': 'Regular Season',
+    'regular season': 'Regular Season',
   };
-  
+
   // Check exact match first (case-insensitive)
-  const lowerCode = code.toLowerCase();
-  const upperCode = code.toUpperCase();
-  
   if (knownMappings[lowerCode]) {
     return knownMappings[lowerCode];
   }
-  
-  if (knownMappings[upperCode]) {
-    return knownMappings[upperCode];
-  }
-  
+
   // Check if code contains a known substring
   for (const [key, value] of Object.entries(knownMappings)) {
-    if (upperCode.includes(key.toUpperCase())) {
+    if (lowerCode.includes(key.toLowerCase())) {
       return value;
     }
   }
-  
+
   // Fallback: capitalize and clean up the code
   return code.replace(/[_-]/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
 }
@@ -543,18 +553,41 @@ export function getWeekDateRange(startDate: Date): { start: string; end: string 
 }
 
 // Helper to format game time from API response
+// Handles various formats: "2025-05-01T18:30:00", "18:30", "18:30:00", etc.
 export function parseGameTime(timeString: string): string {
-  if (!timeString || !timeString.includes('T')) return '';
-  const timePart = timeString.split('T')[1]?.split('.')[0];
+  if (!timeString) return '';
+
+  let timePart = '';
+
+  // Format 1: ISO datetime with 'T' separator - "2025-05-01T18:30:00" or "2025-05-01T18:30:00.000Z"
+  if (timeString.includes('T')) {
+    timePart = timeString.split('T')[1]?.split('.')[0]?.split('Z')[0] || '';
+  }
+  // Format 2: Simple time - "18:30" or "18:30:00"
+  else if (timeString.match(/^\d{1,2}:\d{2}/)) {
+    timePart = timeString;
+  }
+  // Format 3: Try to extract time after space - "2025-05-01 18:30"
+  else if (timeString.includes(' ')) {
+    const parts = timeString.split(' ');
+    const lastPart = parts[parts.length - 1];
+    if (lastPart.match(/^\d{1,2}:\d{2}/)) {
+      timePart = lastPart;
+    }
+  }
+
   if (!timePart) return '';
+
   const [hoursStr, minutesStr] = timePart.split(':');
   const hours = parseInt(hoursStr, 10);
   const minutes = parseInt(minutesStr, 10);
-  
+
+  if (isNaN(hours) || isNaN(minutes)) return '';
+
   const period = hours >= 12 ? 'PM' : 'AM';
   const displayHours = hours % 12 || 12;
   const displayMinutes = minutes.toString().padStart(2, '0');
-  
+
   return `${displayHours}:${displayMinutes} ${period}`;
 }
 
