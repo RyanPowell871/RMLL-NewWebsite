@@ -83,7 +83,14 @@ async function cachedFetch(url: string, options: RequestInit, ttl: number = DEFA
 /** Clear all cached API responses (useful for manual refresh) */
 export function clearApiCache(): void {
   apiCache.clear();
+}
 
+/** Clear cached division schedule status for specific divisions */
+export function clearDivisionScheduleCache(divisionIds: number[]): void {
+  divisionIds.forEach(id => {
+    const url = `${BASE_URL}/SportsDivision/${id}?LimiterCode=BS`;
+    apiCache.delete(url);
+  });
 }
 
 /** Get cache stats for debugging */
@@ -798,7 +805,7 @@ export async function fetchDivisionScheduleStatus(
       headers: getHeaders(),
       mode: 'cors',
       credentials: 'omit',
-    }, 10 * 60 * 1000); // 10-minute TTL — schedule status changes infrequently
+    }, 2 * 60 * 1000); // 2-minute TTL — schedule status may change frequently
 
     const raw = data?.Response?.SportsDivision || data?.SportsDivision || data?.Response || data;
     if (!raw) {

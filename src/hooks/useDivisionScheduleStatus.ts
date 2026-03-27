@@ -1,8 +1,9 @@
 import { useState, useEffect, useRef, useMemo } from 'react';
-import { 
+import {
   fetchAllDivisionScheduleStatuses,
+  clearDivisionScheduleCache,
   isApiKeyReady,
-  type DivisionScheduleStatus 
+  type DivisionScheduleStatus
 } from '../services/sportzsoft';
 
 interface UseDivisionScheduleStatusResult {
@@ -16,27 +17,47 @@ interface UseDivisionScheduleStatusResult {
   inProgressDivisionIds: Set<number>;
   loading: boolean;
   error: string | null;
+  /** Force refetch the schedule status (clears cache) */
+  refetch: () => Promise<void>;
 }
 
 /**
  * Fetches GameScheduleReady and GameScheduleFinal flags for all provided division IDs.
- * 
+ *
  * Business rules (from SportzSoft API):
  * - GameScheduleFinal=true  → show "Schedule Complete"
  * - GameScheduleFinal=false → show "Schedule In Progress"
  * - Games are always visible regardless of flags — we only show status indicators
+ *
+ * @param divisionIds - Division IDs to fetch status for
+ * @param seasonId - Optional season ID to include in fetch key (for cache invalidation)
  */
-export function useDivisionScheduleStatus(divisionIds: number[]): UseDivisionScheduleStatusResult {
+export function useDivisionScheduleStatus(
+  divisionIds: number[],
+  seasonId?: number
+): UseDivisionScheduleStatusResult {
   const [statusMap, setStatusMap] = useState<Map<number, DivisionScheduleStatus>>(new Map());
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const lastFetchKey = useRef('');
 
+  const refetch = useRef(async () => {
+    if (!divisionIds || divisionIds.length === 0) return;
+
+    // Clear cache for these divisions to force fresh fetch
+    clearDivisionScheduleCache(divisionIds);
+
+    // Reset last fetch key to trigger fetch
+    lastFetchKey.current = '';
+
+    // The effect will now re-fetch because lastFetchKey doesn't match
+  }).current;
+
   useEffect(() => {
     if (!divisionIds || divisionIds.length === 0) return;
 
-    // Deduplicate fetch by sorted division IDs
-    const fetchKey = [...divisionIds].sort().join(',');
+    // Include seasonId in fetch key to invalidate cache when season changes
+    const fetchKey = `${[...divisionIds].sort().join(',')}:${seasonId || ''}`;
     if (fetchKey === lastFetchKey.current) return;
 
     const fetchStatuses = async () => {
@@ -67,7 +88,7 @@ export function useDivisionScheduleStatus(divisionIds: number[]): UseDivisionSch
     };
 
     fetchStatuses();
-  }, [divisionIds.join(',')]);
+  }, [divisionIds.join(','), seasonId]);
 
   const isScheduleReady = (divisionId: number): boolean => {
     const status = statusMap.get(divisionId);
@@ -99,6 +120,7 @@ export function useDivisionScheduleStatus(divisionIds: number[]): UseDivisionSch
     isScheduleFinal,
     inProgressDivisionIds,
     loading,
-    error
+    error,
+    refetch
   };
 }

@@ -937,7 +937,7 @@ export function TeamDetailPage({ teamId, teamName, season, teamLogo, divisionId,
     return Array.from(ids);
   }, [divisionId, apiGames]);
 
-  const { isScheduleFinal: isTeamScheduleFinal, inProgressDivisionIds: teamInProgressDivIds, statusMap: teamStatusMap } = useDivisionScheduleStatus(teamDivisionIds);
+  const { isScheduleFinal: isTeamScheduleFinal, inProgressDivisionIds: teamInProgressDivIds, statusMap: teamStatusMap } = useDivisionScheduleStatus(teamDivisionIds, seasonId ? Number(seasonId) : undefined);
 
   // Determine if team's schedule is in progress (any of its divisions not finalized)
   // IMPORTANT: Only show "in progress" for the current/latest season. Past seasons are always complete.

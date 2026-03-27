@@ -166,14 +166,17 @@ export function ScheduleSection() {
     return ids;
   }, [divisionGroups]);
 
+  const isViewingCurrentSeason = parseInt(selectedSeasonYear) >= new Date().getFullYear();
+  const selectedSeasonId = seasonIdsByYear[selectedSeasonYear] || 0;
+
   // Fetch GameScheduleReady / GameScheduleFinal flags for all divisions
-  const { 
-    isScheduleReady, 
-    isScheduleFinal, 
+  const {
+    isScheduleReady,
+    isScheduleFinal,
     inProgressDivisionIds,
     statusMap: divisionStatusMap,
-    loading: scheduleStatusLoading 
-  } = useDivisionScheduleStatus(allDivisionIds);
+    loading: scheduleStatusLoading
+  } = useDivisionScheduleStatus(allDivisionIds, selectedSeasonId);
 
   // Build game types list from API data (with fallback)
   const gameTypes = useMemo(() => {
@@ -217,9 +220,6 @@ export function ScheduleSection() {
     return false;
   };
 
-  const isViewingCurrentSeason = parseInt(selectedSeasonYear) >= new Date().getFullYear();
-  const selectedSeasonId = seasonIdsByYear[selectedSeasonYear] || 0;
-  
  // Fetch ALL games for the season (for generating weeks/months lists)
   const { games: allSeasonGames, teams: allSeasonTeams } = useScheduleData({
     seasonId: selectedSeasonId,
