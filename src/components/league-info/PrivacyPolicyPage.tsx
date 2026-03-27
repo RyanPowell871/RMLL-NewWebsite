@@ -1,38 +1,61 @@
-import { Shield, Lock, Eye, UserCheck, FileCheck, Mail } from 'lucide-react';
+'use client';
 
-const POLICY_POINTS = [
+import { useState, useEffect } from 'react';
+import { Shield, Lock, Eye, UserCheck, FileCheck, Mail, LucideIcon } from 'lucide-react';
+import { createClient } from '@supabase/supabase-js';
+import { projectId, publicAnonKey } from '../../utils/supabase/info';
+
+const supabase = createClient(`https://${projectId}.supabase.co`, publicAnonKey);
+
+// Icon mapping
+const iconMap: Record<string, LucideIcon> = {
+  Eye,
+  FileCheck,
+  UserCheck,
+  Lock,
+  Shield,
+};
+
+// Icon component helper
+function IconComponent({ iconName }: { iconName: string }) {
+  const Icon = iconMap[iconName] || Shield;
+  return <Icon className="w-5 h-5" />;
+}
+
+// Default data
+const DEFAULT_POLICY_POINTS = [
   {
-    icon: <Eye className="w-5 h-5" />,
+    icon: 'Eye',
     title: 'Purpose of Collection',
     description:
       'Personal information will be collected to determine eligibility for competitive and recreational opportunities, age related events, to facilitate enrollment, to disseminate information, to communicate, to administer and evaluate programs and promotions that benefit Members, and for insurance and statistical purposes.',
   },
   {
-    icon: <FileCheck className="w-5 h-5" />,
+    icon: 'FileCheck',
     title: 'Funding Requirements',
     description:
       'In addition, personal information may be, from time to time, submitted to major funding bodies in order to verify registration and meeting funding requirements.',
   },
   {
-    icon: <UserCheck className="w-5 h-5" />,
+    icon: 'UserCheck',
     title: 'Consent',
     description:
       'All information must be collected with the consent of the person or legal guardian.',
   },
   {
-    icon: <Lock className="w-5 h-5" />,
+    icon: 'Lock',
     title: 'Minimization',
     description:
       'Personal information collection must be limited to what is absolutely necessary.',
   },
   {
-    icon: <Shield className="w-5 h-5" />,
+    icon: 'Shield',
     title: 'Accuracy',
     description:
       'All efforts must be made to avoid incorrect information, and efforts must be made to verify accuracy, completeness and timeliness of information.',
   },
   {
-    icon: <Lock className="w-5 h-5" />,
+    icon: 'Lock',
     title: 'Protection',
     description:
       'Reasonable steps will be taken to protect the privacy of all personal information.',
@@ -40,6 +63,39 @@ const POLICY_POINTS = [
 ];
 
 export function PrivacyPolicyPage() {
+  const [policyPoints, setPolicyPoints] = useState(DEFAULT_POLICY_POINTS);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    async function fetchData() {
+      try {
+        const { data: result, error } = await supabase
+          .from('rmll_component_content')
+          .select('extracted_data')
+          .eq('page_id', 'privacy-policy')
+          .maybeSingle();
+
+        if (!error && result && result.extracted_data) {
+          const extracted = result.extracted_data as Record<string, unknown>;
+          const items = extracted.POLICY_POINTS as typeof DEFAULT_POLICY_POINTS;
+          if (items && Array.isArray(items) && items.length > 0) {
+            setPolicyPoints(items);
+          }
+        }
+      } catch (error) {
+        console.error('[PrivacyPolicyPage] Error fetching data:', error);
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    fetchData();
+  }, []);
+
+  if (loading) {
+    return <div className="p-8 text-center text-gray-500">Loading...</div>;
+  }
+
   return (
     <div className="space-y-8">
       {/* Header */}
@@ -61,13 +117,15 @@ export function PrivacyPolicyPage() {
 
       {/* Policy Points */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        {POLICY_POINTS.map((point, idx) => (
+        {policyPoints.map((point, idx) => (
           <div
             key={idx}
             className="bg-white border border-gray-200 rounded-lg p-5 hover:shadow-md transition-shadow"
           >
             <div className="flex items-start gap-3">
-              <div className="p-2 rounded-lg bg-[#013fac]/10 text-[#013fac] shrink-0">{point.icon}</div>
+              <div className="p-2 rounded-lg bg-[#013fac]/10 text-[#013fac] shrink-0">
+                <IconComponent iconName={point.icon} />
+              </div>
               <div>
                 <h4 className="font-bold text-gray-900 mb-1.5">{point.title}</h4>
                 <p className="text-sm text-gray-600 leading-relaxed">{point.description}</p>

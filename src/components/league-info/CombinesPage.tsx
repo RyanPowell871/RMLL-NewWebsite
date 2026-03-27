@@ -1,11 +1,14 @@
-import { useState } from 'react';
+'use client';
+
+import { useState, useEffect } from 'react';
 import {
   Users, Calendar, MapPin, DollarSign, Clock, ChevronDown, ChevronRight,
   ExternalLink, AlertTriangle, FileText, Info, UserCheck
 } from 'lucide-react';
+import { createClient } from '@supabase/supabase-js';
+import { projectId, publicAnonKey } from '../../utils/supabase/info';
 
-const SPORTZSOFT_REG_URL = 'https://www.sportzsoft.com/regApp/Login?OrgId=4023';
-const SOUTH_WAIVER_URL = 'https://waiver.smartwaiver.com/e/bdNUd5vgHg3XWFhH688DE6/web/';
+const supabase = createClient(`https://${projectId}.supabase.co`, publicAnonKey);
 
 interface CombineInfo {
   name: string;
@@ -24,7 +27,8 @@ interface CombineInfo {
   capacityNote?: string;
 }
 
-const COMBINES: CombineInfo[] = [
+// Default data (URLs expanded for CMS editing)
+const DEFAULT_COMBINES: CombineInfo[] = [
   {
     name: 'North Junior Combine',
     region: 'north',
@@ -35,7 +39,7 @@ const COMBINES: CombineInfo[] = [
     cost: '$40.00',
     who: 'GELC, Wheatland, and Grande Prairie Graduating U17 and Tier II Players.',
     registrationDeadline: 'Monday, January 19, 2026',
-    registrationUrl: SPORTZSOFT_REG_URL,
+    registrationUrl: 'https://www.sportzsoft.com/regApp/Login?OrgId=4023',
   },
   {
     name: 'South Junior Combine',
@@ -48,12 +52,15 @@ const COMBINES: CombineInfo[] = [
     costNote: 'Includes a ticket to the Roughnecks/Georgia Swarm game at 6:00 PM.',
     who: 'CALL, CDLA, and SALA Graduating U17 and Tier II Players.',
     registrationDeadline: 'Monday, February 9, 2026',
-    registrationUrl: SPORTZSOFT_REG_URL,
-    waiverUrl: SOUTH_WAIVER_URL,
+    registrationUrl: 'https://www.sportzsoft.com/regApp/Login?OrgId=4023',
+    waiverUrl: 'https://waiver.smartwaiver.com/e/bdNUd5vgHg3XWFhH688DE6/web/',
     waiverNote: 'Once you have registered, please complete the online waiver. The waiver must be completed to go on the floor at the Saddledome.',
     capacityNote: 'Registration for the South Combine is limited to 72 players and 12 goalies, so please register early.',
   },
 ];
+
+// Renamed from COMBINES for component internal use
+let COMBINES: CombineInfo[] = DEFAULT_COMBINES;
 
 function InfoRow({ icon, label, children }: { icon: React.ReactNode; label: string; children: React.ReactNode }) {
   return (
@@ -181,6 +188,42 @@ function CombineCard({ combine }: { combine: CombineInfo }) {
 }
 
 export function CombinesPage() {
+  const [combines, setCombines] = useState(DEFAULT_COMBINES);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    async function fetchData() {
+      try {
+        const { data: result, error } = await supabase
+          .from('rmll_component_content')
+          .select('extracted_data')
+          .eq('page_id', 'combines')
+          .maybeSingle();
+
+        if (!error && result && result.extracted_data) {
+          const extracted = result.extracted_data as Record<string, unknown>;
+          const items = extracted.COMBINES as typeof DEFAULT_COMBINES;
+          if (items && Array.isArray(items) && items.length > 0) {
+            setCombines(items);
+          }
+        }
+      } catch (error) {
+        console.error('[CombinesPage] Error fetching data:', error);
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    fetchData();
+  }, []);
+
+  // Update global COMBINES for CombineCard components
+  COMBINES = combines;
+
+  if (loading) {
+    return <div className="p-8 text-center text-gray-500">Loading...</div>;
+  }
+
   return (
     <div className="space-y-6">
       {/* Hero Banner */}
@@ -233,7 +276,7 @@ export function CombinesPage() {
       </div>
 
       {/* Combine Cards */}
-      {COMBINES.map((combine) => (
+      {combines.map((combine) => (
         <CombineCard key={combine.name} combine={combine} />
       ))}
     </div>

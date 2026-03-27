@@ -1,8 +1,14 @@
-import { useState } from 'react';
+'use client';
+
+import { useState, useEffect } from 'react';
 import {
   Users, Calendar, Clock, MapPin, ChevronDown, ChevronRight,
   Info, Building2, Megaphone
 } from 'lucide-react';
+import { createClient } from '@supabase/supabase-js';
+import { projectId, publicAnonKey } from '../../utils/supabase/info';
+
+const supabase = createClient(`https://${projectId}.supabase.co`, publicAnonKey);
 
 /* ─── Collapsible Section ─── */
 interface CollapsibleSectionProps {
@@ -80,7 +86,7 @@ function SessionCard({ session, index }: { session: SessionInfo; index: number }
 }
 
 /* ─── Main Page ─── */
-const SESSIONS: SessionInfo[] = [
+const DEFAULT_SESSIONS: SessionInfo[] = [
   {
     clubs: 'Graduating U17 Players from GELC, Wheatland and Grande Prairie Minor Lacrosse Clubs',
     date: 'Friday, January 9, 2026',
@@ -98,6 +104,39 @@ const SESSIONS: SessionInfo[] = [
 ];
 
 export function GraduatingU17InfoPage() {
+  const [loading, setLoading] = useState(true);
+  const [sessions, setSessions] = useState<SessionInfo[]>(DEFAULT_SESSIONS);
+
+  useEffect(() => {
+    async function fetchData() {
+      try {
+        const { data: result, error } = await supabase
+          .from('rmll_component_content')
+          .select('extracted_data')
+          .eq('page_id', 'graduating-u17-info')
+          .maybeSingle();
+
+        if (!error && result && result.extracted_data) {
+          const extracted = result.extracted_data as Record<string, unknown>;
+          const fetchedSessions = (extracted.SESSIONS as typeof DEFAULT_SESSIONS);
+          if (fetchedSessions && Array.isArray(fetchedSessions) && fetchedSessions.length > 0) {
+            setSessions(fetchedSessions);
+          }
+        }
+      } catch (error) {
+        console.error('[GraduatingU17InfoPage] Error fetching data:', error);
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    fetchData();
+  }, []);
+
+  if (loading) {
+    return <div className="p-8 text-center text-gray-500">Loading...</div>;
+  }
+
   return (
     <div className="w-full">
       {/* Header */}
@@ -142,7 +181,7 @@ export function GraduatingU17InfoPage() {
           defaultOpen={true}
         >
           <div className="mt-4 space-y-4">
-            {SESSIONS.map((session, i) => (
+            {sessions.map((session, i) => (
               <SessionCard key={i} session={session} index={i} />
             ))}
           </div>

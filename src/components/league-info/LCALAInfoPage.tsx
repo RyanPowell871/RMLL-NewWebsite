@@ -1,8 +1,14 @@
-import { useState } from 'react';
+'use client';
+
+import { useState, useEffect } from 'react';
 import {
   ChevronDown, ChevronRight, ExternalLink,
-  Globe, FileText, Shield, Scale, BookOpen, Heart, Megaphone, ClipboardList
+  Globe, FileText, Shield, Scale, BookOpen, Heart, Megaphone, ClipboardList, LucideIcon
 } from 'lucide-react';
+import { createClient } from '@supabase/supabase-js';
+import { projectId, publicAnonKey } from '../../utils/supabase/info';
+
+const supabase = createClient(`https://${projectId}.supabase.co`, publicAnonKey);
 
 /* ─── Collapsible Section ─── */
 interface CollapsibleSectionProps {
@@ -39,11 +45,23 @@ interface LinkItem {
   label: string;
   url: string;
   description: string;
-  icon: React.ReactNode;
+  iconName: string;
   type: 'webpage' | 'pdf';
 }
 
+// Icon mapping
+const iconMap: Record<string, LucideIcon> = {
+  Scale,
+  ClipboardList,
+  Shield,
+  BookOpen,
+  FileText,
+  Megaphone,
+  Globe,
+};
+
 function LinkCard({ item }: { item: LinkItem }) {
+  const Icon = iconMap[item.iconName] || Globe;
   return (
     <a
       href={item.url}
@@ -52,7 +70,7 @@ function LinkCard({ item }: { item: LinkItem }) {
       className="flex items-start gap-4 p-4 rounded-lg border border-gray-200 hover:border-[#013fac]/40 hover:bg-blue-50/30 transition-all group"
     >
       <div className="p-2 rounded-lg bg-[#013fac]/10 flex-shrink-0 mt-0.5">
-        {item.icon}
+        <Icon className="w-4 h-4 text-[#013fac]" />
       </div>
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-2">
@@ -73,77 +91,109 @@ function LinkCard({ item }: { item: LinkItem }) {
 }
 
 /* ─── Data ─── */
-const LC_LINKS: LinkItem[] = [
+const DEFAULT_LC_LINKS: LinkItem[] = [
   {
     label: 'Lacrosse Canada Bylaws',
     url: 'https://lacrosse.ca/bylaws/',
     description: 'National bylaws and constitutional documents governing lacrosse in Canada.',
-    icon: <Scale className="w-4 h-4 text-[#013fac]" />,
+    iconName: 'Scale',
     type: 'webpage',
   },
   {
     label: 'Lacrosse Canada Transfers',
     url: 'https://lacrosse.ca/transfers/',
     description: 'Information on player transfer policies and procedures between provincial associations.',
-    icon: <ClipboardList className="w-4 h-4 text-[#013fac]" />,
+    iconName: 'ClipboardList',
     type: 'webpage',
   },
   {
     label: 'Anti-Doping Program',
     url: 'https://lacrosse.ca/development/athletes/anti-doping/',
     description: 'Lacrosse Canada anti-doping resources, policies, and athlete information.',
-    icon: <Shield className="w-4 h-4 text-[#013fac]" />,
+    iconName: 'Shield',
     type: 'webpage',
   },
 ];
 
-const ALA_LINKS: LinkItem[] = [
+const DEFAULT_ALA_LINKS: LinkItem[] = [
   {
     label: 'ALA Governance',
     url: 'https://www.albertalacrosse.com/content/governance',
     description: 'Alberta Lacrosse Association governance documents, board information, and organizational structure.',
-    icon: <BookOpen className="w-4 h-4 text-[#7c3aed]" />,
+    iconName: 'BookOpen',
     type: 'webpage',
   },
   {
     label: 'ALA Insurance Brochure',
     url: 'https://cloud.rampinteractive.com/ablax/files/2025/Insurance%20BFL%20ALA%20Brochure%20.pdf',
     description: 'BFL insurance brochure outlining coverage details for ALA-affiliated programs and events.',
-    icon: <Shield className="w-4 h-4 text-[#7c3aed]" />,
+    iconName: 'Shield',
     type: 'pdf',
   },
   {
     label: 'ALA Insurance Claim Form',
     url: 'https://cloud.rampinteractive.com/ablax/files/ALA%20Insurance%20Claim%20Form%202.pdf',
     description: 'Official form for submitting insurance claims through the Alberta Lacrosse Association.',
-    icon: <FileText className="w-4 h-4 text-[#7c3aed]" />,
+    iconName: 'FileText',
     type: 'pdf',
   },
   {
     label: 'ALA Strategic Plan',
     url: 'https://www.albertalacrosse.com/content/ala-strategic-plan',
     description: 'The Alberta Lacrosse Association\'s strategic plan and long-term organizational goals.',
-    icon: <Megaphone className="w-4 h-4 text-[#7c3aed]" />,
+    iconName: 'Megaphone',
     type: 'webpage',
   },
   {
     label: 'ALA Social Media Policy',
     url: 'https://cloud.rampinteractive.com/ablax/files/%20bylaws-regulations-policies/policies/ALA-Social-Media-Policy-Master-v5.pdf',
     description: 'Guidelines and policies for social media use within ALA-affiliated organizations.',
-    icon: <Globe className="w-4 h-4 text-[#7c3aed]" />,
+    iconName: 'Globe',
     type: 'pdf',
   },
   {
     label: 'ALA Forms & Guides',
     url: 'https://www.albertalacrosse.com/content/forms-and-guides',
     description: 'Collection of forms, guides, and templates for ALA programs and administration.',
-    icon: <ClipboardList className="w-4 h-4 text-[#7c3aed]" />,
+    iconName: 'ClipboardList',
     type: 'webpage',
   },
 ];
 
 /* ─── Main Page ─── */
 export function LCALAInfoPage() {
+  const [loading, setLoading] = useState(true);
+  const [lcLinks, setLcLinks] = useState<LinkItem[]>(DEFAULT_LC_LINKS);
+  const [alaLinks, setAlaLinks] = useState<LinkItem[]>(DEFAULT_ALA_LINKS);
+
+  useEffect(() => {
+    async function fetchData() {
+      try {
+        const { data: result, error } = await supabase
+          .from('rmll_component_content')
+          .select('extracted_data')
+          .eq('page_id', 'lc-ala-info')
+          .maybeSingle();
+
+        if (!error && result && result.extracted_data) {
+          const extracted = result.extracted_data as Record<string, unknown>;
+          setLcLinks((extracted.LC_LINKS as typeof DEFAULT_LC_LINKS) || DEFAULT_LC_LINKS);
+          setAlaLinks((extracted.ALA_LINKS as typeof DEFAULT_ALA_LINKS) || DEFAULT_ALA_LINKS);
+        }
+      } catch (error) {
+        console.error('[LCALAInfoPage] Error fetching data:', error);
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    fetchData();
+  }, []);
+
+  if (loading) {
+    return <div className="p-8 text-center text-gray-500">Loading...</div>;
+  }
+
   return (
     <div className="w-full">
       {/* Header */}
@@ -174,7 +224,7 @@ export function LCALAInfoPage() {
             <p className="text-sm text-gray-600 leading-relaxed mb-4">
               Lacrosse Canada is the national governing body for lacrosse. Below are key resources and documents from the national level.
             </p>
-            {LC_LINKS.map((item, i) => (
+            {lcLinks.map((item, i) => (
               <LinkCard key={i} item={item} />
             ))}
           </div>
@@ -191,7 +241,7 @@ export function LCALAInfoPage() {
             <p className="text-sm text-gray-600 leading-relaxed mb-4">
               The Alberta Lacrosse Association oversees lacrosse in Alberta. Below are governance documents, insurance information, forms, and policies.
             </p>
-            {ALA_LINKS.map((item, i) => (
+            {alaLinks.map((item, i) => (
               <LinkCard key={i} item={item} />
             ))}
           </div>
