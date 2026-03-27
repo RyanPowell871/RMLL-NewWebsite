@@ -1,13 +1,18 @@
 import { ExternalLink, ClipboardCheck, AlertTriangle, Info, ChevronRight, Users, DollarSign, ShieldCheck } from 'lucide-react';
+import { createClient } from '@supabase/supabase-js';
+import { projectId, publicAnonKey } from '../../utils/supabase/info';
 
-const DIVISIONS = [
+const supabase = createClient(`https://${projectId}.supabase.co`, publicAnonKey);
+
+// Default data (used if nothing in database)
+const DEFAULT_DIVISIONS = [
   { name: 'Female Junior', dob: 'DOB 2009, 2008, 2007, 2006, 2005', color: 'bg-pink-50 border-pink-300' },
   { name: 'Female Senior', dob: 'DOB 2004 or earlier', color: 'bg-pink-50 border-pink-300' },
   { name: 'Senior', dob: 'DOB 2004 or earlier', note: 'Sr. B (ASL) or Sr. C', color: 'bg-blue-50 border-blue-300' },
   { name: 'Junior', dob: 'DOB 2009, 2008, 2007, 2006, 2005', note: 'Jr. A, Tier I or Tier II', color: 'bg-blue-50 border-blue-300' },
 ];
 
-const STEPS = [
+const DEFAULT_STEPS = [
   {
     step: 1,
     title: 'Log in to RAMP',
@@ -50,7 +55,46 @@ const STEPS = [
   },
 ];
 
-export function RegistrationPage() {
+// Fetch component data from database
+async function getComponentData() {
+  try {
+    const { data, error } = await supabase
+      .from('rmll_component_content')
+      .select('extracted_data')
+      .eq('page_id', 'registration')
+      .maybeSingle();
+
+    if (error || !data || !data.extracted_data) {
+      return {
+        DIVISIONS: DEFAULT_DIVISIONS,
+        STEPS: DEFAULT_STEPS,
+        REGISTRATION_FEE: '$87.00',
+        REGISTRATION_URL: 'http://rmll.rampregistrations.com',
+      };
+    }
+
+    const extracted = data.extracted_data as Record<string, unknown>;
+    return {
+      DIVISIONS: (extracted.DIVISIONS as typeof DEFAULT_DIVISIONS) || DEFAULT_DIVISIONS,
+      STEPS: (extracted.STEPS as typeof DEFAULT_STEPS) || DEFAULT_STEPS,
+      REGISTRATION_FEE: (extracted.REGISTRATION_FEE as string) || '$87.00',
+      REGISTRATION_URL: (extracted.REGISTRATION_URL as string) || 'http://rmll.rampregistrations.com',
+    };
+  } catch (error) {
+    console.error('[RegistrationPage] Error fetching data:', error);
+    return {
+      DIVISIONS: DEFAULT_DIVISIONS,
+      STEPS: DEFAULT_STEPS,
+      REGISTRATION_FEE: '$87.00',
+      REGISTRATION_URL: 'http://rmll.rampregistrations.com',
+    };
+  }
+}
+
+export async function RegistrationPage() {
+  const data = await getComponentData();
+  const { DIVISIONS, STEPS, REGISTRATION_FEE, REGISTRATION_URL } = data;
+
   return (
     <div className="space-y-6">
       {/* Welcome Banner */}
@@ -140,7 +184,7 @@ export function RegistrationPage() {
         <div className="p-4 sm:p-5">
           <div className="flex items-center gap-3 bg-blue-50 border border-blue-200 rounded-lg p-4">
             <div>
-              <p className="text-2xl font-bold text-[#013fac]">$87.00</p>
+              <p className="text-2xl font-bold text-[#013fac]">{REGISTRATION_FEE}</p>
               <p className="text-xs text-gray-500">+ admin fee</p>
             </div>
             <div className="h-10 w-px bg-blue-200"></div>
@@ -163,7 +207,7 @@ export function RegistrationPage() {
             </div>
           </div>
           <a
-            href="http://rmll.rampregistrations.com"
+            href={REGISTRATION_URL}
             target="_blank"
             rel="noopener noreferrer"
             className="inline-flex items-center gap-2 bg-green-600 hover:bg-green-700 text-white font-bold px-5 py-2.5 rounded border-2 border-green-800 shadow-[2px_2px_0px_0px_rgba(0,0,0,0.3)] transition-colors text-sm"
@@ -185,7 +229,7 @@ export function RegistrationPage() {
               <strong>RMLL Registration Confirmation e-mail</strong>.
             </p>
             <p className="text-sm text-blue-700 mt-2 leading-relaxed">
-              Please give a copy of this RMLL Registration Confirmation e-mail to each RMLL Franchise 
+              Please give a copy of this RMLL Registration Confirmation e-mail to each RMLL Franchise
               you are going on the floor with.
             </p>
           </div>
