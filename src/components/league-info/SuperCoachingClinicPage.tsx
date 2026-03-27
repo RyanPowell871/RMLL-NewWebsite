@@ -109,6 +109,9 @@ const DEFAULT_SPORTZSOFT_REG_URL = 'https://www.sportzsoft.com/regApp/Login?OrgI
 const DEFAULT_LOCKER_REG_URL = 'https://thelocker.coach.ca/event/public/5740859';
 const DEFAULT_COMP_INTRO_LOCKER_URL = 'https://thelocker.coach.ca/event/public/5876592';
 
+const DEFAULT_CERTIFICATION_TEXT = 'All Community Development coaches attending will receive their Competitive-Introduction "In-training" status. Coaches who already have taken Competitive-Introduction are encouraged to attend — they will receive more advanced on-floor material.';
+const DEFAULT_PD_POINTS_TEXT = 'Competitive Introduction Certified Coaches may receive eleven (11) PD points based on unique modules included in the Super Coaching Clinic.';
+
 function InfoRow({ icon, label, children }: { icon: React.ReactNode; label: string; children: React.ReactNode }) {
   return (
     <div className="flex items-start gap-3 sm:gap-4">
@@ -149,6 +152,8 @@ export function SuperCoachingClinicPage() {
     SPORTZSOFT_REG_URL: DEFAULT_SPORTZSOFT_REG_URL,
     LOCKER_REG_URL: DEFAULT_LOCKER_REG_URL,
     COMP_INTRO_LOCKER_URL: DEFAULT_COMP_INTRO_LOCKER_URL,
+    CERTIFICATION_TEXT: DEFAULT_CERTIFICATION_TEXT,
+    PD_POINTS_TEXT: DEFAULT_PD_POINTS_TEXT,
   });
 
   useEffect(() => {
@@ -172,6 +177,8 @@ export function SuperCoachingClinicPage() {
             SPORTZSOFT_REG_URL: (extracted.SPORTZSOFT_REG_URL as string) || DEFAULT_SPORTZSOFT_REG_URL,
             LOCKER_REG_URL: (extracted.LOCKER_REG_URL as string) || DEFAULT_LOCKER_REG_URL,
             COMP_INTRO_LOCKER_URL: (extracted.COMP_INTRO_LOCKER_URL as string) || DEFAULT_COMP_INTRO_LOCKER_URL,
+            CERTIFICATION_TEXT: (extracted.CERTIFICATION_TEXT as string) || DEFAULT_CERTIFICATION_TEXT,
+            PD_POINTS_TEXT: (extracted.PD_POINTS_TEXT as string) || DEFAULT_PD_POINTS_TEXT,
           });
         }
       } catch (error) {
@@ -184,7 +191,7 @@ export function SuperCoachingClinicPage() {
     fetchData();
   }, []);
 
-  const { INSTRUCTORS, TOPICS, SCHEDULE, INCLUDED_ITEMS, REQUIRED_INFO, CERT_REQUIRED_INFO, SPORTZSOFT_REG_URL, LOCKER_REG_URL, COMP_INTRO_LOCKER_URL } = data;
+  const { INSTRUCTORS, TOPICS, SCHEDULE, INCLUDED_ITEMS, REQUIRED_INFO, CERT_REQUIRED_INFO, SPORTZSOFT_REG_URL, LOCKER_REG_URL, COMP_INTRO_LOCKER_URL, CERTIFICATION_TEXT, PD_POINTS_TEXT } = data;
 
   // Extract date range from SCHEDULE for display
   const dateRange = SCHEDULE.length > 0
@@ -372,16 +379,13 @@ export function SuperCoachingClinicPage() {
           <h3 className="font-bold text-white text-sm sm:text-base">Certification &amp; PD Points</h3>
         </div>
         <div className="p-4 sm:p-5 bg-blue-50 space-y-3">
-          <p className="text-sm text-gray-700 leading-relaxed">
-            {"All Community Development coaches attending will receive their "}
-            <strong>{"Competitive-Introduction \"In-training\" status"}</strong>
-            {". Coaches who already have taken Competitive-Introduction are encouraged to attend \u2014 they will receive more advanced on-floor material."}
+          <p className="text-sm text-gray-700 leading-relaxed whitespace-pre-line">
+            {CERTIFICATION_TEXT}
           </p>
           <div className="bg-white border border-blue-200 rounded-lg p-3 flex items-center gap-3">
             <Award className="w-5 h-5 text-[#013fac] shrink-0" />
-            <p className="text-sm text-gray-800">
-              Competitive Introduction Certified Coaches may receive <strong className="text-[#013fac]">eleven (11) PD points</strong> based
-              on unique modules included in the Super Coaching Clinic.
+            <p className="text-sm text-gray-800 whitespace-pre-line">
+              {PD_POINTS_TEXT}
             </p>
           </div>
         </div>

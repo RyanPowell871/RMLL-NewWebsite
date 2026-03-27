@@ -275,6 +275,20 @@ export const COMPONENT_SCHEMAS: ComponentSchema[] = [
         },
         defaultItem: { day: '', time: '', label: '' },
       },
+      {
+        type: 'simple',
+        name: 'CERTIFICATION_TEXT',
+        label: 'Certification Description',
+        fieldType: 'multiline',
+        defaultValue: 'All Community Development coaches attending will receive their Competitive-Introduction "In-training" status. Coaches who already have taken Competitive-Introduction are encouraged to attend — they will receive more advanced on-floor material.',
+      },
+      {
+        type: 'simple',
+        name: 'PD_POINTS_TEXT',
+        label: 'PD Points Description',
+        fieldType: 'multiline',
+        defaultValue: 'Competitive Introduction Certified Coaches may receive eleven (11) PD points based on unique modules included in the Super Coaching Clinic.',
+      },
     ],
   },
 
