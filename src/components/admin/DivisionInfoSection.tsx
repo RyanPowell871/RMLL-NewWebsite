@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { Card } from '../ui/card';
 import { Label } from '../ui/label';
 import { Textarea } from '../ui/textarea';
@@ -52,6 +52,12 @@ export function DivisionInfoSection({
 }: DivisionInfoSectionProps) {
   const [editingHeading, setEditingHeading] = useState(false);
   const [headingValue, setHeadingValue] = useState(config.heading || '');
+  const [isCollapsed, setIsCollapsed] = useState(config.collapsed ?? false);
+
+  // Sync collapsed state with config prop
+  useEffect(() => {
+    setIsCollapsed(config.collapsed ?? false);
+  }, [config.collapsed]);
 
   const handleSaveHeading = () => {
     onConfigChange({
@@ -62,7 +68,6 @@ export function DivisionInfoSection({
   };
 
   const displayHeading = config.heading || config.title;
-  const isCollapsed = config.collapsed ?? false;
 
   return (
     <Card className="overflow-hidden">
@@ -120,7 +125,10 @@ export function DivisionInfoSection({
           )}
           {/* Column span toggle - shows layout icon */}
           <Button
-            onClick={() => onConfigChange({ ...config, colSpan: config.colSpan === 2 ? 1 : 2 })}
+            onClick={() => {
+              const newColSpan = config.colSpan === 2 ? 1 : 2;
+              onConfigChange({ ...config, colSpan: newColSpan });
+            }}
             size="sm"
             variant="ghost"
             className={`h-7 w-7 p-0 ${config.colSpan === 2 ? 'text-purple-600' : 'text-gray-400'}`}
@@ -130,7 +138,10 @@ export function DivisionInfoSection({
           </Button>
           {/* Collapsible toggle - shows switch icon */}
           <Button
-            onClick={() => onConfigChange({ ...config, collapsible: !config.collapsible })}
+            onClick={() => {
+              const newCollapsible = !config.collapsible;
+              onConfigChange({ ...config, collapsible: newCollapsible });
+            }}
             size="sm"
             variant="ghost"
             className={`h-7 w-7 p-0 ${config.colSpan === 2 ? 'col-span-1' : 'col-span-1'} ${config.collapsible ? 'text-blue-600' : 'text-gray-400'}`}
@@ -141,7 +152,11 @@ export function DivisionInfoSection({
           {/* Collapse/expand - only shows when collapsible */}
           {config.collapsible && (
             <Button
-              onClick={() => onConfigChange({ ...config, collapsed: !isCollapsed })}
+              onClick={() => {
+                const newCollapsed = !isCollapsed;
+                setIsCollapsed(newCollapsed); // Update local state immediately
+                onConfigChange({ ...config, collapsed: newCollapsed }); // Also persist
+              }}
               size="sm"
               variant="ghost"
               className="h-7 w-7 p-0"
