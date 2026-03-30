@@ -129,11 +129,13 @@ const RMLL_COLORS = [
 
 interface EditSectionData {
   sectionId: string;
-  title: string;
+  title: string;       // Identifier (read-only for existing sections)
+  heading?: string;    // Display title override
   fieldLabel: string;
   colSpan: 1 | 2;
   color: string;
   iconName: string;
+  isCustom?: boolean;
 }
 
 // Add New Section Modal
@@ -292,6 +294,7 @@ function EditSectionModal({
   initialData: EditSectionData | null;
 }) {
   const [title, setTitle] = useState('');
+  const [heading, setHeading] = useState('');
   const [fieldLabel, setFieldLabel] = useState('');
   const [colSpan, setColSpan] = useState<1 | 2>(1);
   const [selectedColor, setSelectedColor] = useState(RMLL_COLORS[0].value);
@@ -301,6 +304,7 @@ function EditSectionModal({
   useEffect(() => {
     if (initialData) {
       setTitle(initialData.title);
+      setHeading(initialData.heading || '');
       setFieldLabel(initialData.fieldLabel);
       setColSpan(initialData.colSpan);
       setSelectedColor(initialData.color);
@@ -312,11 +316,13 @@ function EditSectionModal({
     if (title.trim() && initialData) {
       onEdit({
         sectionId: initialData.sectionId,
-        title: title.trim(),
-        fieldLabel: fieldLabel.trim() || title.trim(),
+        title: initialData.isCustom ? title.trim() : initialData.title, // Only custom sections can change title
+        heading: initialData.isCustom ? undefined : (heading.trim() || undefined), // Existing sections use heading
+        fieldLabel: initialData.isCustom ? (fieldLabel.trim() || title.trim()) : '',
         colSpan,
         color: selectedColor,
         iconName: selectedIcon,
+        isCustom: initialData.isCustom,
       });
       onClose();
     }
@@ -333,22 +339,49 @@ function EditSectionModal({
           <h3 className="text-lg font-semibold">Edit Section</h3>
         </div>
         <div className="p-4 space-y-4">
-          <div>
-            <Label>Section Title</Label>
-            <Input
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-              placeholder="e.g., Additional Rules"
-            />
-          </div>
-          <div>
-            <Label>Field Label</Label>
-            <Input
-              value={fieldLabel}
-              onChange={(e) => setFieldLabel(e.target.value)}
-              placeholder="e.g., Content"
-            />
-          </div>
+          {/* For custom sections: editable title */}
+          {initialData.isCustom ? (
+            <div>
+              <Label>Section Title</Label>
+              <Input
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
+                placeholder="e.g., Additional Rules"
+              />
+            </div>
+          ) : (
+            /* For existing sections: show read-only title and editable heading */
+            <>
+              <div>
+                <Label>Section ID (Read-only)</Label>
+                <Input
+                  value={title}
+                  disabled
+                  className="bg-gray-100 text-gray-600"
+                />
+              </div>
+              <div>
+                <Label>Display Title Override</Label>
+                <Input
+                  value={heading}
+                  onChange={(e) => setHeading(e.target.value)}
+                  placeholder={`Leave empty to use: ${title}`}
+                />
+                <p className="text-xs text-gray-500 mt-1">Enter a custom title to display instead of "{title}"</p>
+              </div>
+            </>
+          )}
+          {/* Field Label only for custom sections */}
+          {initialData.isCustom && (
+            <div>
+              <Label>Field Label</Label>
+              <Input
+                value={fieldLabel}
+                onChange={(e) => setFieldLabel(e.target.value)}
+                placeholder="e.g., Content"
+              />
+            </div>
+          )}
           <div>
             <Label>Color</Label>
             <div className="flex gap-2 mt-2 flex-wrap">
@@ -705,14 +738,16 @@ export function DivisionManager() {
 
   const openEditModal = (sectionId: string) => {
     const config = sectionConfigs.find(c => c.id === sectionId);
-    if (config && config.isCustom) {
+    if (config) {
       setEditingSection({
         sectionId: config.id,
         title: config.title,
-        fieldLabel: config.title, // Use title as field label for custom sections
+        heading: config.heading,
+        fieldLabel: config.isCustom ? config.title : '', // Only custom sections use field label
         colSpan: config.colSpan || 1,
         color: config.color || '#013fac',
         iconName: config.iconName || 'Info',
+        isCustom: config.isCustom, // Track if this is a custom section
       });
       setShowEditModal(true);
     }
@@ -724,6 +759,7 @@ export function DivisionManager() {
         ? {
             ...c,
             title: data.title,
+            heading: data.heading,
             colSpan: data.colSpan,
             color: data.color,
             iconName: data.iconName,
@@ -864,7 +900,7 @@ export function DivisionManager() {
                           onConfigChange={handleSectionConfigChange}
                           onMove={(direction) => moveSection(idx, direction)}
                           onDelete={() => deleteSection(config.id)}
-                          onEdit={config.isCustom ? () => openEditModal(config.id) : undefined}
+                          onEdit={() => openEditModal(config.id)}
                           canMoveUp={idx > 0}
                           canMoveDown={idx < sectionConfigs.length - 1}
                         />

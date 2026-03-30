@@ -193,8 +193,8 @@ export function DivisionInfoSection({
               <MoveDown className="w-3 h-3" />
             </Button>
           )}
-          {/* Edit - only for custom sections */}
-          {onEdit && config.isCustom && (
+          {/* Edit - for all sections */}
+          {onEdit && (
             <Button
               onClick={onEdit}
               size="sm"
