@@ -15,6 +15,9 @@ export interface SectionConfig {
   order: number;
   isCustom?: boolean; // Custom sections added by user
   colSpan?: 1 | 2; // 1 = half-width, 2 = full-width (in 2-column layout)
+  color?: string; // Custom color for custom sections (e.g., '#013fac', '#DC2626')
+  iconName?: string; // Icon name for custom sections
+  deleted?: boolean; // Mark section as deleted (hidden from view)
 }
 
 export interface DivisionInfoField {
@@ -33,6 +36,7 @@ interface DivisionInfoSectionProps {
   onConfigChange: (config: SectionConfig) => void;
   onMove?: (direction: 'up' | 'down') => void;
   onDelete?: () => void;
+  onEdit?: () => void;
   canMoveUp?: boolean;
   canMoveDown?: boolean;
   children?: React.ReactNode;
@@ -46,6 +50,7 @@ export function DivisionInfoSection({
   onConfigChange,
   onMove,
   onDelete,
+  onEdit,
   canMoveUp = false,
   canMoveDown = false,
   children,
@@ -188,6 +193,18 @@ export function DivisionInfoSection({
               <MoveDown className="w-3 h-3" />
             </Button>
           )}
+          {/* Edit - only for custom sections */}
+          {onEdit && config.isCustom && (
+            <Button
+              onClick={onEdit}
+              size="sm"
+              variant="ghost"
+              className="h-7 w-7 p-0"
+              title="Edit section"
+            >
+              <Edit2 className="w-3 h-3 text-blue-600" />
+            </Button>
+          )}
           {/* Delete - all sections */}
           {onDelete && (
             <Button
@@ -238,6 +255,8 @@ export const CUSTOM_SECTION_TEMPLATE: SectionConfig = {
   order: 999,
   isCustom: true,
   colSpan: 1,
+  color: '#013fac',
+  iconName: 'Info',
 };
 
 // Default section configurations for different divisions

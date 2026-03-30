@@ -4,7 +4,7 @@ import { Button } from '../ui/button';
 import { Label } from '../ui/label';
 import { Textarea } from '../ui/textarea';
 import { Badge } from '../ui/badge';
-import { Save, AlertCircle, CheckCircle2, Loader2, Info, Calendar, Users, Award, Trophy, FileText, ArrowRightLeft, ExternalLink, Database, Trash2, Plus, Layout, Maximize2 } from 'lucide-react';
+import { Save, AlertCircle, CheckCircle2, Loader2, Info, Calendar, Users, Award, Trophy, FileText, ArrowRightLeft, ExternalLink, Database, Trash2, Plus, Layout, Maximize2, Edit, File, Flag, AlertTriangle, Zap, Star } from 'lucide-react';
 import { Input } from '../ui/input';
 import { Alert, AlertDescription } from '../ui/alert';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../ui/tabs';
@@ -104,6 +104,38 @@ function SportzSoftDataNotice({ title, description }: { title: string; descripti
   );
 }
 
+// Available icons for custom sections
+const AVAILABLE_ICONS = [
+  { name: 'Info', icon: Info, label: 'Info' },
+  { name: 'FileText', icon: FileText, label: 'Document' },
+  { name: 'Users', icon: Users, label: 'Users' },
+  { name: 'Calendar', icon: Calendar, label: 'Calendar' },
+  { name: 'Award', icon: Award, label: 'Award' },
+  { name: 'Trophy', icon: Trophy, label: 'Trophy' },
+  { name: 'Edit', icon: Edit, label: 'Edit' },
+  { name: 'File', icon: File, label: 'File' },
+  { name: 'Flag', icon: Flag, label: 'Flag' },
+  { name: 'AlertTriangle', icon: AlertTriangle, label: 'Alert' },
+  { name: 'Zap', icon: Zap, label: 'Lightning' },
+  { name: 'Star', icon: Star, label: 'Star' },
+];
+
+// Available RMLL colors
+const RMLL_COLORS = [
+  { name: 'Blue', value: '#013fac', bgClass: 'bg-[#013fac]', textClass: 'text-[#013fac]', labelBg: 'bg-blue-50' },
+  { name: 'Red', value: '#DC2626', bgClass: 'bg-[#DC2626]', textClass: 'text-[#DC2626]', labelBg: 'bg-red-50' },
+  { name: 'Instagram', value: '#E1306C', bgClass: 'bg-[#E1306C]', textClass: 'text-[#E1306C]', labelBg: 'bg-pink-50' },
+];
+
+interface EditSectionData {
+  sectionId: string;
+  title: string;
+  fieldLabel: string;
+  colSpan: 1 | 2;
+  color: string;
+  iconName: string;
+}
+
 // Add New Section Modal
 function AddSectionModal({
   isOpen,
@@ -112,23 +144,29 @@ function AddSectionModal({
 }: {
   isOpen: boolean;
   onClose: () => void;
-  onAdd: (title: string, fieldLabel: string, colSpan: 1 | 2) => void;
+  onAdd: (title: string, fieldLabel: string, colSpan: 1 | 2, color: string, iconName: string) => void;
 }) {
   const [title, setTitle] = useState('');
   const [fieldLabel, setFieldLabel] = useState('');
   const [colSpan, setColSpan] = useState<1 | 2>(1);
+  const [selectedColor, setSelectedColor] = useState(RMLL_COLORS[0].value);
+  const [selectedIcon, setSelectedIcon] = useState(AVAILABLE_ICONS[0].name);
 
   const handleAdd = () => {
     if (title.trim()) {
-      onAdd(title.trim(), fieldLabel.trim() || title.trim(), colSpan);
+      onAdd(title.trim(), fieldLabel.trim() || title.trim(), colSpan, selectedColor, selectedIcon);
       setTitle('');
       setFieldLabel('');
       setColSpan(1);
+      setSelectedColor(RMLL_COLORS[0].value);
+      setSelectedIcon(AVAILABLE_ICONS[0].name);
       onClose();
     }
   };
 
   if (!isOpen) return null;
+
+  const IconComponent = AVAILABLE_ICONS.find(i => i.name === selectedIcon)?.icon || Info;
 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
@@ -154,6 +192,51 @@ function AddSectionModal({
             />
           </div>
           <div>
+            <Label>Color</Label>
+            <div className="flex gap-2 mt-2 flex-wrap">
+              {RMLL_COLORS.map((color) => (
+                <button
+                  key={color.value}
+                  type="button"
+                  onClick={() => setSelectedColor(color.value)}
+                  className={`w-10 h-10 rounded-lg flex items-center justify-center transition-all ${
+                    selectedColor === color.value
+                      ? `${color.bgClass} text-white ring-2 ring-offset-2 ring-gray-400 scale-110 shadow-md`
+                      : `${color.bgClass} text-white/80 hover:opacity-100`
+                  }`}
+                  title={color.name}
+                >
+                  <div className="w-3 h-3 rounded-full bg-white/30"></div>
+                </button>
+              ))}
+            </div>
+            <p className="text-xs text-gray-500 mt-1">Selected: {RMLL_COLORS.find(c => c.value === selectedColor)?.name}</p>
+          </div>
+          <div>
+            <Label>Icon</Label>
+            <div className="flex gap-2 mt-2 flex-wrap">
+              {AVAILABLE_ICONS.map((icon) => {
+                const IconComponent = icon.icon;
+                return (
+                  <button
+                    key={icon.name}
+                    type="button"
+                    onClick={() => setSelectedIcon(icon.name)}
+                    className={`w-10 h-10 rounded-lg border flex items-center justify-center transition-all ${
+                      selectedIcon === icon.name
+                        ? `bg-[#013fac] text-white border-[#013fac] ring-2 ring-offset-1 ring-[#013fac] scale-110 shadow-md`
+                        : 'border-gray-300 hover:bg-gray-50 text-gray-500'
+                    }`}
+                    title={icon.label}
+                  >
+                    <IconComponent className="w-5 h-5" />
+                  </button>
+                );
+              })}
+            </div>
+            <p className="text-xs text-gray-500 mt-1">Selected: {AVAILABLE_ICONS.find(i => i.name === selectedIcon)?.label}</p>
+          </div>
+          <div>
             <Label>Layout</Label>
             <div className="flex gap-2 mt-2">
               <button
@@ -161,7 +244,7 @@ function AddSectionModal({
                 onClick={() => setColSpan(1)}
                 className={`flex-1 p-3 border rounded-lg text-sm font-medium transition-colors ${
                   colSpan === 1
-                    ? 'bg-purple-50 border-purple-500 text-purple-700'
+                    ? 'bg-purple-50 border-purple-500 text-purple-700 ring-2 ring-purple-300'
                     : 'border-gray-300 hover:bg-gray-50'
                 }`}
               >
@@ -175,7 +258,7 @@ function AddSectionModal({
                 onClick={() => setColSpan(2)}
                 className={`flex-1 p-3 border rounded-lg text-sm font-medium transition-colors ${
                   colSpan === 2
-                    ? 'bg-purple-50 border-purple-500 text-purple-700'
+                    ? 'bg-purple-50 border-purple-500 text-purple-700 ring-2 ring-purple-300'
                     : 'border-gray-300 hover:bg-gray-50'
                 }`}
               >
@@ -190,6 +273,164 @@ function AddSectionModal({
         <div className="p-4 border-t flex justify-end gap-2">
           <Button variant="outline" onClick={onClose}>Cancel</Button>
           <Button onClick={handleAdd}>Add Section</Button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// Edit Section Modal
+function EditSectionModal({
+  isOpen,
+  onClose,
+  onEdit,
+  initialData,
+}: {
+  isOpen: boolean;
+  onClose: () => void;
+  onEdit: (data: EditSectionData) => void;
+  initialData: EditSectionData | null;
+}) {
+  const [title, setTitle] = useState('');
+  const [fieldLabel, setFieldLabel] = useState('');
+  const [colSpan, setColSpan] = useState<1 | 2>(1);
+  const [selectedColor, setSelectedColor] = useState(RMLL_COLORS[0].value);
+  const [selectedIcon, setSelectedIcon] = useState(AVAILABLE_ICONS[0].name);
+
+  // Reset form when modal opens with new data
+  useEffect(() => {
+    if (initialData) {
+      setTitle(initialData.title);
+      setFieldLabel(initialData.fieldLabel);
+      setColSpan(initialData.colSpan);
+      setSelectedColor(initialData.color);
+      setSelectedIcon(initialData.iconName);
+    }
+  }, [initialData, isOpen]);
+
+  const handleSave = () => {
+    if (title.trim() && initialData) {
+      onEdit({
+        sectionId: initialData.sectionId,
+        title: title.trim(),
+        fieldLabel: fieldLabel.trim() || title.trim(),
+        colSpan,
+        color: selectedColor,
+        iconName: selectedIcon,
+      });
+      onClose();
+    }
+  };
+
+  if (!isOpen || !initialData) return null;
+
+  const IconComponent = AVAILABLE_ICONS.find(i => i.name === selectedIcon)?.icon || Info;
+
+  return (
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+      <div className="bg-white rounded-lg shadow-lg w-full max-w-md">
+        <div className="p-4 border-b">
+          <h3 className="text-lg font-semibold">Edit Section</h3>
+        </div>
+        <div className="p-4 space-y-4">
+          <div>
+            <Label>Section Title</Label>
+            <Input
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+              placeholder="e.g., Additional Rules"
+            />
+          </div>
+          <div>
+            <Label>Field Label</Label>
+            <Input
+              value={fieldLabel}
+              onChange={(e) => setFieldLabel(e.target.value)}
+              placeholder="e.g., Content"
+            />
+          </div>
+          <div>
+            <Label>Color</Label>
+            <div className="flex gap-2 mt-2 flex-wrap">
+              {RMLL_COLORS.map((color) => (
+                <button
+                  key={color.value}
+                  type="button"
+                  onClick={() => setSelectedColor(color.value)}
+                  className={`w-10 h-10 rounded-lg flex items-center justify-center transition-all ${
+                    selectedColor === color.value
+                      ? `${color.bgClass} text-white ring-2 ring-offset-2 ring-gray-400 scale-110 shadow-md`
+                      : `${color.bgClass} text-white/80 hover:opacity-100`
+                  }`}
+                  title={color.name}
+                >
+                  <div className="w-3 h-3 rounded-full bg-white/30"></div>
+                </button>
+              ))}
+            </div>
+            <p className="text-xs text-gray-500 mt-1">Selected: {RMLL_COLORS.find(c => c.value === selectedColor)?.name}</p>
+          </div>
+          <div>
+            <Label>Icon</Label>
+            <div className="flex gap-2 mt-2 flex-wrap">
+              {AVAILABLE_ICONS.map((icon) => {
+                const IconComponent = icon.icon;
+                return (
+                  <button
+                    key={icon.name}
+                    type="button"
+                    onClick={() => setSelectedIcon(icon.name)}
+                    className={`w-10 h-10 rounded-lg border flex items-center justify-center transition-all ${
+                      selectedIcon === icon.name
+                        ? `bg-[#013fac] text-white border-[#013fac] ring-2 ring-offset-1 ring-[#013fac] scale-110 shadow-md`
+                        : 'border-gray-300 hover:bg-gray-50 text-gray-500'
+                    }`}
+                    title={icon.label}
+                  >
+                    <IconComponent className="w-5 h-5" />
+                  </button>
+                );
+              })}
+            </div>
+            <p className="text-xs text-gray-500 mt-1">Selected: {AVAILABLE_ICONS.find(i => i.name === selectedIcon)?.label}</p>
+          </div>
+          <div>
+            <Label>Layout</Label>
+            <div className="flex gap-2 mt-2">
+              <button
+                type="button"
+                onClick={() => setColSpan(1)}
+                className={`flex-1 p-3 border rounded-lg text-sm font-medium transition-colors ${
+                  colSpan === 1
+                    ? 'bg-purple-50 border-purple-500 text-purple-700 ring-2 ring-purple-300'
+                    : 'border-gray-300 hover:bg-gray-50'
+                }`}
+              >
+                <div className="flex flex-col items-center gap-1">
+                  <Layout className="w-5 h-5" />
+                  <span>Half Width</span>
+                </div>
+              </button>
+              <button
+                type="button"
+                onClick={() => setColSpan(2)}
+                className={`flex-1 p-3 border rounded-lg text-sm font-medium transition-colors ${
+                  colSpan === 2
+                    ? 'bg-purple-50 border-purple-500 text-purple-700 ring-2 ring-purple-300'
+                    : 'border-gray-300 hover:bg-gray-50'
+                }`}
+              >
+                <div className="flex flex-col items-center gap-1">
+                  <Maximize2 className="w-5 h-5" />
+                  <span>Full Width</span>
+                </div>
+              </button>
+            </div>
+          </div>
+        </div>
+        <div className="p-4 border-t flex justify-end gap-2">
+          <Button variant="outline" onClick={onClose}>Cancel</Button>
+          <Button onClick={handleSave}>Save Changes</Button>
         </div>
       </div>
     </div>
@@ -220,6 +461,10 @@ export function DivisionManager() {
 
   // Add section modal
   const [showAddModal, setShowAddModal] = useState(false);
+
+  // Edit section modal
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [editingSection, setEditingSection] = useState<EditSectionData | null>(null);
 
   // Initialize section configs when division changes
   useEffect(() => {
@@ -257,17 +502,22 @@ export function DivisionManager() {
         if (data.sectionConfigs) {
           try {
             const parsedConfigs = JSON.parse(data.sectionConfigs) as SectionConfig[];
-            // Merge with defaults, preserving custom sections
+            // Merge with defaults, preserving custom sections and deleted status
             const defaultConfigs = getDefaultSectionConfigs(selectedDivision);
             const mergedConfigs: SectionConfig[] = [];
 
             // Add default sections with saved config
             defaultConfigs.forEach(defaultConfig => {
               const savedConfig = parsedConfigs.find(c => c.id === defaultConfig.id);
-              mergedConfigs.push(savedConfig ? { ...defaultConfig, ...savedConfig } : defaultConfig);
+              // If saved config exists and is marked deleted, mark default as deleted
+              if (savedConfig) {
+                mergedConfigs.push({ ...defaultConfig, ...savedConfig });
+              } else {
+                mergedConfigs.push(defaultConfig);
+              }
             });
 
-            // Add custom sections
+            // Add custom sections (including deleted ones, they'll be filtered when rendering)
             parsedConfigs.filter(c => c.isCustom && !defaultConfigs.find(d => d.id === c.id))
               .forEach(customConfig => {
                 mergedConfigs.push(customConfig);
@@ -428,11 +678,13 @@ export function DivisionManager() {
 
   const deleteSection = (sectionId: string) => {
     if (window.confirm('Are you sure you want to delete this section?')) {
-      setSectionConfigs(sectionConfigs.filter(c => c.id !== sectionId));
+      setSectionConfigs(sectionConfigs.map(c =>
+        c.id === sectionId ? { ...c, deleted: true } : c
+      ));
     }
   };
 
-  const addCustomSection = (title: string, fieldLabel: string, colSpan: 1 | 2 = 1) => {
+  const addCustomSection = (title: string, fieldLabel: string, colSpan: 1 | 2 = 1, color: string = '#013fac', iconName: string = 'Info') => {
     const newId = `custom-${Date.now()}`;
     const newSection: SectionConfig = {
       id: newId,
@@ -443,10 +695,43 @@ export function DivisionManager() {
       order: sectionConfigs.length,
       isCustom: true,
       colSpan,
+      color,
+      iconName,
     };
     setSectionConfigs([...sectionConfigs, newSection]);
     // Initialize the field value
     setFieldValues({ ...fieldValues, [newId]: '' });
+  };
+
+  const openEditModal = (sectionId: string) => {
+    const config = sectionConfigs.find(c => c.id === sectionId);
+    if (config && config.isCustom) {
+      setEditingSection({
+        sectionId: config.id,
+        title: config.title,
+        fieldLabel: config.title, // Use title as field label for custom sections
+        colSpan: config.colSpan || 1,
+        color: config.color || '#013fac',
+        iconName: config.iconName || 'Info',
+      });
+      setShowEditModal(true);
+    }
+  };
+
+  const editSection = (data: EditSectionData) => {
+    setSectionConfigs(sectionConfigs.map(c =>
+      c.id === data.sectionId
+        ? {
+            ...c,
+            title: data.title,
+            colSpan: data.colSpan,
+            color: data.color,
+            iconName: data.iconName,
+          }
+        : c
+    ));
+    setShowEditModal(false);
+    setEditingSection(null);
   };
 
   const isEditableTab = !['drafts', 'protected-list', 'transactions'].includes(activeTab);
@@ -559,6 +844,7 @@ export function DivisionManager() {
               {/* Configurable Sections */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {sectionConfigs
+                  .filter(c => !c.deleted)
                   .sort((a, b) => a.order - b.order)
                   .map((config, idx) => {
                     const fields = SECTION_FIELDS[config.id] || [];
@@ -578,6 +864,7 @@ export function DivisionManager() {
                           onConfigChange={handleSectionConfigChange}
                           onMove={(direction) => moveSection(idx, direction)}
                           onDelete={() => deleteSection(config.id)}
+                          onEdit={config.isCustom ? () => openEditModal(config.id) : undefined}
                           canMoveUp={idx > 0}
                           canMoveDown={idx < sectionConfigs.length - 1}
                         />
@@ -706,6 +993,17 @@ export function DivisionManager() {
         isOpen={showAddModal}
         onClose={() => setShowAddModal(false)}
         onAdd={addCustomSection}
+      />
+
+      {/* Edit Section Modal */}
+      <EditSectionModal
+        isOpen={showEditModal}
+        onClose={() => {
+          setShowEditModal(false);
+          setEditingSection(null);
+        }}
+        onEdit={editSection}
+        initialData={editingSection}
       />
     </div>
   );

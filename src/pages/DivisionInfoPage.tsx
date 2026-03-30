@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Header } from '../components/Header';
-import { ChevronRight, ChevronDown, Info, Calendar, Users, Award, Trophy, FileText, ArrowRightLeft, Loader2 } from 'lucide-react';
+import { ChevronRight, ChevronDown, Info, Calendar, Users, Award, Trophy, FileText, ArrowRightLeft, Loader2, Edit, File, Flag, AlertTriangle, Zap, Star } from 'lucide-react';
 import { allPossibleDivisions } from '../contexts/DivisionContext';
 import { useDivision } from '../contexts/DivisionContext';
 import { useNavigation } from '../contexts/NavigationContext';
@@ -28,6 +28,9 @@ interface SectionConfig {
   order: number;
   isCustom?: boolean;
   colSpan?: 1 | 2;
+  color?: string;
+  iconName?: string;
+  deleted?: boolean;
 }
 
 interface DivisionData {
@@ -93,7 +96,6 @@ export function DivisionInfoPage() {
   const [divisionData, setDivisionData] = useState<DivisionData>({});
   const [sectionConfigs, setSectionConfigs] = useState<SectionConfig[]>([]);
   const [loading, setLoading] = useState(false);
-  const [collapsedSections, setCollapsedSections] = useState<Set<string>>(new Set());
 
   // Default section configurations for different divisions
   const getDefaultSectionConfigs = (divisionName: string): SectionConfig[] => {
@@ -177,7 +179,7 @@ export function DivisionInfoPage() {
   };
 
   // Helper to get section icon and color
-  const getSectionProps = (sectionId: string) => {
+  const getSectionProps = (sectionId: string, config?: SectionConfig) => {
     const props: Record<string, { icon: any; color: string; label?: string }> = {
       tryouts: { icon: Info, color: '#013fac' },
       teams: { icon: Users, color: '#013fac' },
@@ -207,6 +209,28 @@ export function DivisionInfoPage() {
       freeAgentsAMF: { icon: Users, color: '#DC2626' },
       returningPlayers: { icon: Users, color: '#013fac' },
     };
+
+    // For custom sections, use their configured icon and color
+    if (config?.isCustom) {
+      const iconMap: Record<string, any> = {
+        Info,
+        FileText,
+        Users,
+        Calendar,
+        Award,
+        Trophy,
+        Edit,
+        File,
+        Flag,
+        AlertTriangle,
+        Zap,
+        Star,
+      };
+      const icon = iconMap[config.iconName || 'Info'] || Info;
+      const color = config.color || '#013fac';
+      return { icon, color };
+    }
+
     return props[sectionId] || { icon: Info, color: '#013fac' };
   };
 
@@ -220,7 +244,7 @@ export function DivisionInfoPage() {
 
   // Helper to get section display title
   const getSectionTitle = (config: SectionConfig): string => {
-    const props = getSectionProps(config.id);
+    const props = getSectionProps(config.id, config);
     return props.label || config.heading || config.title;
   };
 
@@ -233,15 +257,10 @@ export function DivisionInfoPage() {
   const toggleSectionCollapse = (sectionId: string) => {
     const config = sectionConfigs.find(c => c.id === sectionId);
     if (!config || !config.collapsible) return;
-    setCollapsedSections(prev => {
-      const newSet = new Set(prev);
-      if (newSet.has(sectionId)) {
-        newSet.delete(sectionId);
-      } else {
-        newSet.add(sectionId);
-      }
-      return newSet;
-    });
+    // Update the section config's collapsed state
+    setSectionConfigs(prev => prev.map(c =>
+      c.id === sectionId ? { ...c, collapsed: !(c.collapsed ?? false) } : c
+    ));
   };
 
   const isInactiveDivision = INACTIVE_DIVISIONS.includes(selectedDivision);
@@ -559,10 +578,11 @@ export function DivisionInfoPage() {
                 {/* Info Grid - Dynamic sections based on config */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   {sectionConfigs
+                    .filter(c => !c.deleted)
                     .sort((a, b) => a.order - b.order)
                     .map((config) => {
                       const sectionValue = getSectionValue(config.id);
-                      const { icon: Icon, color } = getSectionProps(config.id);
+                      const { icon: Icon, color } = getSectionProps(config.id, config);
                       const isCollapsed = isSectionCollapsed(config.id);
 
                       // Don't render if no value (except for custom sections)
