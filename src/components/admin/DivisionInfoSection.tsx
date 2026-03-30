@@ -1,8 +1,8 @@
-import { useState, useEffect } from 'react';
+import { useState, useRef } from 'react';
 import { Card } from '../ui/card';
 import { Label } from '../ui/label';
 import { Textarea } from '../ui/textarea';
-import { ChevronUp, ChevronDown, Edit2, Check, X, AlertCircle } from 'lucide-react';
+import { ChevronUp, ChevronDown, Edit2, Check, X, AlertCircle, Plus, Trash2 } from 'lucide-react';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
 
@@ -13,6 +13,7 @@ export interface SectionConfig {
   collapsible: boolean;
   collapsed?: boolean;
   order: number;
+  isCustom?: boolean; // Custom sections added by user
 }
 
 export interface DivisionInfoField {
@@ -30,6 +31,7 @@ interface DivisionInfoSectionProps {
   onChange: (fieldId: string, value: string) => void;
   onConfigChange: (config: SectionConfig) => void;
   onMove?: (direction: 'up' | 'down') => void;
+  onDelete?: () => void;
   canMoveUp?: boolean;
   canMoveDown?: boolean;
   children?: React.ReactNode;
@@ -42,16 +44,13 @@ export function DivisionInfoSection({
   onChange,
   onConfigChange,
   onMove,
+  onDelete,
   canMoveUp = false,
   canMoveDown = false,
   children,
 }: DivisionInfoSectionProps) {
   const [editingHeading, setEditingHeading] = useState(false);
   const [headingValue, setHeadingValue] = useState(config.heading || '');
-
-  useEffect(() => {
-    setHeadingValue(config.heading || '');
-  }, [config.heading]);
 
   const handleSaveHeading = () => {
     onConfigChange({
@@ -102,9 +101,12 @@ export function DivisionInfoSection({
               {displayHeading}
             </span>
           )}
+          {config.isCustom && (
+            <span className="text-xs bg-purple-100 text-purple-700 px-2 py-0.5 rounded-full">Custom</span>
+          )}
         </div>
         <div className="flex items-center gap-1">
-          {config.heading !== undefined && (
+          {config.heading !== undefined && !editingHeading && (
             <Button
               onClick={() => setEditingHeading(true)}
               size="sm"
@@ -157,6 +159,17 @@ export function DivisionInfoSection({
               <ChevronDown className="w-3 h-3" />
             </Button>
           )}
+          {onDelete && config.isCustom && (
+            <Button
+              onClick={onDelete}
+              size="sm"
+              variant="ghost"
+              className="h-7 w-7 p-0"
+              title="Delete section"
+            >
+              <Trash2 className="w-3 h-3 text-red-500" />
+            </Button>
+          )}
         </div>
       </div>
 
@@ -186,82 +199,91 @@ export function DivisionInfoSection({
   );
 }
 
+// Custom section template for adding new sections
+export const CUSTOM_SECTION_TEMPLATE: SectionConfig = {
+  id: '',
+  title: 'New Section',
+  collapsible: true,
+  collapsed: false,
+  order: 999,
+  isCustom: true,
+};
+
 // Default section configurations for different divisions
 export const getDefaultSectionConfigs = (divisionName: string): SectionConfig[] => {
   const common: SectionConfig[] = [
-    { id: 'description', title: 'Division Description', collapsible: true, collapsed: false, order: 0 },
-    { id: 'teams', title: 'Teams', collapsible: true, collapsed: false, order: 1 },
-    { id: 'playerAges', title: 'Player Ages', collapsible: true, collapsed: false, order: 2 },
-    { id: 'graduatingDraft', title: 'Graduating Junior Entry Draft', collapsible: true, collapsed: false, order: 3 },
-    { id: 'playingRights', title: 'Playing Rights', collapsible: true, collapsed: false, order: 4 },
-    { id: 'minGames', title: 'Minimum Games for Playoff Eligibility', collapsible: true, collapsed: false, order: 5 },
-    { id: 'outOfProvince', title: 'Out of Province Players', collapsible: true, collapsed: false, order: 6 },
-    { id: 'outOfCountry', title: 'Out of Country Players', collapsible: true, collapsed: false, order: 7 },
+    { id: 'teams', title: 'Teams', collapsible: true, collapsed: false, order: 0 },
+    { id: 'playerAges', title: 'Player Ages', collapsible: true, collapsed: false, order: 1 },
+    { id: 'graduatingDraft', title: 'Graduating Junior Entry Draft', collapsible: true, collapsed: false, order: 2 },
+    { id: 'playingRights', title: 'Playing Rights', collapsible: true, collapsed: false, order: 3 },
+    { id: 'minGames', title: 'Minimum Games for Playoff Eligibility', collapsible: true, collapsed: false, order: 4 },
+    { id: 'outOfProvince', title: 'Out of Province Players', collapsible: true, collapsed: false, order: 5 },
+    { id: 'outOfCountry', title: 'Out of Country Players', collapsible: true, collapsed: false, order: 6 },
   ];
 
   if (['Senior B', 'Senior C', 'Junior A', 'Junior B Tier I', 'Junior B Tier II', 'Junior B Tier III'].includes(divisionName)) {
     return [
       ...common,
-      { id: 'tryouts', title: 'Tryouts', collapsible: true, collapsed: false, order: 8 },
+      { id: 'tryouts', title: 'Tryouts', collapsible: true, collapsed: false, order: 7 },
     ];
   }
 
   if (['Senior B', 'Senior C', 'Junior A', 'Junior B Tier I', 'Junior B Tier II'].includes(divisionName)) {
     return [
       ...common,
-      { id: 'tryouts', title: 'Tryouts', collapsible: true, collapsed: false, order: 8 },
-      { id: 'regularSeasonStandings', title: 'Regular Season Standings', collapsible: true, collapsed: false, order: 9 },
+      { id: 'tryouts', title: 'Tryouts', collapsible: true, collapsed: false, order: 7 },
+      { id: 'regularSeasonStandings', title: 'Regular Season Standings', collapsible: true, collapsed: false, order: 8 },
     ];
   }
 
   if (['Senior B', 'Senior C', 'Junior B Tier I', 'Junior B Tier II', 'Junior B Tier III'].includes(divisionName)) {
     return [
       ...common,
-      { id: 'tryouts', title: 'Tryouts', collapsible: true, collapsed: false, order: 8 },
-      { id: 'otherJurisdiction', title: 'Other Jurisdiction Players', collapsible: true, collapsed: false, order: 9 },
-      { id: 'protectedList', title: 'Protected List', collapsible: true, collapsed: false, order: 10 },
-      { id: 'draftedProtectedPlayers', title: 'Drafted Protected Players', collapsible: true, collapsed: false, order: 11 },
-      { id: 'freeAgent', title: 'Free Agent', collapsible: true, collapsed: false, order: 12 },
-      { id: 'firstYearRegistration', title: 'First Year Registration', collapsible: true, collapsed: false, order: 13 },
+      { id: 'tryouts', title: 'Tryouts', collapsible: true, collapsed: false, order: 7 },
+      { id: 'otherJurisdiction', title: 'Other Jurisdiction Players', collapsible: true, collapsed: false, order: 8 },
+      { id: 'protectedList', title: 'Protected List', collapsible: true, collapsed: false, order: 9 },
+      { id: 'draftedProtectedPlayers', title: 'Drafted Protected Players', collapsible: true, collapsed: false, order: 10 },
+      { id: 'freeAgent', title: 'Free Agent', collapsible: true, collapsed: false, order: 11 },
+      { id: 'firstYearRegistration', title: 'First Year Registration', collapsible: true, collapsed: false, order: 12 },
     ];
   }
 
   if (divisionName === 'Junior B Tier I') {
     return [
       ...common,
-      { id: 'tryouts', title: 'Tryouts', collapsible: true, collapsed: false, order: 8 },
-      { id: 'otherJurisdiction', title: 'Other Jurisdiction Players', collapsible: true, collapsed: false, order: 9 },
-      { id: 'regularSeasonStandings', title: 'Regular Season Standings', collapsible: true, collapsed: false, order: 10 },
-      { id: 'northGraduatingDraft', title: 'North Graduating Draft', collapsible: true, collapsed: false, order: 11 },
-      { id: 'centralGraduatingDraft', title: 'Central Graduating Draft', collapsible: true, collapsed: false, order: 12 },
-      { id: 'southGraduatingDraft', title: 'South Graduating Draft', collapsible: true, collapsed: false, order: 13 },
-      { id: 'protectedList', title: 'Protected List', collapsible: true, collapsed: false, order: 14 },
-      { id: 'draftedProtectedPlayers', title: 'Drafted Protected Players', collapsible: true, collapsed: false, order: 15 },
-      { id: 'freeAgent', title: 'Free Agent', collapsible: true, collapsed: false, order: 16 },
-      { id: 'firstYearRegistration', title: 'First Year Registration', collapsible: true, collapsed: false, order: 17 },
+      { id: 'tryouts', title: 'Tryouts', collapsible: true, collapsed: false, order: 7 },
+      { id: 'otherJurisdiction', title: 'Other Jurisdiction Players', collapsible: true, collapsed: false, order: 8 },
+      { id: 'regularSeasonStandings', title: 'Regular Season Standings', collapsible: true, collapsed: false, order: 9 },
+      { id: 'northGraduatingDraft', title: 'North Graduating Draft', collapsible: true, collapsed: false, order: 10 },
+      { id: 'centralGraduatingDraft', title: 'Central Graduating Draft', collapsible: true, collapsed: false, order: 11 },
+      { id: 'southGraduatingDraft', title: 'South Graduating Draft', collapsible: true, collapsed: false, order: 12 },
+      { id: 'protectedList', title: 'Protected List', collapsible: true, collapsed: false, order: 13 },
+      { id: 'draftedProtectedPlayers', title: 'Drafted Protected Players', collapsible: true, collapsed: false, order: 14 },
+      { id: 'freeAgent', title: 'Free Agent', collapsible: true, collapsed: false, order: 15 },
+      { id: 'firstYearRegistration', title: 'First Year Registration', collapsible: true, collapsed: false, order: 16 },
     ];
   }
 
   if (divisionName === 'Alberta Major Female') {
     return [
       ...common,
-      { id: 'instagram', title: 'Instagram', collapsible: true, collapsed: false, order: 8 },
-      { id: 'draftInfo', title: 'Draft Info', collapsible: true, collapsed: false, order: 9 },
-      { id: 'protectedListInfo', title: 'Protected List Info', collapsible: true, collapsed: false, order: 10 },
-      { id: 'calgaryFreeAgents', title: 'Calgary Free Agents', collapsible: true, collapsed: false, order: 11 },
-      { id: 'stAlbertDrillers', title: 'St. Albert Drillers', collapsible: true, collapsed: false, order: 12 },
-      { id: 'sherwoodParkTitans', title: 'Sherwood Park Titans', collapsible: true, collapsed: false, order: 13 },
-      { id: 'capitalRegionSaints', title: 'Capital Region Saints', collapsible: true, collapsed: false, order: 14 },
-      { id: 'redDeerRiot', title: 'Red Deer Riot', collapsible: true, collapsed: false, order: 15 },
-      { id: 'freeAgentsAMF', title: 'Free Agents', collapsible: true, collapsed: false, order: 16 },
-      { id: 'returningPlayers', title: 'Returning Players', collapsible: true, collapsed: false, order: 17 },
+      { id: 'instagram', title: 'Instagram', collapsible: true, collapsed: false, order: 7 },
+      { id: 'draftInfo', title: 'Draft Info', collapsible: true, collapsed: false, order: 8 },
+      { id: 'protectedListInfo', title: 'Protected List Info', collapsible: true, collapsed: false, order: 9 },
+      { id: 'calgaryFreeAgents', title: 'Calgary Free Agents', collapsible: true, collapsed: false, order: 10 },
+      { id: 'stAlbertDrillers', title: 'St. Albert Drillers', collapsible: true, collapsed: false, order: 11 },
+      { id: 'sherwoodParkTitans', title: 'Sherwood Park Titans', collapsible: true, collapsed: false, order: 12 },
+      { id: 'capitalRegionSaints', title: 'Capital Region Saints', collapsible: true, collapsed: false, order: 13 },
+      { id: 'redDeerRiot', title: 'Red Deer Riot', collapsible: true, collapsed: false, order: 14 },
+      { id: 'freeAgentsAMF', title: 'Free Agents', collapsible: true, collapsed: false, order: 15 },
+      { id: 'returningPlayers', title: 'Returning Players', collapsible: true, collapsed: false, order: 16 },
     ];
   }
 
   if (divisionName === 'Alberta Major Senior Female') {
     return [
       ...common,
-      { id: 'instagram', title: 'Instagram', collapsible: true, collapsed: false, order: 8 },
+      { id: 'instagram', title: 'Instagram', collapsible: true, collapsed: false, order: 7 },
     ];
   }
 
@@ -270,9 +292,6 @@ export const getDefaultSectionConfigs = (divisionName: string): SectionConfig[] 
 
 // Field definitions for each section
 export const SECTION_FIELDS: Record<string, DivisionInfoField[]> = {
-  description: [
-    { id: 'divisionDescription', label: 'Division Description', placeholder: 'Enter a description of this division - its history, values, level of play, etc.', rows: 8 },
-  ],
   teams: [
     { id: 'teams', label: 'Teams', placeholder: 'e.g., 8 teams compete in the Senior B division.', rows: 2 },
   ],

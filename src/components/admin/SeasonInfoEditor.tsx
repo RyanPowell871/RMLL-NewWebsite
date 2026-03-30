@@ -23,6 +23,7 @@ interface Scenario {
 }
 
 interface SeasonInfoData {
+  __metadata?: Record<string, { title?: string; description?: string; heading?: string; collapsible?: boolean; collapsed?: boolean }>;
   drafts?: {
     north?: {
       title: string;
@@ -62,11 +63,14 @@ interface SeasonInfoData {
     travelDays: string[];
   };
   notes?: string;
+  // Dynamic sections can be added
+  [key: string]: any;
 }
 
 interface SeasonInfoEditorProps {
   value: string;
   onChange: (value: string) => void;
+  divisionName?: string;
 }
 
 function ScenarioEditor({
@@ -286,7 +290,7 @@ function ScenarioEditor({
   );
 }
 
-export function SeasonInfoEditor({ value, onChange }: SeasonInfoEditorProps) {
+export function SeasonInfoEditor({ value, onChange, divisionName = '' }: SeasonInfoEditorProps) {
   const [mode, setMode] = useState<'visual' | 'json' | 'preview'>('visual');
   const [jsonValue, setJsonValue] = useState(value);
   const [jsonError, setJsonError] = useState<string | null>(null);
@@ -324,26 +328,51 @@ export function SeasonInfoEditor({ value, onChange }: SeasonInfoEditorProps) {
     }
   };
 
-  // Get tab metadata
+  // Get available tabs based on data (dynamic)
+  const dataKeys = Object.keys(data).filter(key =>
+    key !== '__metadata' &&
+    typeof data[key] === 'object' &&
+    data[key] !== null &&
+    ['drafts', 'regularSeason', 'playoffs', 'provincial', 'presidentsCup', 'notes'].includes(key)
+  );
+
+  const defaultTab = dataKeys.length > 0 ? dataKeys[0] : 'drafts';
+
+  // Helper to get tab label
+  const getTabLabel = (key: string): string => {
+    const metadata = data.__metadata?.[key];
+    if (metadata?.title) return metadata.title;
+    switch (key) {
+      case 'drafts': return 'Drafts';
+      case 'regularSeason': return 'Regular Season';
+      case 'playoffs': return 'Playoffs';
+      case 'provincial': return 'Provincial';
+      case 'presidentsCup': return 'Presidents Cup';
+      case 'notes': return 'Notes';
+      default: return key.charAt(0).toUpperCase() + key.slice(1);
+    }
+  };
+
+  // Helper to get tab description
+  const getTabDescription = (key: string): string => {
+    const metadata = data.__metadata?.[key];
+    if (metadata?.description) return metadata.description;
+    switch (key) {
+      case 'drafts': return 'Draft schedules and information';
+      case 'regularSeason': return 'Regular season schedule details';
+      case 'playoffs': return 'Playoff format and schedule scenarios';
+      case 'provincial': return 'Provincial format and schedule scenarios';
+      case 'presidentsCup': return 'Presidents Cup tournament details';
+      case 'notes': return 'Important notes and reminders';
+      default: return 'Information';
+    }
+  };
+
   const getTabMetadata = (key: string) => data.__metadata?.[key] || {};
   const updateTabMetadata = (key: string, field: string, value: any) => {
     const metadata = data.__metadata || {};
     metadata[key] = { ...metadata[key], [field]: value };
     updateData({ ...data, __metadata: metadata });
-  };
-
-  const getTabLabel = (key: string) => {
-    const metadata = getTabMetadata(key);
-    if (metadata.title) return metadata.title;
-    switch (key) {
-      case 'drafts': return 'Drafts';
-      case 'regular': return 'Regular Season';
-      case 'playoffs': return 'Playoffs';
-      case 'provincial': return 'Provincial';
-      case 'presidents': return 'Presidents Cup';
-      case 'notes': return 'Notes';
-      default: return key;
-    }
   };
 
   const isTabCollapsed = (key: string) => {
@@ -355,8 +384,6 @@ export function SeasonInfoEditor({ value, onChange }: SeasonInfoEditorProps) {
     const metadata = getTabMetadata(key);
     return metadata.collapsible ?? true;
   };
-
-  const availableTabs = ['drafts', 'regular', 'playoffs', 'provincial', 'presidents', 'notes'];
 
   return (
     <div className="space-y-4">
@@ -391,466 +418,484 @@ export function SeasonInfoEditor({ value, onChange }: SeasonInfoEditorProps) {
 
       {mode === 'visual' && (
         <div className="space-y-6">
-          <Alert>
-            <AlertCircle className="w-4 w-4" />
-            <AlertDescription>
-              Use the visual editor to build structured season information. This will be displayed as beautiful cards on the Division Info page.
-            </AlertDescription>
-          </Alert>
+          {dataKeys.length === 0 && (
+            <Alert>
+              <AlertCircle className="h-4 h-4" />
+              <AlertDescription>
+                No season info data found. Use the JSON Editor to add data, or it will be created automatically when you save.
+              </AlertDescription>
+            </Alert>
+          )}
 
-          <Tabs defaultValue="drafts" className="w-full">
-            <TabsList className="grid grid-cols-3 lg:grid-cols-6">
-              {availableTabs.map(tab => (
-                <TabsTrigger key={tab} value={tab}>
-                  {getTabLabel(tab)}
-                </TabsTrigger>
-              ))}
-            </TabsList>
+          {dataKeys.length > 0 && (
+            <Tabs defaultValue={defaultTab} className="w-full">
+              <TabsList className="grid grid-cols-3 lg:grid-cols-6">
+                {dataKeys.map(key => (
+                  <TabsTrigger key={key} value={key}>
+                    {getTabLabel(key)}
+                  </TabsTrigger>
+                ))}
+              </TabsList>
 
-            {/* Drafts Tab */}
-            <TabsContent value="drafts" className="space-y-4">
-              <Card className="p-4">
-                <div className="flex items-center justify-between mb-3">
-                  <h4 className="font-bold">North Draft</h4>
-                  <div className="flex items-center gap-1">
-                    <Button
-                      onClick={() => setEditingHeading('drafts-north')}
-                      size="sm"
-                      variant="ghost"
-                      className="h-7 w-7 p-0"
-                      title="Edit heading"
-                    >
-                      <Edit2 className="w-3 h-3 text-gray-500" />
-                    </Button>
-                  </div>
-                </div>
-                {editingHeading === 'drafts-north' ? (
-                  <div className="flex items-center gap-2 mb-3">
-                    <Input
-                      value={getTabMetadata('drafts').northHeading || ''}
-                      onChange={(e) => {}}
-                      placeholder="Custom heading (optional)"
-                      className="h-7 w-48"
-                    />
-                    <Button
-                      onClick={() => {
-                        updateTabMetadata('drafts', 'northHeading', '');
-                        setEditingHeading(null);
-                      }}
-                      size="sm"
-                      variant="ghost"
-                      className="h-7 w-7 p-0"
-                    >
-                      <Check className="w-3 h-3 text-green-600" />
-                    </Button>
-                    <Button
-                      onClick={() => setEditingHeading(null)}
-                      size="sm"
-                      variant="ghost"
-                      className="h-7 w-7 p-0"
-                    >
-                      <X className="w-3 h-3 text-red-600" />
-                    </Button>
-                  </div>
-                ) : getTabMetadata('drafts').northHeading ? (
-                  <p className="text-sm text-gray-600 mb-3 italic">{getTabMetadata('drafts').northHeading}</p>
-                ) : null}
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <Label className="text-xs">Title</Label>
-                    <Input
-                      value={data.drafts?.north?.title || ''}
-                      onChange={(e) => updateData({
-                        ...data,
-                        drafts: {
-                          ...data.drafts,
-                          north: { ...data.drafts?.north!, title: e.target.value }
-                        }
-                      })}
-                      placeholder="North Draft"
-                    />
-                  </div>
-                  <div>
-                    <Label className="text-xs">Subtitle</Label>
-                    <Input
-                      value={data.drafts?.north?.subtitle || ''}
-                      onChange={(e) => updateData({
-                        ...data,
-                        drafts: {
-                          ...data.drafts,
-                          north: { ...data.drafts?.north!, subtitle: e.target.value }
-                        }
-                      })}
-                      placeholder="(Teams)"
-                    />
-                  </div>
-                  <div>
-                    <Label className="text-xs">Date</Label>
-                    <Input
-                      value={data.drafts?.north?.date || ''}
-                      onChange={(e) => updateData({
-                        ...data,
-                        drafts: {
-                          ...data.drafts,
-                          north: { ...data.drafts?.north!, date: e.target.value }
-                        }
-                      })}
-                      placeholder="Wednesday, February 4, 2026"
-                    />
-                  </div>
-                  <div>
-                    <Label className="text-xs">Time</Label>
-                    <Input
-                      value={data.drafts?.north?.time || ''}
-                      onChange={(e) => updateData({
-                        ...data,
-                        drafts: {
-                          ...data.drafts,
-                          north: { ...data.drafts?.north!, time: e.target.value }
-                        }
-                      })}
-                      placeholder="7:00 PM"
-                    />
-                  </div>
-                  <div className="col-span-2">
-                    <Label className="text-xs">Location (optional)</Label>
-                    <Input
-                      value={data.drafts?.north?.location || ''}
-                      onChange={(e) => updateData({
-                        ...data,
-                        drafts: {
-                          ...data.drafts,
-                          north: { ...data.drafts?.north!, location: e.target.value }
-                        }
-                      })}
-                      placeholder="Local Eatery Sherwood..."
-                    />
-                  </div>
-                  <div className="col-span-2">
-                    <Label className="text-xs">Notes (optional)</Label>
-                    <Input
-                      value={data.drafts?.north?.notes || ''}
-                      onChange={(e) => updateData({
-                        ...data,
-                        drafts: {
-                          ...data.drafts,
-                          north: { ...data.drafts?.north!, notes: e.target.value }
-                        }
-                      })}
-                      placeholder="Players welcome to attend..."
-                    />
-                  </div>
-                </div>
-              </Card>
+              {dataKeys.map(key => {
+                const metadata = getTabMetadata(key);
+                const isCollapsed = isTabCollapsed(key);
+                const isCollapsible = isTabCollapsible(key);
 
-              <Card className="p-4">
-                <div className="flex items-center justify-between mb-3">
-                  <h4 className="font-bold">South Draft</h4>
-                  <div className="flex items-center gap-1">
-                    <Button
-                      onClick={() => setEditingHeading('drafts-south')}
-                      size="sm"
-                      variant="ghost"
-                      className="h-7 w-7 p-0"
-                      title="Edit heading"
-                    >
-                      <Edit2 className="w-3 h-3 text-gray-500" />
-                    </Button>
-                  </div>
-                </div>
-                {editingHeading === 'drafts-south' ? (
-                  <div className="flex items-center gap-2 mb-3">
-                    <Input
-                      value={getTabMetadata('drafts').southHeading || ''}
-                      onChange={(e) => {}}
-                      placeholder="Custom heading (optional)"
-                      className="h-7 w-48"
-                    />
-                    <Button
-                      onClick={() => {
-                        updateTabMetadata('drafts', 'southHeading', '');
-                        setEditingHeading(null);
-                      }}
-                      size="sm"
-                      variant="ghost"
-                      className="h-7 w-7 p-0"
-                    >
-                      <Check className="w-3 h-3 text-green-600" />
-                    </Button>
-                    <Button
-                      onClick={() => setEditingHeading(null)}
-                      size="sm"
-                      variant="ghost"
-                      className="h-7 w-7 p-0"
-                    >
-                      <X className="w-3 h-3 text-red-600" />
-                    </Button>
-                  </div>
-                ) : getTabMetadata('drafts').southHeading ? (
-                  <p className="text-sm text-gray-600 mb-3 italic">{getTabMetadata('drafts').southHeading}</p>
-                ) : null}
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <Label className="text-xs">Title</Label>
-                    <Input
-                      value={data.drafts?.south?.title || ''}
-                      onChange={(e) => updateData({
-                        ...data,
-                        drafts: {
-                          ...data.drafts,
-                          south: { ...data.drafts?.south!, title: e.target.value }
-                        }
-                      })}
-                      placeholder="South Draft"
-                    />
-                  </div>
-                  <div>
-                    <Label className="text-xs">Subtitle</Label>
-                    <Input
-                      value={data.drafts?.south?.subtitle || ''}
-                      onChange={(e) => updateData({
-                        ...data,
-                        drafts: {
-                          ...data.drafts,
-                          south: { ...data.drafts?.south!, subtitle: e.target.value }
-                        }
-                      })}
-                      placeholder="(Teams)"
-                    />
-                  </div>
-                  <div>
-                    <Label className="text-xs">Date</Label>
-                    <Input
-                      value={data.drafts?.south?.date || ''}
-                      onChange={(e) => updateData({
-                        ...data,
-                        drafts: {
-                          ...data.drafts,
-                          south: { ...data.drafts?.south!, date: e.target.value }
-                        }
-                      })}
-                      placeholder="Thursday, February 5, 2026"
-                    />
-                  </div>
-                  <div>
-                    <Label className="text-xs">Time</Label>
-                    <Input
-                      value={data.drafts?.south?.time || ''}
-                      onChange={(e) => updateData({
-                        ...data,
-                        drafts: {
-                          ...data.drafts,
-                          south: { ...data.drafts?.south!, time: e.target.value }
-                        }
-                      })}
-                      placeholder="7:00 PM"
-                    />
-                  </div>
-                  <div className="col-span-2">
-                    <Label className="text-xs">Notes (optional)</Label>
-                    <Input
-                      value={data.drafts?.south?.notes || ''}
-                      onChange={(e) => updateData({
-                        ...data,
-                        drafts: {
-                          ...data.drafts,
-                          south: { ...data.drafts?.south!, notes: e.target.value }
-                        }
-                      })}
-                      placeholder="Follow Live on X..."
-                    />
-                  </div>
-                </div>
-              </Card>
-            </TabsContent>
+                return (
+                  <TabsContent key={key} value={key} className="space-y-4">
+                    {/* Drafts Tab */}
+                    {key === 'drafts' && (
+                      <>
+                        <div className="flex items-center justify-between mb-4">
+                          <div>
+                            {editingHeading === key ? (
+                              <div className="flex items-center gap-2">
+                                <Input
+                                  value={metadata.heading || ''}
+                                  onChange={(e) => {}}
+                                  placeholder="Custom heading (optional)"
+                                  className="h-8 w-64"
+                                />
+                                <Button
+                                  onClick={() => {
+                                    updateTabMetadata(key, 'heading', '');
+                                    setEditingHeading(null);
+                                  }}
+                                  size="sm"
+                                  variant="ghost"
+                                  className="h-8 w-8 p-0"
+                                >
+                                  <Check className="w-4 h-4 text-green-600" />
+                                </Button>
+                                <Button
+                                  onClick={() => setEditingHeading(null)}
+                                  size="sm"
+                                  variant="ghost"
+                                  className="h-8 w-8 p-0"
+                                >
+                                  <X className="w-4 h-4 text-red-600" />
+                                </Button>
+                              </div>
+                            ) : (
+                              <h3 className="text-lg font-semibold">{getTabLabel(key)}</h3>
+                            )}
+                          </div>
+                          <div className="flex items-center gap-1">
+                            {metadata.heading !== undefined && !editingHeading && (
+                              <Button
+                                onClick={() => setEditingHeading(key)}
+                                size="sm"
+                                variant="ghost"
+                                className="h-8 w-8 p-0"
+                                title="Edit heading"
+                              >
+                                <Edit2 className="w-4 h-4 text-gray-500" />
+                              </Button>
+                            )}
+                            <Button
+                              onClick={() => updateTabMetadata(key, 'collapsible', !isCollapsible)}
+                              size="sm"
+                              variant="ghost"
+                              className={`h-8 w-8 p-0 ${isCollapsible ? 'text-blue-600' : 'text-gray-400'}`}
+                              title={isCollapsible ? 'Collapsible enabled' : 'Collapsible disabled'}
+                            >
+                              <AlertCircle className="w-4 h-4" />
+                            </Button>
+                            {isCollapsible && (
+                              <Button
+                                onClick={() => updateTabMetadata(key, 'collapsed', !isCollapsed)}
+                                size="sm"
+                                variant="ghost"
+                                className="h-8 w-8 p-0"
+                                title={isCollapsed ? 'Expand' : 'Collapse'}
+                              >
+                                {isCollapsed ? <ChevronDown className="w-5 h-5" /> : <ChevronUp className="w-5 h-5" />}
+                              </Button>
+                            )}
+                          </div>
+                        </div>
+                        {metadata.heading && !editingHeading ? (
+                          <p className="text-sm text-gray-600 mb-3 italic">{metadata.heading}</p>
+                        ) : null}
 
-            {/* Regular Season Tab */}
-            <TabsContent value="regular" className="space-y-4">
-              <Card className="p-4">
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <Label className="text-xs">Season Start</Label>
-                    <Input
-                      value={data.regularSeason?.start || ''}
-                      onChange={(e) => updateData({
-                        ...data,
-                        regularSeason: { ...data.regularSeason!, start: e.target.value }
-                      })}
-                      placeholder="Friday, April 24, 2026"
-                    />
-                  </div>
-                  <div>
-                    <Label className="text-xs">Season End</Label>
-                    <Input
-                      value={data.regularSeason?.end || ''}
-                      onChange={(e) => updateData({
-                        ...data,
-                        regularSeason: { ...data.regularSeason!, end: e.target.value }
-                      })}
-                      placeholder="Sunday, July 12, 2026"
-                    />
-                  </div>
-                  <div>
-                    <Label className="text-xs">Total Games</Label>
-                    <Input
-                      type="number"
-                      value={data.regularSeason?.totalGames || 0}
-                      onChange={(e) => updateData({
-                        ...data,
-                        regularSeason: { ...data.regularSeason!, totalGames: parseInt(e.target.value) || 0 }
-                      })}
-                      placeholder="14"
-                    />
-                  </div>
-                  <div>
-                    <Label className="text-xs">Format</Label>
-                    <Input
-                      value={data.regularSeason?.format || ''}
-                      onChange={(e) => updateData({
-                        ...data,
-                        regularSeason: { ...data.regularSeason!, format: e.target.value }
-                      })}
-                      placeholder="Unbalanced home & away"
-                    />
-                  </div>
-                  <div className="col-span-2">
-                    <Label className="text-xs">Game Days (comma-separated)</Label>
-                    <Input
-                      value={data.regularSeason?.gameDays?.join(', ') || ''}
-                      onChange={(e) => updateData({
-                        ...data,
-                        regularSeason: {
-                          ...data.regularSeason!,
-                          gameDays: e.target.value.split(',').map(d => d.trim())
-                        }
-                      })}
-                      placeholder="Monday, Wednesday, Friday, Saturday, Sunday"
-                    />
-                  </div>
-                </div>
-              </Card>
-            </TabsContent>
+                        {!isCollapsed && (
+                          <>
+                            <Card className="p-4 mb-4">
+                              <h4 className="font-bold mb-3">North Draft</h4>
+                              <div className="grid grid-cols-2 gap-3">
+                                <div>
+                                  <Label className="text-xs">Title</Label>
+                                  <Input
+                                    value={data.drafts?.north?.title || ''}
+                                    onChange={(e) => updateData({
+                                      ...data,
+                                      drafts: {
+                                        ...data.drafts,
+                                        north: { ...data.drafts?.north!, title: e.target.value }
+                                      }
+                                    })}
+                                    placeholder="North Draft"
+                                  />
+                                </div>
+                                <div>
+                                  <Label className="text-xs">Subtitle</Label>
+                                  <Input
+                                    value={data.drafts?.north?.subtitle || ''}
+                                    onChange={(e) => updateData({
+                                      ...data,
+                                      drafts: {
+                                        ...data.drafts,
+                                        north: { ...data.drafts?.north!, subtitle: e.target.value }
+                                      }
+                                    })}
+                                    placeholder="(Teams)"
+                                  />
+                                </div>
+                                <div>
+                                  <Label className="text-xs">Date</Label>
+                                  <Input
+                                    value={data.drafts?.north?.date || ''}
+                                    onChange={(e) => updateData({
+                                      ...data,
+                                      drafts: {
+                                        ...data.drafts,
+                                        north: { ...data.drafts?.north!, date: e.target.value }
+                                      }
+                                    })}
+                                    placeholder="Wednesday, February 4, 2026"
+                                  />
+                                </div>
+                                <div>
+                                  <Label className="text-xs">Time</Label>
+                                  <Input
+                                    value={data.drafts?.north?.time || ''}
+                                    onChange={(e) => updateData({
+                                      ...data,
+                                      drafts: {
+                                        ...data.drafts,
+                                        north: { ...data.drafts?.north!, time: e.target.value }
+                                      }
+                                    })}
+                                    placeholder="7:00 PM"
+                                  />
+                                </div>
+                                <div className="col-span-2">
+                                  <Label className="text-xs">Location (optional)</Label>
+                                  <Input
+                                    value={data.drafts?.north?.location || ''}
+                                    onChange={(e) => updateData({
+                                      ...data,
+                                      drafts: {
+                                        ...data.drafts,
+                                        north: { ...data.drafts?.north!, location: e.target.value }
+                                      }
+                                    })}
+                                    placeholder="Local Eatery Sherwood..."
+                                  />
+                                </div>
+                                <div className="col-span-2">
+                                  <Label className="text-xs">Notes (optional)</Label>
+                                  <Input
+                                    value={data.drafts?.north?.notes || ''}
+                                    onChange={(e) => updateData({
+                                      ...data,
+                                      drafts: {
+                                        ...data.drafts,
+                                        north: { ...data.drafts?.north!, notes: e.target.value }
+                                      }
+                                    })}
+                                    placeholder="Players welcome to attend..."
+                                  />
+                                </div>
+                              </div>
+                            </Card>
 
-            {/* Playoffs Tab */}
-            <TabsContent value="playoffs" className="space-y-4">
-              <Card className="p-4 space-y-4">
-                <div>
-                  <Label className="text-xs">Playoff Format</Label>
-                  <Input
-                    value={data.playoffs?.format || ''}
-                    onChange={(e) => updateData({
-                      ...data,
-                      playoffs: { format: e.target.value, scenarios: data.playoffs?.scenarios || [] }
-                    })}
-                    placeholder="e.g., Best of 5, Best of 7, Round Robin"
-                  />
-                </div>
+                            <Card className="p-4">
+                              <h4 className="font-bold mb-3">South Draft</h4>
+                              <div className="grid grid-cols-2 gap-3">
+                                <div>
+                                  <Label className="text-xs">Title</Label>
+                                  <Input
+                                    value={data.drafts?.south?.title || ''}
+                                    onChange={(e) => updateData({
+                                      ...data,
+                                      drafts: {
+                                        ...data.drafts,
+                                        south: { ...data.drafts?.south!, title: e.target.value }
+                                      }
+                                    })}
+                                    placeholder="South Draft"
+                                  />
+                                </div>
+                                <div>
+                                  <Label className="text-xs">Subtitle</Label>
+                                  <Input
+                                    value={data.drafts?.south?.subtitle || ''}
+                                    onChange={(e) => updateData({
+                                      ...data,
+                                      drafts: {
+                                        ...data.drafts,
+                                        south: { ...data.drafts?.south!, subtitle: e.target.value }
+                                      }
+                                    })}
+                                    placeholder="(Teams)"
+                                  />
+                                </div>
+                                <div>
+                                  <Label className="text-xs">Date</Label>
+                                  <Input
+                                    value={data.drafts?.south?.date || ''}
+                                    onChange={(e) => updateData({
+                                      ...data,
+                                      drafts: {
+                                        ...data.drafts,
+                                        south: { ...data.drafts?.south!, date: e.target.value }
+                                      }
+                                    })}
+                                    placeholder="Thursday, February 5, 2026"
+                                  />
+                                </div>
+                                <div>
+                                  <Label className="text-xs">Time</Label>
+                                  <Input
+                                    value={data.drafts?.south?.time || ''}
+                                    onChange={(e) => updateData({
+                                      ...data,
+                                      drafts: {
+                                        ...data.drafts,
+                                        south: { ...data.drafts?.south!, time: e.target.value }
+                                      }
+                                    })}
+                                    placeholder="7:00 PM"
+                                  />
+                                </div>
+                                <div className="col-span-2">
+                                  <Label className="text-xs">Notes (optional)</Label>
+                                  <Input
+                                    value={data.drafts?.south?.notes || ''}
+                                    onChange={(e) => updateData({
+                                      ...data,
+                                      drafts: {
+                                        ...data.drafts,
+                                        south: { ...data.drafts?.south!, notes: e.target.value }
+                                      }
+                                    })}
+                                    placeholder="Follow Live on X..."
+                                  />
+                                </div>
+                              </div>
+                            </Card>
+                          </>
+                        )}
+                      </>
+                    )}
 
-                <ScenarioEditor
-                  scenarios={data.playoffs?.scenarios || []}
-                  onChange={(scenarios) => updateData({
-                    ...data,
-                    playoffs: { format: data.playoffs?.format || '', scenarios }
-                  })}
-                  label="Playoff"
-                />
-              </Card>
-            </TabsContent>
+                    {/* Regular Season Tab */}
+                    {key === 'regularSeason' && (
+                      <Card className="p-4">
+                        <div className="grid grid-cols-2 gap-3">
+                          <div>
+                            <Label className="text-xs">Season Start</Label>
+                            <Input
+                              value={data.regularSeason?.start || ''}
+                              onChange={(e) => updateData({
+                                ...data,
+                                regularSeason: { ...data.regularSeason!, start: e.target.value }
+                              })}
+                              placeholder="Friday, April 24, 2026"
+                            />
+                          </div>
+                          <div>
+                            <Label className="text-xs">Season End</Label>
+                            <Input
+                              value={data.regularSeason?.end || ''}
+                              onChange={(e) => updateData({
+                                ...data,
+                                regularSeason: { ...data.regularSeason!, end: e.target.value }
+                              })}
+                              placeholder="Sunday, July 12, 2026"
+                            />
+                          </div>
+                          <div>
+                            <Label className="text-xs">Total Games</Label>
+                            <Input
+                              type="number"
+                              value={data.regularSeason?.totalGames || 0}
+                              onChange={(e) => updateData({
+                                ...data,
+                                regularSeason: { ...data.regularSeason!, totalGames: parseInt(e.target.value) || 0 }
+                              })}
+                              placeholder="14"
+                            />
+                          </div>
+                          <div>
+                            <Label className="text-xs">Format</Label>
+                            <Input
+                              value={data.regularSeason?.format || ''}
+                              onChange={(e) => updateData({
+                                ...data,
+                                regularSeason: { ...data.regularSeason!, format: e.target.value }
+                              })}
+                              placeholder="Unbalanced home & away"
+                            />
+                          </div>
+                          <div className="col-span-2">
+                            <Label className="text-xs">Game Days (comma-separated)</Label>
+                            <Input
+                              value={data.regularSeason?.gameDays?.join(', ') || ''}
+                              onChange={(e) => updateData({
+                                ...data,
+                                regularSeason: {
+                                  ...data.regularSeason!,
+                                  gameDays: e.target.value.split(',').map(d => d.trim())
+                                }
+                              })}
+                              placeholder="Monday, Wednesday, Friday, Saturday, Sunday"
+                            />
+                          </div>
+                        </div>
+                      </Card>
+                    )}
 
-            {/* Provincial Tab */}
-            <TabsContent value="provincial" className="space-y-4">
-              <Card className="p-4 space-y-4">
-                <div>
-                  <Label className="text-xs">Provincial Format</Label>
-                  <Input
-                    value={data.provincial?.format || ''}
-                    onChange={(e) => updateData({
-                      ...data,
-                      provincial: { format: e.target.value, scenarios: data.provincial?.scenarios || [] }
-                    })}
-                    placeholder="e.g., Best of 5, Round Robin + Final"
-                  />
-                </div>
+                    {/* Playoffs Tab */}
+                    {key === 'playoffs' && (
+                      <Card className="p-4 space-y-4">
+                        {!isCollapsed && (
+                          <>
+                            <div>
+                              <Label className="text-xs">Playoff Format</Label>
+                              <Input
+                                value={data.playoffs?.format || ''}
+                                onChange={(e) => updateData({
+                                  ...data,
+                                  playoffs: { format: e.target.value, scenarios: data.playoffs?.scenarios || [] }
+                                })}
+                                placeholder="e.g., Best of 5, Best of 7, Round Robin"
+                              />
+                            </div>
+                          </>
+                        )}
+                        <ScenarioEditor
+                          scenarios={data.playoffs?.scenarios || []}
+                          onChange={(scenarios) => updateData({
+                            ...data,
+                            playoffs: { format: data.playoffs?.format || '', scenarios }
+                          })}
+                          label="Playoff"
+                        />
+                      </Card>
+                    )}
 
-                <ScenarioEditor
-                  scenarios={data.provincial?.scenarios || []}
-                  onChange={(scenarios) => updateData({
-                    ...data,
-                    provincial: { format: data.provincial?.format || '', scenarios }
-                  })}
-                  label="Provincial"
-                />
-              </Card>
-            </TabsContent>
+                    {/* Provincial Tab */}
+                    {key === 'provincial' && (
+                      <Card className="p-4 space-y-4">
+                        {!isCollapsed && (
+                          <div>
+                            <Label className="text-xs">Provincial Format</Label>
+                            <Input
+                              value={data.provincial?.format || ''}
+                              onChange={(e) => updateData({
+                                ...data,
+                                provincial: { format: e.target.value, scenarios: data.provincial?.scenarios || [] }
+                              })}
+                              placeholder="e.g., Best of 5, Round Robin + Final"
+                            />
+                          </div>
+                        )}
+                        <ScenarioEditor
+                          scenarios={data.provincial?.scenarios || []}
+                          onChange={(scenarios) => updateData({
+                            ...data,
+                            provincial: { format: data.provincial?.format || '', scenarios }
+                          })}
+                          label="Provincial"
+                        />
+                      </Card>
+                    )}
 
-            {/* Presidents Cup Tab */}
-            <TabsContent value="presidents">
-              <Card className="p-4">
-                <div className="grid grid-cols-2 gap-3">
-                  <div className="col-span-2">
-                    <Label className="text-xs">Tournament Dates</Label>
-                    <Input
-                      value={data.presidentsCup?.dates || ''}
-                      onChange={(e) => updateData({
-                        ...data,
-                        presidentsCup: { ...data.presidentsCup!, dates: e.target.value }
-                      })}
-                      placeholder="Sunday, August 30 to Saturday, September 5, 2026"
-                    />
-                  </div>
-                  <div>
-                    <Label className="text-xs">Location</Label>
-                    <Input
-                      value={data.presidentsCup?.location || ''}
-                      onChange={(e) => updateData({
-                        ...data,
-                        presidentsCup: { ...data.presidentsCup!, location: e.target.value }
-                      })}
-                      placeholder="Silent Ice Centre - Hatch Arena"
-                    />
-                  </div>
-                  <div>
-                    <Label className="text-xs">City</Label>
-                    <Input
-                      value={data.presidentsCup?.city || ''}
-                      onChange={(e) => updateData({
-                        ...data,
-                        presidentsCup: { ...data.presidentsCup!, city: e.target.value }
-                      })}
-                      placeholder="Nisku, AB"
-                    />
-                  </div>
-                  <div className="col-span-2">
-                    <Label className="text-xs">Travel Days (comma-separated)</Label>
-                    <Input
-                      value={data.presidentsCup?.travelDays?.join(', ') || ''}
-                      onChange={(e) => updateData({
-                        ...data,
-                        presidentsCup: {
-                          ...data.presidentsCup!,
-                          travelDays: e.target.value.split(',').map(d => d.trim())
-                        }
-                      })}
-                      placeholder="Saturday, August 29, 2026, Sunday, September 6, 2026"
-                    />
-                  </div>
-                </div>
-              </Card>
-            </TabsContent>
+                    {/* Presidents Cup Tab */}
+                    {key === 'presidentsCup' && (
+                      <Card className="p-4">
+                        <div className="grid grid-cols-2 gap-3">
+                          <div className="col-span-2">
+                            <Label className="text-xs">Tournament Dates</Label>
+                            <Input
+                              value={data.presidentsCup?.dates || ''}
+                              onChange={(e) => updateData({
+                                ...data,
+                                presidentsCup: { ...data.presidentsCup!, dates: e.target.value }
+                              })}
+                              placeholder="Sunday, August 30 to Saturday, September 5, 2026"
+                            />
+                          </div>
+                          <div>
+                            <Label className="text-xs">Location</Label>
+                            <Input
+                              value={data.presidentsCup?.location || ''}
+                              onChange={(e) => updateData({
+                                ...data,
+                                presidentsCup: { ...data.presidentsCup!, location: e.target.value }
+                              })}
+                              placeholder="Silent Ice Centre - Hatch Arena"
+                            />
+                          </div>
+                          <div>
+                            <Label className="text-xs">City</Label>
+                            <Input
+                              value={data.presidentsCup?.city || ''}
+                              onChange={(e) => updateData({
+                                ...data,
+                                presidentsCup: { ...data.presidentsCup!, city: e.target.value }
+                              })}
+                              placeholder="Nisku, AB"
+                            />
+                          </div>
+                          <div className="col-span-2">
+                            <Label className="text-xs">Travel Days (comma-separated)</Label>
+                            <Input
+                              value={data.presidentsCup?.travelDays?.join(', ') || ''}
+                              onChange={(e) => updateData({
+                                ...data,
+                                presidentsCup: {
+                                  ...data.presidentsCup!,
+                                  travelDays: e.target.value.split(',').map(d => d.trim())
+                                }
+                              })}
+                              placeholder="Saturday, August 29, 2026, Sunday, September 6, 2026"
+                            />
+                          </div>
+                        </div>
+                      </Card>
+                    )}
 
-            {/* Notes Tab */}
-            <TabsContent value="notes">
-              <Card className="p-4">
-                <Label className="text-xs">Important Notes</Label>
-                <Textarea
-                  value={data.notes || ''}
-                  onChange={(e) => updateData({ ...data, notes: e.target.value })}
-                  placeholder="Dates for Playoffs and Provincials may be subject to change..."
-                  rows={4}
-                />
-              </Card>
-            </TabsContent>
-          </Tabs>
+                    {/* Notes Tab */}
+                    {key === 'notes' && (
+                      <Card className="p-4">
+                        <Label className="text-xs">Important Notes</Label>
+                        <Textarea
+                          value={data.notes || ''}
+                          onChange={(e) => updateData({ ...data, notes: e.target.value })}
+                          placeholder="Dates for Playoffs and Provincials may be subject to change..."
+                          rows={4}
+                        />
+                      </Card>
+                    )}
+                  </TabsContent>
+                );
+              })}
+            </Tabs>
+          )}
+
+          {dataKeys.length === 0 && (
+            <div className="text-center py-8 text-gray-500">
+              <p className="mb-4">No season information configured yet.</p>
+              <Button onClick={() => setMode('json')} variant="outline">
+                <Code className="w-4 h-4 mr-2" />
+                Use JSON Editor to Add Content
+              </Button>
+            </div>
+          )}
         </div>
       )}
 

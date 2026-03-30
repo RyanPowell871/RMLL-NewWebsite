@@ -4,7 +4,7 @@ import { Button } from '../ui/button';
 import { Label } from '../ui/label';
 import { Textarea } from '../ui/textarea';
 import { Badge } from '../ui/badge';
-import { Save, AlertCircle, CheckCircle2, Loader2, Info, Calendar, Users, Award, Trophy, FileText, ArrowRightLeft, ExternalLink, Database, Edit2, X, Check } from 'lucide-react';
+import { Save, AlertCircle, CheckCircle2, Loader2, Info, Calendar, Users, Award, Trophy, FileText, ArrowRightLeft, ExternalLink, Database, Trash2, Plus } from 'lucide-react';
 import { Alert, AlertDescription } from '../ui/alert';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
@@ -55,6 +55,7 @@ interface DivisionData {
     redDeerRiot?: string;
     freeAgents?: string;
     returningPlayers?: string;
+    customSections?: Record<string, string>; // For custom section content
   };
   seasonInfo?: string;
   awards?: string;
@@ -102,6 +103,63 @@ function SportzSoftDataNotice({ title, description }: { title: string; descripti
   );
 }
 
+// Add New Section Modal
+function AddSectionModal({
+  isOpen,
+  onClose,
+  onAdd,
+}: {
+  isOpen: boolean;
+  onClose: () => void;
+  onAdd: (title: string, fieldLabel: string) => void;
+}) {
+  const [title, setTitle] = useState('');
+  const [fieldLabel, setFieldLabel] = useState('');
+
+  const handleAdd = () => {
+    if (title.trim()) {
+      onAdd(title.trim(), fieldLabel.trim() || title.trim());
+      setTitle('');
+      setFieldLabel('');
+      onClose();
+    }
+  };
+
+  if (!isOpen) return null;
+
+  return (
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+      <div className="bg-white rounded-lg shadow-lg w-full max-w-md">
+        <div className="p-4 border-b">
+          <h3 className="text-lg font-semibold">Add Custom Section</h3>
+        </div>
+        <div className="p-4 space-y-4">
+          <div>
+            <Label>Section Title</Label>
+            <Input
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+              placeholder="e.g., Additional Rules"
+            />
+          </div>
+          <div>
+            <Label>Field Label</Label>
+            <Input
+              value={fieldLabel}
+              onChange={(e) => setFieldLabel(e.target.value)}
+              placeholder="e.g., Content"
+            />
+          </div>
+        </div>
+        <div className="p-4 border-t flex justify-end gap-2">
+          <Button variant="outline" onClick={onClose}>Cancel</Button>
+          <Button onClick={handleAdd}>Add Section</Button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export function DivisionManager() {
   const [selectedDivision, setSelectedDivision] = useState(divisions[0]);
   const [activeTab, setActiveTab] = useState('division-info');
@@ -113,7 +171,7 @@ export function DivisionManager() {
   // Section configurations
   const [sectionConfigs, setSectionConfigs] = useState<SectionConfig[]>([]);
 
-  // Division Description (not in sections)
+  // Division Description
   const [divisionDescription, setDivisionDescription] = useState('');
 
   // Field values
@@ -124,27 +182,21 @@ export function DivisionManager() {
   const [awards, setAwards] = useState('');
   const [championships, setChampionships] = useState('');
 
+  // Add section modal
+  const [showAddModal, setShowAddModal] = useState(false);
+
   // Initialize section configs when division changes
   useEffect(() => {
     const defaultConfigs = getDefaultSectionConfigs(selectedDivision);
     setSectionConfigs(defaultConfigs);
-
-    // Initialize field values
-    const initialValues: Record<string, string> = {};
-    defaultConfigs.forEach(config => {
-      SECTION_FIELDS[config.id]?.forEach(field => {
-        initialValues[field.id] = '';
-      });
-    });
-    setFieldValues(initialValues);
   }, [selectedDivision]);
 
-  // Load division data
+  // Load division data (only depends on selectedDivision, NOT sectionConfigs)
   useEffect(() => {
     if (selectedDivision) {
       loadDivisionData();
     }
-  }, [selectedDivision, sectionConfigs]);
+  }, [selectedDivision]);
 
   const loadDivisionData = async () => {
     setLoading(true);
@@ -169,12 +221,25 @@ export function DivisionManager() {
         if (data.sectionConfigs) {
           try {
             const parsedConfigs = JSON.parse(data.sectionConfigs) as SectionConfig[];
-            // Merge with defaults to ensure all sections exist
+            // Merge with defaults, preserving custom sections
             const defaultConfigs = getDefaultSectionConfigs(selectedDivision);
-            const mergedConfigs = defaultConfigs.map(defaultConfig => {
+            const mergedConfigs: SectionConfig[] = [];
+
+            // Add default sections with saved config
+            defaultConfigs.forEach(defaultConfig => {
               const savedConfig = parsedConfigs.find(c => c.id === defaultConfig.id);
-              return savedConfig ? { ...defaultConfig, ...savedConfig } : defaultConfig;
+              mergedConfigs.push(savedConfig ? { ...defaultConfig, ...savedConfig } : defaultConfig);
             });
+
+            // Add custom sections
+            parsedConfigs.filter(c => c.isCustom && !defaultConfigs.find(d => d.id === c.id))
+              .forEach(customConfig => {
+                mergedConfigs.push(customConfig);
+              });
+
+            // Sort by order
+            mergedConfigs.sort((a, b) => a.order - b.order);
+
             setSectionConfigs(mergedConfigs);
           } catch (e) {
             console.error('Error parsing section configs:', e);
@@ -185,6 +250,12 @@ export function DivisionManager() {
         const newValues: Record<string, string> = { ...fieldValues };
         if (data.divisionInfo) {
           Object.entries(data.divisionInfo).forEach(([key, value]) => {
+            newValues[key] = value as string;
+          });
+        }
+        // Load custom sections
+        if (data.divisionInfo?.customSections) {
+          Object.entries(data.divisionInfo.customSections).forEach(([key, value]) => {
             newValues[key] = value as string;
           });
         }
@@ -251,6 +322,14 @@ export function DivisionManager() {
           redDeerRiot: fieldValues.redDeerRiot,
           freeAgents: fieldValues.freeAgentsAMF,
           returningPlayers: fieldValues.returningPlayers,
+          // Custom sections
+          ...sectionConfigs.filter(s => s.isCustom).reduce((acc, section) => {
+            const value = fieldValues[section.id];
+            if (value !== undefined) {
+              acc[section.id] = value;
+            }
+            return acc;
+          }, {} as Record<string, string>),
         },
         seasonInfo,
         awards,
@@ -289,10 +368,9 @@ export function DivisionManager() {
   };
 
   const handleSectionConfigChange = (config: SectionConfig) => {
-    const newConfigs = sectionConfigs.map(c =>
+    setSectionConfigs(sectionConfigs.map(c =>
       c.id === config.id ? config : c
-    );
-    setSectionConfigs(newConfigs);
+    ));
   };
 
   const moveSection = (idx: number, direction: 'up' | 'down') => {
@@ -310,6 +388,28 @@ export function DivisionManager() {
     newConfigs.sort((a, b) => a.order - b.order);
 
     setSectionConfigs(newConfigs);
+  };
+
+  const deleteSection = (sectionId: string) => {
+    if (window.confirm('Are you sure you want to delete this section?')) {
+      setSectionConfigs(sectionConfigs.filter(c => c.id !== sectionId));
+    }
+  };
+
+  const addCustomSection = (title: string, fieldLabel: string) => {
+    const newId = `custom-${Date.now()}`;
+    const newSection: SectionConfig = {
+      id: newId,
+      title,
+      heading: undefined,
+      collapsible: true,
+      collapsed: false,
+      order: sectionConfigs.length,
+      isCustom: true,
+    };
+    setSectionConfigs([...sectionConfigs, newSection]);
+    // Initialize the field value
+    setFieldValues({ ...fieldValues, [newId]: '' });
   };
 
   const isEditableTab = !['drafts', 'protected-list', 'transactions'].includes(activeTab);
@@ -405,9 +505,7 @@ export function DivisionManager() {
               {/* Division Description - always visible */}
               <Card>
                 <div className="flex items-center justify-between px-4 py-3 bg-gray-50 border-b">
-                  <div className="flex items-center gap-2">
-                    <span className="text-sm font-semibold">Division Description</span>
-                  </div>
+                  <span className="text-sm font-semibold">Division Description</span>
                 </div>
                 <div className="p-4 space-y-2">
                   <p className="text-xs text-gray-500">This text appears prominently at the top of the division page as an overview/about section. Use line breaks to separate paragraphs.</p>
@@ -426,22 +524,39 @@ export function DivisionManager() {
                 .sort((a, b) => a.order - b.order)
                 .map((config, idx) => {
                   const fields = SECTION_FIELDS[config.id] || [];
-                  if (fields.length === 0) return null;
+                  const customFields = config.isCustom
+                    ? [{ id: config.id, label: config.title, placeholder: 'Enter content...', rows: 4 }]
+                    : [];
+
+                  if (!config.isCustom && fields.length === 0) return null;
 
                   return (
                     <DivisionInfoSection
                       key={config.id}
                       config={config}
-                      fields={fields}
+                      fields={config.isCustom ? customFields : fields}
                       values={fieldValues}
                       onChange={handleFieldChange}
                       onConfigChange={handleSectionConfigChange}
                       onMove={(direction) => moveSection(idx, direction)}
+                      onDelete={config.isCustom ? () => deleteSection(config.id) : undefined}
                       canMoveUp={idx > 0}
                       canMoveDown={idx < sectionConfigs.length - 1}
                     />
                   );
                 })}
+
+              {/* Add Section Button */}
+              <div className="flex justify-center">
+                <Button
+                  onClick={() => setShowAddModal(true)}
+                  variant="outline"
+                  className="w-full max-w-xs"
+                >
+                  <Plus className="w-4 h-4 mr-2" />
+                  Add Custom Section
+                </Button>
+              </div>
             </TabsContent>
 
             {/* Season Info Tab */}
@@ -455,6 +570,7 @@ export function DivisionManager() {
                   <SeasonInfoEditor
                     value={seasonInfo}
                     onChange={setSeasonInfo}
+                    divisionName={selectedDivision}
                   />
                 </CardContent>
               </Card>
@@ -544,6 +660,13 @@ export function DivisionManager() {
           )}
         </>
       )}
+
+      {/* Add Section Modal */}
+      <AddSectionModal
+        isOpen={showAddModal}
+        onClose={() => setShowAddModal(false)}
+        onAdd={addCustomSection}
+      />
     </div>
   );
 }
