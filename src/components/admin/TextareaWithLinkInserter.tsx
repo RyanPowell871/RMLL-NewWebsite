@@ -18,29 +18,6 @@ interface TextareaWithLinkInserterProps {
   className?: string;
 }
 
-// Helper to insert markdown at cursor position
-function insertAtCursor(textarea: HTMLTextAreaElement, text: string) {
-  const start = textarea.selectionStart;
-  const end = textarea.selectionEnd;
-  const value = textarea.value;
-
-  const newValue = value.substring(0, start) + text + value.substring(end);
-
-  // Update the value
-  const nativeInputValueSetter = Object.getOwnPropertyDescriptor(
-    HTMLTextAreaElement.prototype,
-    'value'
-  ).set;
-  nativeInputValueSetter.call(textarea, newValue);
-
-  // Trigger input event
-  textarea.dispatchEvent(new Event('input', { bubbles: true, cancelable: true }));
-
-  // Set cursor position after inserted text
-  textarea.setSelectionRange(start + text.length, start + text.length);
-  textarea.focus();
-}
-
 export const TextareaWithLinkInserter = forwardRef<HTMLTextAreaElement, TextareaWithLinkInserterProps>(
   function TextareaWithLinkInserter({
     label,
@@ -59,19 +36,29 @@ export const TextareaWithLinkInserter = forwardRef<HTMLTextAreaElement, Textarea
     // Handle link insertion from LinkInserter
     const handleInsertLink = (markdown: string) => {
       const textarea = textareaRef.current;
-      if (textarea) {
-        insertAtCursor(textarea, markdown);
-      }
+      if (!textarea || !value) return;
+
+      const start = textarea.selectionStart;
+      const end = textarea.selectionEnd;
+
+      const newValue = value.substring(0, start) + markdown + value.substring(end);
+      onChange?.(newValue);
+
+      // Set cursor position after inserted text
+      setTimeout(() => {
+        textarea.setSelectionRange(start + markdown.length, start + markdown.length);
+        textarea.focus();
+      }, 0);
     };
 
     // Handle toolbar actions
     const handleFormat = (format: 'bold' | 'italic' | 'ul' | 'ol') => {
       const textarea = textareaRef.current;
-      if (!textarea) return;
+      if (!textarea || !value) return;
 
       const start = textarea.selectionStart;
       const end = textarea.selectionEnd;
-      const selectedText = textarea.value.substring(start, end);
+      const selectedText = value.substring(start, end);
 
       let formattedText = '';
       switch (format) {
@@ -93,8 +80,15 @@ export const TextareaWithLinkInserter = forwardRef<HTMLTextAreaElement, Textarea
           break;
       }
 
-      insertAtCursor(textarea, formattedText);
+      const newValue = value.substring(0, start) + formattedText + value.substring(end);
+      onChange?.(newValue);
       setShowFormatting(false);
+
+      // Set cursor position after inserted text
+      setTimeout(() => {
+        textarea.setSelectionRange(start + formattedText.length, start + formattedText.length);
+        textarea.focus();
+      }, 0);
     };
 
     return (
