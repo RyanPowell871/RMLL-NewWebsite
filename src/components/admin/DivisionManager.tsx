@@ -684,6 +684,7 @@ export function DivisionManager() {
   };
 
   const handleFieldChange = (fieldId: string, value: string) => {
+    console.log('handleFieldChange called:', fieldId, value);
     setFieldValues({ ...fieldValues, [fieldId]: value });
   };
 

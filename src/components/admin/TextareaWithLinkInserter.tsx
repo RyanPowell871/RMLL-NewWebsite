@@ -36,20 +36,31 @@ export const TextareaWithLinkInserter = forwardRef<HTMLTextAreaElement, Textarea
     // Handle link insertion from LinkInserter
     const handleInsertLink = (markdown: string) => {
       const textarea = textareaRef.current;
-      if (!textarea) return;
+      if (!textarea) {
+        console.error('Textarea ref not available');
+        return;
+      }
 
       const currentValue = value || '';
       const start = textarea.selectionStart;
       const end = textarea.selectionEnd;
 
+      console.log('Inserting link:', markdown, 'at position', start, 'current value:', currentValue);
+
       const newValue = currentValue.substring(0, start) + markdown + currentValue.substring(end);
+      console.log('New value:', newValue);
+
       onChange?.(newValue);
 
-      // Set cursor position after inserted text
-      setTimeout(() => {
-        textarea.setSelectionRange(start + markdown.length, start + markdown.length);
-        textarea.focus();
-      }, 0);
+      // Set cursor position after inserted text - use requestAnimationFrame to ensure DOM updated
+      requestAnimationFrame(() => {
+        const updatedTextarea = textareaRef.current;
+        if (updatedTextarea) {
+          updatedTextarea.setSelectionRange(start + markdown.length, start + markdown.length);
+          updatedTextarea.focus();
+          console.log('Focus and cursor set');
+        }
+      });
     };
 
     // Handle toolbar actions

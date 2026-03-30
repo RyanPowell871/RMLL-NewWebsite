@@ -134,12 +134,14 @@ export function LinkInserter({ onInsert, trigger }: LinkInserterProps) {
 
   const insertDocumentLink = (doc: DocumentItem) => {
     const markdown = `[${doc.title}](/documents/${doc.id})`;
+    console.log('LinkInserter insertDocumentLink:', markdown);
     onInsert(markdown);
     setOpen(false);
   };
 
   const insertPageLink = (page: PageItem) => {
     const markdown = `[${page.title}](${page.url})`;
+    console.log('LinkInserter insertPageLink:', markdown);
     onInsert(markdown);
     setOpen(false);
   };
