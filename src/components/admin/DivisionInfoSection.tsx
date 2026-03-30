@@ -2,7 +2,7 @@ import { useState, useRef } from 'react';
 import { Card } from '../ui/card';
 import { Label } from '../ui/label';
 import { Textarea } from '../ui/textarea';
-import { ChevronUp, ChevronDown, Edit2, Check, X, AlertCircle, Plus, Trash2 } from 'lucide-react';
+import { ChevronUp, ChevronDown, MoveUp, MoveDown, ToggleLeft, ToggleRight, Edit2, Check, X, Trash2 } from 'lucide-react';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
 
@@ -117,35 +117,38 @@ export function DivisionInfoSection({
               <Edit2 className="w-3 h-3 text-gray-500" />
             </Button>
           )}
+          {/* Collapsible toggle - shows switch icon */}
           <Button
             onClick={() => onConfigChange({ ...config, collapsible: !config.collapsible })}
             size="sm"
             variant="ghost"
             className={`h-7 w-7 p-0 ${config.collapsible ? 'text-blue-600' : 'text-gray-400'}`}
-            title={config.collapsible ? 'Collapsible enabled' : 'Collapsible disabled'}
+            title={config.collapsible ? 'Collapsible - click to disable' : 'Not collapsible - click to enable'}
           >
-            <AlertCircle className="w-3 h-3" />
+            {config.collapsible ? <ToggleLeft className="w-3 h-3" /> : <ToggleRight className="w-3 h-3" />}
           </Button>
+          {/* Collapse/expand - only shows when collapsible */}
           {config.collapsible && (
             <Button
               onClick={() => onConfigChange({ ...config, collapsed: !isCollapsed })}
               size="sm"
               variant="ghost"
               className="h-7 w-7 p-0"
-              title={isCollapsed ? 'Expand' : 'Collapse'}
+              title={isCollapsed ? 'Expand section' : 'Collapse section'}
             >
               {isCollapsed ? <ChevronDown className="w-4 h-4" /> : <ChevronUp className="w-4 h-4" />}
             </Button>
           )}
+          {/* Move up/down - use dedicated move icons */}
           {onMove && canMoveUp && (
             <Button
               onClick={() => onMove('up')}
               size="sm"
               variant="ghost"
               className="h-7 w-7 p-0"
-              title="Move up"
+              title="Move section up"
             >
-              <ChevronUp className="w-3 h-3" />
+              <MoveUp className="w-3 h-3" />
             </Button>
           )}
           {onMove && canMoveDown && (
@@ -154,11 +157,12 @@ export function DivisionInfoSection({
               size="sm"
               variant="ghost"
               className="h-7 w-7 p-0"
-              title="Move down"
+              title="Move section down"
             >
-              <ChevronDown className="w-3 h-3" />
+              <MoveDown className="w-3 h-3" />
             </Button>
           )}
+          {/* Delete - custom sections only */}
           {onDelete && config.isCustom && (
             <Button
               onClick={onDelete}
