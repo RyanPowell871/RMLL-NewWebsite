@@ -116,16 +116,16 @@ export const TextareaWithLinkInserter = forwardRef<HTMLTextAreaElement, Textarea
                 <List className="w-4 h-4" />
               </Button>
             </PopoverTrigger>
-            <PopoverContent className="w-48 p-1" align="start">
+            <PopoverContent className="w-52 p-1" align="start">
               <div className="grid grid-cols-2 gap-1">
                 <Button
                   type="button"
                   variant="ghost"
                   size="sm"
                   onClick={() => handleFormat('bold')}
-                  className="justify-start"
+                  className="h-8 text-xs"
                 >
-                  <Bold className="w-4 h-4 mr-2" />
+                  <Bold className="w-3 h-3 mr-1.5" />
                   Bold
                 </Button>
                 <Button
@@ -133,9 +133,9 @@ export const TextareaWithLinkInserter = forwardRef<HTMLTextAreaElement, Textarea
                   variant="ghost"
                   size="sm"
                   onClick={() => handleFormat('italic')}
-                  className="justify-start"
+                  className="h-8 text-xs"
                 >
-                  <Italic className="w-4 h-4 mr-2" />
+                  <Italic className="w-3 h-3 mr-1.5" />
                   Italic
                 </Button>
                 <Button
@@ -143,20 +143,20 @@ export const TextareaWithLinkInserter = forwardRef<HTMLTextAreaElement, Textarea
                   variant="ghost"
                   size="sm"
                   onClick={() => handleFormat('ul')}
-                  className="justify-start"
+                  className="h-8 text-xs"
                 >
-                  <List className="w-4 h-4 mr-2" />
-                  Bullet List
+                  <List className="w-3 h-3 mr-1.5" />
+                  Bullet
                 </Button>
                 <Button
                   type="button"
                   variant="ghost"
                   size="sm"
                   onClick={() => handleFormat('ol')}
-                  className="justify-start"
+                  className="h-8 text-xs"
                 >
-                  <ListOrdered className="w-4 h-4 mr-2" />
-                  Numbered List
+                  <ListOrdered className="w-3 h-3 mr-1.5" />
+                  Numbered
                 </Button>
               </div>
             </PopoverContent>
