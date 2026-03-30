@@ -173,8 +173,8 @@ export function DivisionInfoSection({
               <MoveDown className="w-3 h-3" />
             </Button>
           )}
-          {/* Delete - custom sections only */}
-          {onDelete && config.isCustom && (
+          {/* Delete - all sections */}
+          {onDelete && (
             <Button
               onClick={onDelete}
               size="sm"

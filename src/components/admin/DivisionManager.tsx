@@ -577,7 +577,7 @@ export function DivisionManager() {
                           onChange={handleFieldChange}
                           onConfigChange={handleSectionConfigChange}
                           onMove={(direction) => moveSection(idx, direction)}
-                          onDelete={config.isCustom ? () => deleteSection(config.id) : undefined}
+                          onDelete={() => deleteSection(config.id)}
                           canMoveUp={idx > 0}
                           canMoveDown={idx < sectionConfigs.length - 1}
                         />
