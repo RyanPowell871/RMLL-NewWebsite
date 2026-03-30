@@ -1,0 +1,184 @@
+import { forwardRef, useRef, useState } from 'react';
+import { Label } from '../ui/label';
+import { Textarea } from '../ui/textarea';
+import { LinkInserter } from './LinkInserter';
+import { Bold, Italic, List, ListOrdered } from 'lucide-react';
+import { Button } from '../ui/button';
+import { Popover, PopoverContent, PopoverTrigger } from '../ui/popover';
+
+interface TextareaWithLinkInserterProps {
+  label?: string;
+  placeholder?: string;
+  value?: string;
+  onChange?: (value: string) => void;
+  rows?: number;
+  required?: boolean;
+  id?: string;
+  name?: string;
+  className?: string;
+}
+
+// Helper to insert markdown at cursor position
+function insertAtCursor(textarea: HTMLTextAreaElement, text: string) {
+  const start = textarea.selectionStart;
+  const end = textarea.selectionEnd;
+  const value = textarea.value;
+
+  const newValue = value.substring(0, start) + text + value.substring(end);
+
+  // Update the value
+  const nativeInputValueSetter = Object.getOwnPropertyDescriptor(
+    HTMLTextAreaElement.prototype,
+    'value'
+  ).set;
+  nativeInputValueSetter.call(textarea, newValue);
+
+  // Trigger input event
+  textarea.dispatchEvent(new Event('input', { bubbles: true, cancelable: true }));
+
+  // Set cursor position after inserted text
+  textarea.setSelectionRange(start + text.length, start + text.length);
+  textarea.focus();
+}
+
+export const TextareaWithLinkInserter = forwardRef<HTMLTextAreaElement, TextareaWithLinkInserterProps>(
+  function TextareaWithLinkInserter({
+    label,
+    placeholder,
+    value,
+    onChange,
+    rows = 2,
+    required = false,
+    id,
+    name,
+    className,
+  }, ref) {
+    const textareaRef = useRef<HTMLTextAreaElement>(null);
+    const [showFormatting, setShowFormatting] = useState(false);
+
+    // Handle link insertion from LinkInserter
+    const handleInsertLink = (markdown: string) => {
+      const textarea = textareaRef.current;
+      if (textarea) {
+        insertAtCursor(textarea, markdown);
+      }
+    };
+
+    // Handle toolbar actions
+    const handleFormat = (format: 'bold' | 'italic' | 'ul' | 'ol') => {
+      const textarea = textareaRef.current;
+      if (!textarea) return;
+
+      const start = textarea.selectionStart;
+      const end = textarea.selectionEnd;
+      const selectedText = textarea.value.substring(start, end);
+
+      let formattedText = '';
+      switch (format) {
+        case 'bold':
+          formattedText = `**${selectedText || 'bold text'}**`;
+          break;
+        case 'italic':
+          formattedText = `*${selectedText || 'italic text'}*`;
+          break;
+        case 'ul':
+          formattedText = selectedText
+            ? selectedText.split('\n').map(line => `- ${line}`).join('\n')
+            : '- list item';
+          break;
+        case 'ol':
+          formattedText = selectedText
+            ? selectedText.split('\n').map((line, i) => `${i + 1}. ${line}`).join('\n')
+            : '1. list item';
+          break;
+      }
+
+      insertAtCursor(textarea, formattedText);
+      setShowFormatting(false);
+    };
+
+    return (
+      <div className="space-y-2">
+        {label && (
+          <Label htmlFor={id || name} className="flex items-center gap-2">
+            {label}
+            {required && <span className="text-red-500">*</span>}
+          </Label>
+        )}
+
+        {/* Toolbar */}
+        <div className="flex items-center gap-1 p-2 bg-gray-50 border border-gray-200 rounded-t-lg rounded-b-none border-b-0">
+          <LinkInserter onInsert={handleInsertLink} />
+
+          <Popover open={showFormatting} onOpenChange={setShowFormatting}>
+            <PopoverTrigger asChild>
+              <Button type="button" variant="ghost" size="sm" className="h-8 px-2" title="Text Formatting">
+                <List className="w-4 h-4" />
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-48 p-1" align="start">
+              <div className="grid grid-cols-2 gap-1">
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => handleFormat('bold')}
+                  className="justify-start"
+                >
+                  <Bold className="w-4 h-4 mr-2" />
+                  Bold
+                </Button>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => handleFormat('italic')}
+                  className="justify-start"
+                >
+                  <Italic className="w-4 h-4 mr-2" />
+                  Italic
+                </Button>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => handleFormat('ul')}
+                  className="justify-start"
+                >
+                  <List className="w-4 h-4 mr-2" />
+                  Bullet List
+                </Button>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => handleFormat('ol')}
+                  className="justify-start"
+                >
+                  <ListOrdered className="w-4 h-4 mr-2" />
+                  Numbered List
+                </Button>
+              </div>
+            </PopoverContent>
+          </Popover>
+        </div>
+
+        {/* Textarea */}
+        <Textarea
+          id={id}
+          name={name}
+          ref={(el) => {
+            if (typeof ref === 'function') ref(el);
+            else if (ref) ref.current = el;
+            textareaRef.current = el;
+          }}
+          placeholder={placeholder}
+          value={value}
+          onChange={(e) => onChange?.(e.target.value)}
+          rows={rows}
+          className={`${className || ''} rounded-t-none border-t-0`}
+        />
+      </div>
+    );
+  }
+);
