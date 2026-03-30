@@ -19,6 +19,17 @@ import { DraftsDisplay } from '../components/DraftsDisplay';
 import { PointLeaderAwards } from '../components/league-info/PointLeaderAwards';
 import { JrBTier1DivisionAwards } from '../components/league-info/JrBTier1DivisionAwards';
 
+interface SectionConfig {
+  id: string;
+  title: string;
+  heading?: string;
+  collapsible: boolean;
+  collapsed?: boolean;
+  order: number;
+  isCustom?: boolean;
+  colSpan?: 1 | 2;
+}
+
 interface DivisionData {
   lastActiveSeason?: string;
   divisionDescription?: string;
@@ -50,7 +61,10 @@ interface DivisionData {
     capitalRegionSaints: string;
     redDeerRiot: string;
     freeAgents: string;
+    freeAgentsAMF: string;
     returningPlayers: string;
+    // Custom sections - dynamic keys
+    [key: string]: string | undefined;
   };
   seasonInfo?: string;
   drafts?: string;
@@ -58,6 +72,7 @@ interface DivisionData {
   transactions?: string;
   awards?: string;
   championships?: string;
+  sectionConfigs?: string; // JSON string of section configs
   subdivisions?: Record<string, DivisionData>;
 }
 
@@ -76,7 +91,158 @@ export function DivisionInfoPage() {
   const [activeTab, setActiveTab] = useState('division-info');
   const [activeSubdivision, setActiveSubdivision] = useState<string | null>(null);
   const [divisionData, setDivisionData] = useState<DivisionData>({});
+  const [sectionConfigs, setSectionConfigs] = useState<SectionConfig[]>([]);
   const [loading, setLoading] = useState(false);
+  const [collapsedSections, setCollapsedSections] = useState<Set<string>>(new Set());
+
+  // Default section configurations for different divisions
+  const getDefaultSectionConfigs = (divisionName: string): SectionConfig[] => {
+    const common: SectionConfig[] = [
+      { id: 'teams', title: 'Teams', collapsible: true, collapsed: false, order: 0, colSpan: 1 },
+      { id: 'playerAges', title: 'Player Ages', collapsible: true, collapsed: false, order: 1, colSpan: 1 },
+      { id: 'graduatingDraft', title: 'Graduating Junior Entry Draft', collapsible: true, collapsed: false, order: 2, colSpan: 1 },
+      { id: 'playingRights', title: 'Playing Rights', collapsible: true, collapsed: false, order: 3, colSpan: 2 },
+      { id: 'minGames', title: 'Minimum Games for Playoff Eligibility', collapsible: true, collapsed: false, order: 4, colSpan: 1 },
+      { id: 'outOfProvince', title: 'Out of Province Players', collapsible: true, collapsed: false, order: 5, colSpan: 1 },
+      { id: 'outOfCountry', title: 'Out of Country Players', collapsible: true, collapsed: false, order: 6, colSpan: 1 },
+    ];
+
+    if (['Senior B', 'Senior C', 'Junior A', 'Junior B Tier I', 'Junior B Tier II', 'Junior B Tier III'].includes(divisionName)) {
+      return [
+        ...common,
+        { id: 'tryouts', title: 'Tryouts', collapsible: true, collapsed: false, order: 7, colSpan: 2 },
+      ];
+    }
+
+    if (['Senior B', 'Senior C', 'Junior A', 'Junior B Tier I', 'Junior B Tier II'].includes(divisionName)) {
+      return [
+        ...common,
+        { id: 'tryouts', title: 'Tryouts', collapsible: true, collapsed: false, order: 7, colSpan: 2 },
+        { id: 'regularSeasonStandings', title: 'Regular Season Standings', collapsible: true, collapsed: false, order: 8, colSpan: 2 },
+      ];
+    }
+
+    if (['Senior B', 'Senior C', 'Junior B Tier I', 'Junior B Tier II', 'Junior B Tier III'].includes(divisionName)) {
+      return [
+        ...common,
+        { id: 'tryouts', title: 'Tryouts', collapsible: true, collapsed: false, order: 7, colSpan: 2 },
+        { id: 'otherJurisdiction', title: 'Other Jurisdiction Players', collapsible: true, collapsed: false, order: 8, colSpan: 1 },
+        { id: 'protectedList', title: 'Protected List', collapsible: true, collapsed: false, order: 9, colSpan: 2 },
+        { id: 'draftedProtectedPlayers', title: 'Drafted Protected Players', collapsible: true, collapsed: false, order: 10, colSpan: 2 },
+        { id: 'freeAgent', title: 'Free Agent', collapsible: true, collapsed: false, order: 11, colSpan: 1 },
+        { id: 'firstYearRegistration', title: 'First Year Registration', collapsible: true, collapsed: false, order: 12, colSpan: 1 },
+      ];
+    }
+
+    if (divisionName === 'Junior B Tier I') {
+      return [
+        ...common,
+        { id: 'tryouts', title: 'Tryouts', collapsible: true, collapsed: false, order: 7, colSpan: 2 },
+        { id: 'otherJurisdiction', title: 'Other Jurisdiction Players', collapsible: true, collapsed: false, order: 8, colSpan: 1 },
+        { id: 'regularSeasonStandings', title: 'Regular Season Standings', collapsible: true, collapsed: false, order: 9, colSpan: 2 },
+        { id: 'northGraduatingDraft', title: 'North Graduating Draft', collapsible: true, collapsed: false, order: 10, colSpan: 2 },
+        { id: 'centralGraduatingDraft', title: 'Central Graduating Draft', collapsible: true, collapsed: false, order: 11, colSpan: 2 },
+        { id: 'southGraduatingDraft', title: 'South Graduating Draft', collapsible: true, collapsed: false, order: 12, colSpan: 2 },
+        { id: 'protectedList', title: 'Protected List', collapsible: true, collapsed: false, order: 13, colSpan: 2 },
+        { id: 'draftedProtectedPlayers', title: 'Drafted Protected Players', collapsible: true, collapsed: false, order: 14, colSpan: 2 },
+        { id: 'freeAgent', title: 'Free Agent', collapsible: true, collapsed: false, order: 15, colSpan: 1 },
+        { id: 'firstYearRegistration', title: 'First Year Registration', collapsible: true, collapsed: false, order: 16, colSpan: 1 },
+      ];
+    }
+
+    if (divisionName === 'Alberta Major Female') {
+      return [
+        ...common,
+        { id: 'instagram', title: 'Instagram', collapsible: true, collapsed: false, order: 7, colSpan: 1 },
+        { id: 'draftInfo', title: 'Draft Info', collapsible: true, collapsed: false, order: 8, colSpan: 2 },
+        { id: 'protectedListInfo', title: 'Protected List Info', collapsible: true, collapsed: false, order: 9, colSpan: 2 },
+        { id: 'calgaryFreeAgents', title: 'Calgary Free Agents', collapsible: true, collapsed: false, order: 10, colSpan: 1 },
+        { id: 'stAlbertDrillers', title: 'St. Albert Drillers', collapsible: true, collapsed: false, order: 11, colSpan: 1 },
+        { id: 'sherwoodParkTitans', title: 'Sherwood Park Titans', collapsible: true, collapsed: false, order: 12, colSpan: 1 },
+        { id: 'capitalRegionSaints', title: 'Capital Region Saints', collapsible: true, collapsed: false, order: 13, colSpan: 1 },
+        { id: 'redDeerRiot', title: 'Red Deer Riot', collapsible: true, collapsed: false, order: 14, colSpan: 1 },
+        { id: 'freeAgentsAMF', title: 'Free Agents', collapsible: true, collapsed: false, order: 15, colSpan: 1 },
+        { id: 'returningPlayers', title: 'Returning Players', collapsible: true, collapsed: false, order: 16, colSpan: 1 },
+      ];
+    }
+
+    if (divisionName === 'Alberta Major Senior Female') {
+      return [
+        ...common,
+        { id: 'instagram', title: 'Instagram', collapsible: true, collapsed: false, order: 7, colSpan: 1 },
+      ];
+    }
+
+    return common;
+  };
+
+  // Helper to get section icon and color
+  const getSectionProps = (sectionId: string) => {
+    const props: Record<string, { icon: any; color: string; label?: string }> = {
+      tryouts: { icon: Info, color: '#013fac' },
+      teams: { icon: Users, color: '#013fac' },
+      playerAges: { icon: Info, color: '#DC2626' },
+      graduatingDraft: { icon: Users, color: '#013fac' },
+      playingRights: { icon: FileText, color: '#DC2626' },
+      minGames: { icon: Calendar, color: '#013fac' },
+      outOfProvince: { icon: Calendar, color: '#DC2626' },
+      outOfCountry: { icon: Calendar, color: '#013fac' },
+      otherJurisdiction: { icon: Calendar, color: '#DC2626' },
+      regularSeasonStandings: { icon: Trophy, color: '#013fac' },
+      northGraduatingDraft: { icon: Users, color: '#013fac', label: 'North Graduating U17 Player Draft' },
+      centralGraduatingDraft: { icon: Users, color: '#DC2626', label: 'Red Deer Rampage and Innisfail Mavericks Graduating U17 Draft' },
+      southGraduatingDraft: { icon: Users, color: '#013fac', label: 'South Graduating U17 Draft' },
+      protectedList: { icon: FileText, color: '#DC2626', label: '35 Player Protected List' },
+      draftedProtectedPlayers: { icon: Users, color: '#013fac', label: 'Drafted/Protected Players' },
+      freeAgent: { icon: Users, color: '#DC2626' },
+      firstYearRegistration: { icon: Calendar, color: '#013fac' },
+      instagram: { icon: Info, color: '#E1306C' },
+      draftInfo: { icon: Users, color: '#013fac' },
+      protectedListInfo: { icon: FileText, color: '#DC2626' },
+      calgaryFreeAgents: { icon: Users, color: '#013fac' },
+      stAlbertDrillers: { icon: Info, color: '#DC2626' },
+      sherwoodParkTitans: { icon: Info, color: '#013fac' },
+      capitalRegionSaints: { icon: Info, color: '#DC2626' },
+      redDeerRiot: { icon: Info, color: '#013fac' },
+      freeAgentsAMF: { icon: Users, color: '#DC2626' },
+      returningPlayers: { icon: Users, color: '#013fac' },
+    };
+    return props[sectionId] || { icon: Info, color: '#013fac' };
+  };
+
+  // Helper to get section value
+  const getSectionValue = (sectionId: string): string | undefined => {
+    if (divisionData.subdivisions && activeSubdivision) {
+      return divisionData.subdivisions[activeSubdivision]?.divisionInfo?.[sectionId as keyof typeof divisionData.divisionInfo] as string;
+    }
+    return divisionData.divisionInfo?.[sectionId as keyof typeof divisionData.divisionInfo] as string;
+  };
+
+  // Helper to get section display title
+  const getSectionTitle = (config: SectionConfig): string => {
+    const props = getSectionProps(config.id);
+    return props.label || config.heading || config.title;
+  };
+
+  const isSectionCollapsed = (sectionId: string): boolean => {
+    const config = sectionConfigs.find(c => c.id === sectionId);
+    if (!config || !config.collapsible) return false;
+    return config.collapsed ?? false;
+  };
+
+  const toggleSectionCollapse = (sectionId: string) => {
+    const config = sectionConfigs.find(c => c.id === sectionId);
+    if (!config || !config.collapsible) return;
+    setCollapsedSections(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(sectionId)) {
+        newSet.delete(sectionId);
+      } else {
+        newSet.add(sectionId);
+      }
+      return newSet;
+    });
+  };
 
   const isInactiveDivision = INACTIVE_DIVISIONS.includes(selectedDivision);
 
@@ -128,7 +294,39 @@ export function DivisionInfoPage() {
           // Only update state if this request hasn't been cancelled
           if (!isCancelled) {
             setDivisionData(data);
-            
+
+            // Parse section configs
+            if (data.sectionConfigs) {
+              try {
+                const parsedConfigs = JSON.parse(data.sectionConfigs) as SectionConfig[];
+                // Merge with defaults, preserving custom sections
+                const defaultConfigs = getDefaultSectionConfigs(selectedDivision);
+                const mergedConfigs: SectionConfig[] = [];
+
+                // Add default sections with saved config
+                defaultConfigs.forEach(defaultConfig => {
+                  const savedConfig = parsedConfigs.find(c => c.id === defaultConfig.id);
+                  mergedConfigs.push(savedConfig ? { ...defaultConfig, ...savedConfig } : defaultConfig);
+                });
+
+                // Add custom sections
+                parsedConfigs.filter(c => c.isCustom && !defaultConfigs.find(d => d.id === c.id))
+                  .forEach(customConfig => {
+                    mergedConfigs.push(customConfig);
+                  });
+
+                // Sort by order
+                mergedConfigs.sort((a, b) => a.order - b.order);
+
+                setSectionConfigs(mergedConfigs);
+              } catch (e) {
+                console.error('Error parsing section configs:', e);
+                setSectionConfigs(getDefaultSectionConfigs(selectedDivision));
+              }
+            } else {
+              setSectionConfigs(getDefaultSectionConfigs(selectedDivision));
+            }
+
             // If there are subdivisions, set the first one as active
             if (data.subdivisions) {
               const subdivisionKeys = Object.keys(data.subdivisions);

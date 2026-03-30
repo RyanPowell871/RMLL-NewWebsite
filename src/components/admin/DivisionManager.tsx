@@ -4,7 +4,7 @@ import { Button } from '../ui/button';
 import { Label } from '../ui/label';
 import { Textarea } from '../ui/textarea';
 import { Badge } from '../ui/badge';
-import { Save, AlertCircle, CheckCircle2, Loader2, Info, Calendar, Users, Award, Trophy, FileText, ArrowRightLeft, ExternalLink, Database, Trash2, Plus } from 'lucide-react';
+import { Save, AlertCircle, CheckCircle2, Loader2, Info, Calendar, Users, Award, Trophy, FileText, ArrowRightLeft, ExternalLink, Database, Trash2, Plus, Layout, Maximize2 } from 'lucide-react';
 import { Input } from '../ui/input';
 import { Alert, AlertDescription } from '../ui/alert';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../ui/tabs';
@@ -112,16 +112,18 @@ function AddSectionModal({
 }: {
   isOpen: boolean;
   onClose: () => void;
-  onAdd: (title: string, fieldLabel: string) => void;
+  onAdd: (title: string, fieldLabel: string, colSpan: 1 | 2) => void;
 }) {
   const [title, setTitle] = useState('');
   const [fieldLabel, setFieldLabel] = useState('');
+  const [colSpan, setColSpan] = useState<1 | 2>(1);
 
   const handleAdd = () => {
     if (title.trim()) {
-      onAdd(title.trim(), fieldLabel.trim() || title.trim());
+      onAdd(title.trim(), fieldLabel.trim() || title.trim(), colSpan);
       setTitle('');
       setFieldLabel('');
+      setColSpan(1);
       onClose();
     }
   };
@@ -150,6 +152,39 @@ function AddSectionModal({
               onChange={(e) => setFieldLabel(e.target.value)}
               placeholder="e.g., Content"
             />
+          </div>
+          <div>
+            <Label>Layout</Label>
+            <div className="flex gap-2 mt-2">
+              <button
+                type="button"
+                onClick={() => setColSpan(1)}
+                className={`flex-1 p-3 border rounded-lg text-sm font-medium transition-colors ${
+                  colSpan === 1
+                    ? 'bg-purple-50 border-purple-500 text-purple-700'
+                    : 'border-gray-300 hover:bg-gray-50'
+                }`}
+              >
+                <div className="flex flex-col items-center gap-1">
+                  <Layout className="w-5 h-5" />
+                  <span>Half Width</span>
+                </div>
+              </button>
+              <button
+                type="button"
+                onClick={() => setColSpan(2)}
+                className={`flex-1 p-3 border rounded-lg text-sm font-medium transition-colors ${
+                  colSpan === 2
+                    ? 'bg-purple-50 border-purple-500 text-purple-700'
+                    : 'border-gray-300 hover:bg-gray-50'
+                }`}
+              >
+                <div className="flex flex-col items-center gap-1">
+                  <Maximize2 className="w-5 h-5" />
+                  <span>Full Width</span>
+                </div>
+              </button>
+            </div>
           </div>
         </div>
         <div className="p-4 border-t flex justify-end gap-2">
@@ -321,7 +356,7 @@ export function DivisionManager() {
           sherwoodParkTitans: fieldValues.sherwoodParkTitans,
           capitalRegionSaints: fieldValues.capitalRegionSaints,
           redDeerRiot: fieldValues.redDeerRiot,
-          freeAgents: fieldValues.freeAgentsAMF,
+          freeAgentsAMF: fieldValues.freeAgentsAMF,
           returningPlayers: fieldValues.returningPlayers,
           // Custom sections
           ...sectionConfigs.filter(s => s.isCustom).reduce((acc, section) => {
@@ -397,7 +432,7 @@ export function DivisionManager() {
     }
   };
 
-  const addCustomSection = (title: string, fieldLabel: string) => {
+  const addCustomSection = (title: string, fieldLabel: string, colSpan: 1 | 2 = 1) => {
     const newId = `custom-${Date.now()}`;
     const newSection: SectionConfig = {
       id: newId,
@@ -407,6 +442,7 @@ export function DivisionManager() {
       collapsed: false,
       order: sectionConfigs.length,
       isCustom: true,
+      colSpan,
     };
     setSectionConfigs([...sectionConfigs, newSection]);
     // Initialize the field value
@@ -521,31 +557,34 @@ export function DivisionManager() {
               </Card>
 
               {/* Configurable Sections */}
-              {sectionConfigs
-                .sort((a, b) => a.order - b.order)
-                .map((config, idx) => {
-                  const fields = SECTION_FIELDS[config.id] || [];
-                  const customFields = config.isCustom
-                    ? [{ id: config.id, label: config.title, placeholder: 'Enter content...', rows: 4 }]
-                    : [];
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {sectionConfigs
+                  .sort((a, b) => a.order - b.order)
+                  .map((config, idx) => {
+                    const fields = SECTION_FIELDS[config.id] || [];
+                    const customFields = config.isCustom
+                      ? [{ id: config.id, label: config.title, placeholder: 'Enter content...', rows: 4 }]
+                      : [];
 
-                  if (!config.isCustom && fields.length === 0) return null;
+                    if (!config.isCustom && fields.length === 0) return null;
 
-                  return (
-                    <DivisionInfoSection
-                      key={config.id}
-                      config={config}
-                      fields={config.isCustom ? customFields : fields}
-                      values={fieldValues}
-                      onChange={handleFieldChange}
-                      onConfigChange={handleSectionConfigChange}
-                      onMove={(direction) => moveSection(idx, direction)}
-                      onDelete={config.isCustom ? () => deleteSection(config.id) : undefined}
-                      canMoveUp={idx > 0}
-                      canMoveDown={idx < sectionConfigs.length - 1}
-                    />
-                  );
-                })}
+                    return (
+                      <div key={config.id} className={config.colSpan === 2 ? 'md:col-span-2' : ''}>
+                        <DivisionInfoSection
+                          config={config}
+                          fields={config.isCustom ? customFields : fields}
+                          values={fieldValues}
+                          onChange={handleFieldChange}
+                          onConfigChange={handleSectionConfigChange}
+                          onMove={(direction) => moveSection(idx, direction)}
+                          onDelete={config.isCustom ? () => deleteSection(config.id) : undefined}
+                          canMoveUp={idx > 0}
+                          canMoveDown={idx < sectionConfigs.length - 1}
+                        />
+                      </div>
+                    );
+                  })}
+              </div>
 
               {/* Add Section Button */}
               <div className="flex justify-center">
