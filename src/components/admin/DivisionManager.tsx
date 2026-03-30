@@ -692,21 +692,28 @@ export function DivisionManager() {
     ));
   };
 
-  const moveSection = (idx: number, direction: 'up' | 'down') => {
-    const newConfigs = [...sectionConfigs];
+  const moveSection = (sectionId: string, direction: 'up' | 'down') => {
+    // Filter out deleted sections and sort by order
+    const visibleConfigs = sectionConfigs.filter(c => !c.deleted).sort((a, b) => a.order - b.order);
+
+    // Find the index of the section in the visible configs
+    const idx = visibleConfigs.findIndex(c => c.id === sectionId);
+    if (idx === -1) return;
+
     const targetIdx = direction === 'up' ? idx - 1 : idx + 1;
 
-    if (targetIdx < 0 || targetIdx >= newConfigs.length) return;
+    // Check bounds
+    if (targetIdx < 0 || targetIdx >= visibleConfigs.length) return;
 
-    // Swap order values
-    const tempOrder = newConfigs[idx].order;
-    newConfigs[idx].order = newConfigs[targetIdx].order;
-    newConfigs[targetIdx].order = tempOrder;
+    // Swap order values between the two sections
+    const section1 = visibleConfigs[idx];
+    const section2 = visibleConfigs[targetIdx];
+    const tempOrder = section1.order;
+    section1.order = section2.order;
+    section2.order = tempOrder;
 
-    // Re-sort by order
-    newConfigs.sort((a, b) => a.order - b.order);
-
-    setSectionConfigs(newConfigs);
+    // Update sectionConfigs with the new order values
+    setSectionConfigs([...sectionConfigs]);
   };
 
   const deleteSection = (sectionId: string) => {
@@ -879,10 +886,11 @@ export function DivisionManager() {
 
               {/* Configurable Sections */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {sectionConfigs
-                  .filter(c => !c.deleted)
-                  .sort((a, b) => a.order - b.order)
-                  .map((config, idx) => {
+                {(() => {
+                  // Filter out deleted sections and sort by order
+                  const visibleConfigs = sectionConfigs.filter(c => !c.deleted).sort((a, b) => a.order - b.order);
+
+                  return visibleConfigs.map((config, idx) => {
                     const fields = SECTION_FIELDS[config.id] || [];
                     const customFields = config.isCustom
                       ? [{ id: config.id, label: config.title, placeholder: 'Enter content...', rows: 4 }]
@@ -898,15 +906,16 @@ export function DivisionManager() {
                           values={fieldValues}
                           onChange={handleFieldChange}
                           onConfigChange={handleSectionConfigChange}
-                          onMove={(direction) => moveSection(idx, direction)}
+                          onMove={(direction) => moveSection(config.id, direction)}
                           onDelete={() => deleteSection(config.id)}
                           onEdit={() => openEditModal(config.id)}
                           canMoveUp={idx > 0}
-                          canMoveDown={idx < sectionConfigs.length - 1}
+                          canMoveDown={idx < visibleConfigs.length - 1}
                         />
                       </div>
                     );
-                  })}
+                  });
+                })()}
               </div>
 
               {/* Add Section Button */}
