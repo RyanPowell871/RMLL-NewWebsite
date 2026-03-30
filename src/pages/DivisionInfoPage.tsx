@@ -615,6 +615,9 @@ export function DivisionInfoPage() {
                       );
                     })}
                 </div>
+              </div>
+            </TabsContent>
+
             {/* Season Info Tab */}
             <TabsContent value="season-info" className="mt-0">
               {divisionData.seasonInfo ? (
