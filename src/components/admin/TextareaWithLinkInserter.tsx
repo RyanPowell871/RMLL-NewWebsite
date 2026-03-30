@@ -2,7 +2,7 @@ import { forwardRef, useRef, useState } from 'react';
 import { Label } from '../ui/label';
 import { Textarea } from '../ui/textarea';
 import { LinkInserter } from './LinkInserter';
-import { Bold, Italic, List, ListOrdered } from 'lucide-react';
+import { Bold, Italic, List, ListOrdered, Link2 } from 'lucide-react';
 import { Button } from '../ui/button';
 import { Popover, PopoverContent, PopoverTrigger } from '../ui/popover';
 
@@ -16,6 +16,12 @@ interface TextareaWithLinkInserterProps {
   id?: string;
   name?: string;
   className?: string;
+}
+
+export interface LinkInsertOptions {
+  url: string;
+  title?: string;
+  newTab?: boolean;
 }
 
 export const TextareaWithLinkInserter = forwardRef<HTMLTextAreaElement, TextareaWithLinkInserterProps>(
@@ -32,35 +38,41 @@ export const TextareaWithLinkInserter = forwardRef<HTMLTextAreaElement, Textarea
   }, ref) {
     const textareaRef = useRef<HTMLTextAreaElement>(null);
     const [showFormatting, setShowFormatting] = useState(false);
+    const [cursorPosition, setCursorPosition] = useState(0);
+    const [showLinkInserter, setShowLinkInserter] = useState(false);
+
+    // Focus textarea and capture cursor position when opening link inserter
+    const openLinkInserter = () => {
+      const textarea = textareaRef.current;
+      if (textarea) {
+        textarea.focus();
+        setCursorPosition(textarea.selectionStart);
+      }
+      setShowLinkInserter(true);
+    };
 
     // Handle link insertion from LinkInserter
-    const handleInsertLink = (markdown: string) => {
-      const textarea = textareaRef.current;
-      if (!textarea) {
-        console.error('Textarea ref not available');
-        return;
-      }
-
+    const handleInsertLink = (options: LinkInsertOptions) => {
       const currentValue = value || '';
-      const start = textarea.selectionStart;
-      const end = textarea.selectionEnd;
+      const position = cursorPosition;
 
-      console.log('Inserting link:', markdown, 'at position', start, 'current value:', currentValue);
+      // Build markdown: [text](url) or [text](url "_blank")
+      const linkText = options.title || options.url;
+      const targetAttr = options.newTab ? ' "_blank"' : '';
+      const markdown = `[${linkText}](${options.url}${targetAttr})`;
 
-      const newValue = currentValue.substring(0, start) + markdown + currentValue.substring(end);
-      console.log('New value:', newValue);
-
+      const newValue = currentValue.substring(0, position) + markdown + currentValue.substring(position);
       onChange?.(newValue);
+      setShowLinkInserter(false);
 
-      // Set cursor position after inserted text - use requestAnimationFrame to ensure DOM updated
-      requestAnimationFrame(() => {
-        const updatedTextarea = textareaRef.current;
-        if (updatedTextarea) {
-          updatedTextarea.setSelectionRange(start + markdown.length, start + markdown.length);
-          updatedTextarea.focus();
-          console.log('Focus and cursor set');
+      // Set cursor position after inserted text
+      setTimeout(() => {
+        const textarea = textareaRef.current;
+        if (textarea) {
+          textarea.setSelectionRange(position + markdown.length, position + markdown.length);
+          textarea.focus();
         }
-      });
+      }, 50);
     };
 
     // Handle toolbar actions
@@ -115,7 +127,23 @@ export const TextareaWithLinkInserter = forwardRef<HTMLTextAreaElement, Textarea
 
         {/* Toolbar */}
         <div className="flex items-center gap-1 p-2 bg-gray-50 border border-gray-200 rounded-t-lg rounded-b-none border-b-0">
-          <LinkInserter onInsert={handleInsertLink} />
+          <LinkInserter
+            open={showLinkInserter}
+            onOpenChange={setShowLinkInserter}
+            onInsert={handleInsertLink}
+            trigger={
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                className="h-8 w-8 p-0"
+                onClick={openLinkInserter}
+                title="Insert Link"
+              >
+                <Link2 className="w-4 h-4" />
+              </Button>
+            }
+          />
 
           <Popover open={showFormatting} onOpenChange={setShowFormatting}>
             <PopoverTrigger asChild>

@@ -1,10 +1,12 @@
 import { useState } from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '../ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../ui/dialog';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../ui/tabs';
 import { ScrollArea } from '../ui/scroll-area';
-import { FileText, File, Search, ExternalLink, Book, Briefcase, Users, Scale, Wrench, Menu as MenuIcon, Link2 } from 'lucide-react';
+import { Checkbox } from '../ui/checkbox';
+import { FileText, File, Search, ExternalLink, Book, Briefcase, Users, Scale, Menu as MenuIcon } from 'lucide-react';
+import { LinkInsertOptions } from './TextareaWithLinkInserter';
 
 // Document types
 interface DocumentItem {
@@ -22,7 +24,7 @@ interface PageItem {
   url: string;
 }
 
-// Document library data (same structure as DocumentsPageV1.tsx)
+// Document library data
 const DOCUMENTS: DocumentItem[] = [
   { id: '1', title: 'RMLL Official Rulebook 2025', category: 'Rules & Regulations', year: 2025 },
   { id: '2', title: 'Player Registration Form', category: 'Forms', year: 2025 },
@@ -92,21 +94,26 @@ const LEAGUE_INFO_PAGES: PageItem[] = [
 const DOCUMENT_CATEGORIES = ['All Categories', 'Rules & Regulations', 'Forms', 'Policies', 'Officials', 'Reports'];
 
 interface LinkInserterProps {
-  onInsert: (markdown: string) => void;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  onInsert: (options: LinkInsertOptions) => void;
   trigger?: React.ReactNode;
 }
 
-export function LinkInserter({ onInsert, trigger }: LinkInserterProps) {
-  const [open, setOpen] = useState(false);
+export function LinkInserter({ open, onOpenChange, onInsert, trigger }: LinkInserterProps) {
   const [docSearch, setDocSearch] = useState('');
   const [pageSearch, setPageSearch] = useState('');
   const [leagueInfoSearch, setLeagueInfoSearch] = useState('');
   const [docCategory, setDocCategory] = useState('All Categories');
+  const [customUrl, setCustomUrl] = useState('');
+  const [customText, setCustomText] = useState('');
+  const [newTab, setNewTab] = useState(false);
+  const [selectedItem, setSelectedItem] = useState<{ url: string; title?: string } | null>(null);
 
   // Filter documents
   const filteredDocuments = DOCUMENTS.filter(doc => {
     const matchesSearch = doc.title.toLowerCase().includes(docSearch.toLowerCase());
-    const matchesCategory = docCategory === 'All Categories' || doc.category === docCategory;
+    const matchesCategory = docCategory === 'All Categories' || doc.category === doc.category;
     return matchesSearch && matchesCategory;
   });
 
@@ -132,52 +139,78 @@ export function LinkInserter({ onInsert, trigger }: LinkInserterProps) {
     }
   };
 
-  const insertDocumentLink = (doc: DocumentItem) => {
-    const markdown = `[${doc.title}](/documents/${doc.id})`;
-    console.log('LinkInserter insertDocumentLink:', markdown);
-    onInsert(markdown);
-    setOpen(false);
+  const selectDocument = (doc: DocumentItem) => {
+    setSelectedItem({ url: `/documents/${doc.id}`, title: doc.title });
+    setCustomText(doc.title);
   };
 
-  const insertPageLink = (page: PageItem) => {
-    const markdown = `[${page.title}](${page.url})`;
-    console.log('LinkInserter insertPageLink:', markdown);
-    onInsert(markdown);
-    setOpen(false);
+  const selectPage = (page: PageItem) => {
+    setSelectedItem({ url: page.url, title: page.title });
+    setCustomText(page.title);
   };
 
-  const defaultTrigger = (
-    <Button type="button" variant="ghost" size="sm" className="h-8 w-8 p-0" title="Insert Link">
-      <Link2 className="w-4 h-4" />
-    </Button>
-  );
+  const handleInsert = () => {
+    if (selectedItem) {
+      onInsert({
+        url: selectedItem.url,
+        title: customText || selectedItem.title,
+        newTab,
+      });
+    } else if (customUrl) {
+      onInsert({
+        url: customUrl,
+        title: customText || customUrl,
+        newTab,
+      });
+    }
+  };
+
+  const reset = () => {
+    setSelectedItem(null);
+    setCustomUrl('');
+    setCustomText('');
+    setNewTab(false);
+    setDocSearch('');
+    setPageSearch('');
+    setLeagueInfoSearch('');
+    setDocCategory('All Categories');
+  };
+
+  const handleClose = () => {
+    reset();
+    onOpenChange(false);
+  };
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>{trigger || defaultTrigger}</DialogTrigger>
-      <DialogContent className="max-w-2xl max-h-[80vh]">
+    <Dialog open={open} onOpenChange={handleClose}>
+      {trigger}
+      <DialogContent className="max-w-2xl max-h-[90vh] flex flex-col">
         <DialogHeader>
           <DialogTitle>Insert Link</DialogTitle>
         </DialogHeader>
-        <Tabs defaultValue="documents">
-          <TabsList className="grid w-full grid-cols-3">
+        <Tabs defaultValue="documents" className="flex-1 overflow-hidden flex flex-col">
+          <TabsList className="grid w-full grid-cols-4">
             <TabsTrigger value="documents">
               <FileText className="w-4 h-4 mr-2" />
               Documents
             </TabsTrigger>
             <TabsTrigger value="pages">
               <MenuIcon className="w-4 h-4 mr-2" />
-              Site Pages
+              Pages
             </TabsTrigger>
             <TabsTrigger value="league-info">
               <Book className="w-4 h-4 mr-2" />
               League Info
             </TabsTrigger>
+            <TabsTrigger value="custom">
+              <ExternalLink className="w-4 h-4 mr-2" />
+              Custom URL
+            </TabsTrigger>
           </TabsList>
 
           {/* Documents Tab */}
-          <TabsContent value="documents" className="mt-4">
-            <div className="space-y-3">
+          <TabsContent value="documents" className="flex-1 overflow-hidden flex flex-col mt-4">
+            <div className="space-y-3 flex-shrink-0">
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
                 <Input
@@ -204,7 +237,7 @@ export function LinkInserter({ onInsert, trigger }: LinkInserterProps) {
                 ))}
               </div>
             </div>
-            <ScrollArea className="h-[400px] border rounded-lg">
+            <ScrollArea className="flex-1 border rounded-lg mt-3">
               <div className="p-2 space-y-1">
                 {filteredDocuments.length === 0 ? (
                   <div className="text-center py-8 text-gray-500">
@@ -215,26 +248,38 @@ export function LinkInserter({ onInsert, trigger }: LinkInserterProps) {
                     <button
                       key={doc.id}
                       type="button"
-                      onClick={() => insertDocumentLink(doc)}
-                      className="w-full text-left p-3 rounded-lg hover:bg-gray-100 transition-colors border border-transparent hover:border-gray-200 group"
+                      onClick={() => selectDocument(doc)}
+                      className={`w-full text-left p-3 rounded-lg transition-colors border group ${
+                        selectedItem?.url === `/documents/${doc.id}`
+                          ? 'bg-[#013fac] text-white border-[#013fac]'
+                          : 'hover:bg-gray-100 border-transparent hover:border-gray-200'
+                      }`}
                     >
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-3">
-                          <div className="p-2 bg-red-50 rounded group-hover:bg-red-100 transition-colors">
+                          <div className={`p-2 rounded group-hover:transition-colors ${
+                            selectedItem?.url === `/documents/${doc.id}`
+                              ? 'bg-blue-800'
+                              : 'bg-red-50 group-hover:bg-red-100'
+                          }`}>
                             <FileText className="w-4 h-4 text-red-600" />
                           </div>
                           <div className="flex-1 min-w-0">
-                            <div className="font-semibold text-sm text-gray-900 truncate">
+                            <div className="font-semibold text-sm truncate">
                               {doc.title}
                             </div>
-                            <div className="text-xs text-gray-500 flex items-center gap-2">
+                            <div className={`text-xs flex items-center gap-2 ${
+                              selectedItem?.url === `/documents/${doc.id}`
+                                ? 'text-blue-200'
+                                : 'text-gray-500'
+                            }`}>
                               <span>{doc.category}</span>
                               <span>•</span>
                               <span>{doc.year}</span>
                             </div>
                           </div>
                         </div>
-                        <ExternalLink className="w-4 h-4 text-gray-400 group-hover:text-[#013fac]" />
+                        <ExternalLink className="w-4 h-4" />
                       </div>
                     </button>
                   ))
@@ -244,8 +289,8 @@ export function LinkInserter({ onInsert, trigger }: LinkInserterProps) {
           </TabsContent>
 
           {/* Site Pages Tab */}
-          <TabsContent value="pages" className="mt-4">
-            <div className="space-y-3">
+          <TabsContent value="pages" className="flex-1 overflow-hidden flex flex-col mt-4">
+            <div className="space-y-3 flex-shrink-0">
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
                 <Input
@@ -256,7 +301,7 @@ export function LinkInserter({ onInsert, trigger }: LinkInserterProps) {
                 />
               </div>
             </div>
-            <ScrollArea className="h-[400px] border rounded-lg">
+            <ScrollArea className="flex-1 border rounded-lg mt-3">
               <div className="p-2 space-y-1">
                 {filteredSitePages.length === 0 ? (
                   <div className="text-center py-8 text-gray-500">
@@ -267,24 +312,34 @@ export function LinkInserter({ onInsert, trigger }: LinkInserterProps) {
                     <button
                       key={page.id}
                       type="button"
-                      onClick={() => insertPageLink(page)}
-                      className="w-full text-left p-3 rounded-lg hover:bg-gray-100 transition-colors border border-transparent hover:border-gray-200 group"
+                      onClick={() => selectPage(page)}
+                      className={`w-full text-left p-3 rounded-lg transition-colors border group ${
+                        selectedItem?.url === page.url
+                          ? 'bg-[#013fac] text-white border-[#013fac]'
+                          : 'hover:bg-gray-100 border-transparent hover:border-gray-200'
+                      }`}
                     >
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-3">
-                          <div className="p-2 bg-blue-50 rounded group-hover:bg-blue-100 transition-colors">
+                          <div className={`p-2 rounded group-hover:transition-colors ${
+                            selectedItem?.url === page.url
+                              ? 'bg-blue-800'
+                              : 'bg-blue-50 group-hover:bg-blue-100'
+                          }`}>
                             <MenuIcon className="w-4 h-4 text-blue-600" />
                           </div>
                           <div className="flex-1 min-w-0">
                             <div className="font-semibold text-sm text-gray-900 truncate">
                               {page.title}
                             </div>
-                            <div className="text-xs text-gray-500">
-                              {page.category} • {page.url}
+                            <div className={`text-xs ${
+                              selectedItem?.url === page.url ? 'text-blue-200' : 'text-gray-500'
+                            }`}>
+                              {page.category}
                             </div>
                           </div>
                         </div>
-                        <ExternalLink className="w-4 h-4 text-gray-400 group-hover:text-[#013fac]" />
+                        <ExternalLink className="w-4 h-4" />
                       </div>
                     </button>
                   ))
@@ -294,8 +349,8 @@ export function LinkInserter({ onInsert, trigger }: LinkInserterProps) {
           </TabsContent>
 
           {/* League Info Tab */}
-          <TabsContent value="league-info" className="mt-4">
-            <div className="space-y-3">
+          <TabsContent value="league-info" className="flex-1 overflow-hidden flex flex-col mt-4">
+            <div className="space-y-3 flex-shrink-0">
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
                 <Input
@@ -306,7 +361,7 @@ export function LinkInserter({ onInsert, trigger }: LinkInserterProps) {
                 />
               </div>
             </div>
-            <ScrollArea className="h-[400px] border rounded-lg">
+            <ScrollArea className="flex-1 border rounded-lg mt-3">
               <div className="p-2">
                 {(() => {
                   const categories = [...new Set(filteredLeagueInfoPages.map(p => p.category))];
@@ -328,24 +383,34 @@ export function LinkInserter({ onInsert, trigger }: LinkInserterProps) {
                               <button
                                 key={page.id}
                                 type="button"
-                                onClick={() => insertPageLink(page)}
-                                className="w-full text-left p-2 rounded-lg hover:bg-gray-100 transition-colors border border-transparent hover:border-gray-200 group"
+                                onClick={() => selectPage(page)}
+                                className={`w-full text-left p-2 rounded-lg transition-colors border group ${
+                                  selectedItem?.url === page.url
+                                    ? 'bg-[#013fac] text-white border-[#013fac]'
+                                    : 'hover:bg-gray-100 border-transparent hover:border-gray-200'
+                                }`}
                               >
                                 <div className="flex items-center justify-between">
                                   <div className="flex items-center gap-2">
-                                    <div className="p-1.5 bg-purple-50 rounded group-hover:bg-purple-100 transition-colors">
+                                    <div className={`p-1.5 rounded group-hover:transition-colors ${
+                                      selectedItem?.url === page.url
+                                        ? 'bg-blue-800'
+                                        : 'bg-purple-50 group-hover:bg-purple-100'
+                                    }`}>
                                       <Book className="w-3 h-3 text-purple-600" />
                                     </div>
                                     <div className="flex-1 min-w-0">
                                       <div className="font-semibold text-sm text-gray-900 truncate">
                                         {page.title}
                                       </div>
-                                      <div className="text-xs text-gray-500 truncate">
+                                      <div className={`text-xs truncate ${
+                                        selectedItem?.url === page.url ? 'text-blue-200' : 'text-gray-500'
+                                      }`}>
                                         {page.url}
                                       </div>
                                     </div>
                                   </div>
-                                  <ExternalLink className="w-4 h-4 text-gray-400 group-hover:text-[#013fac]" />
+                                  <ExternalLink className="w-4 h-4" />
                                 </div>
                               </button>
                             ))}
@@ -357,7 +422,84 @@ export function LinkInserter({ onInsert, trigger }: LinkInserterProps) {
               </div>
             </ScrollArea>
           </TabsContent>
+
+          {/* Custom URL Tab */}
+          <TabsContent value="custom" className="mt-4 flex-1">
+            <div className="space-y-4">
+              <div>
+                <label className="text-sm font-medium">URL</label>
+                <Input
+                  placeholder="https://example.com"
+                  value={customUrl}
+                  onChange={(e) => {
+                    setCustomUrl(e.target.value);
+                    if (e.target.value && !selectedItem) {
+                      setSelectedItem({ url: e.target.value });
+                    }
+                  }}
+                  className="mt-1"
+                />
+              </div>
+              <div>
+                <label className="text-sm font-medium">Link Text (optional)</label>
+                <Input
+                  placeholder="Click here"
+                  value={customText}
+                  onChange={(e) => setCustomText(e.target.value)}
+                  className="mt-1"
+                />
+              </div>
+              <div className="flex items-center space-x-2">
+                <Checkbox
+                  id="newTab"
+                  checked={newTab}
+                  onCheckedChange={(checked) => setNewTab(checked as boolean)}
+                />
+                <label htmlFor="newTab" className="text-sm">
+                  Open in new tab
+                </label>
+              </div>
+            </div>
+          </TabsContent>
         </Tabs>
+
+        {/* Footer with custom options */}
+        {selectedItem && (
+          <div className="border-t pt-4 mt-4 space-y-3">
+            <div>
+              <label className="text-sm font-medium">Link Text</label>
+              <Input
+                placeholder="Link text"
+                value={customText}
+                onChange={(e) => setCustomText(e.target.value)}
+                className="mt-1"
+              />
+            </div>
+            <div className="flex items-center justify-between">
+              <div className="flex items-center space-x-2">
+                <Checkbox
+                  id="newTab"
+                  checked={newTab}
+                  onCheckedChange={(checked) => setNewTab(checked as boolean)}
+                />
+                <label htmlFor="newTab" className="text-sm">
+                  Open in new tab
+                </label>
+              </div>
+              <div className="text-xs text-gray-500">
+                {selectedItem.url}
+              </div>
+            </div>
+            <div className="flex gap-2 justify-end pt-2">
+              <Button variant="outline" onClick={handleClose}>
+                Cancel
+              </Button>
+              <Button onClick={handleInsert} disabled={!selectedItem.url}>
+                Insert Link
+              </Button>
+            </div>
+          </div>
+        )}
       </DialogContent>
     </Dialog>
   );
