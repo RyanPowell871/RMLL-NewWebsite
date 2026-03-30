@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Header } from '../components/Header';
-import { ChevronRight, Info, Calendar, Users, Award, Trophy, FileText, ArrowRightLeft, Loader2 } from 'lucide-react';
+import { ChevronRight, ChevronDown, Info, Calendar, Users, Award, Trophy, FileText, ArrowRightLeft, Loader2 } from 'lucide-react';
 import { allPossibleDivisions } from '../contexts/DivisionContext';
 import { useDivision } from '../contexts/DivisionContext';
 import { useNavigation } from '../contexts/NavigationContext';
@@ -556,585 +556,65 @@ export function DivisionInfoPage() {
                   </div>
                 )}
 
-                {/* Info Grid */}
+                {/* Info Grid - Dynamic sections based on config */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {/* Tryouts */}
-                  {(divisionData.subdivisions && activeSubdivision 
-                    ? divisionData.subdivisions[activeSubdivision]?.divisionInfo?.tryouts 
-                    : divisionData.divisionInfo?.tryouts) && (
-                    <Card className="border-l-4 border-l-[#013fac] shadow-sm hover:shadow-md transition-shadow md:col-span-2">
-                      <div className="p-5">
-                        <div className="flex items-start gap-3 mb-3">
-                          <div className="p-2 bg-[#013fac]/10 rounded-lg">
-                            <Info className="w-5 h-5 text-[#013fac]" />
-                          </div>
-                          <div>
-                            <h4 className="font-bold text-base text-gray-900 mb-1" style={{ fontFamily: 'var(--font-secondary)' }}>
-                              Tryouts
-                            </h4>
-                            <p className="text-sm text-gray-700 leading-relaxed whitespace-pre-line">
-                              {divisionData.subdivisions && activeSubdivision
-                                ? divisionData.subdivisions[activeSubdivision].divisionInfo?.tryouts
-                                : divisionData.divisionInfo?.tryouts}
-                            </p>
-                          </div>
-                        </div>
-                      </div>
-                    </Card>
-                  )}
+                  {sectionConfigs
+                    .sort((a, b) => a.order - b.order)
+                    .map((config) => {
+                      const sectionValue = getSectionValue(config.id);
+                      const { icon: Icon, color } = getSectionProps(config.id);
+                      const isCollapsed = isSectionCollapsed(config.id);
 
-                  {/* Teams */}
-                  <Card className="border-l-4 border-l-[#013fac] shadow-sm hover:shadow-md transition-shadow">
-                    <div className="p-5">
-                      <div className="flex items-start gap-3 mb-3">
-                        <div className="p-2 bg-[#013fac]/10 rounded-lg">
-                          <Users className="w-5 h-5 text-[#013fac]" />
-                        </div>
-                        <div>
-                          <h4 className="font-bold text-base text-gray-900 mb-1" style={{ fontFamily: 'var(--font-secondary)' }}>
-                            Teams
-                          </h4>
-                          <p className="text-sm text-gray-700 leading-relaxed whitespace-pre-line">
-                            {divisionData.subdivisions && activeSubdivision
-                              ? divisionData.subdivisions[activeSubdivision].divisionInfo?.teams || 'Select a specific division to view details'
-                              : divisionData.divisionInfo?.teams || 'Select a specific division to view details'}
-                          </p>
-                        </div>
-                      </div>
-                    </div>
-                  </Card>
+                      // Don't render if no value (except for custom sections)
+                      if (!sectionValue && !config.isCustom) return null;
 
-                  {/* Player Ages */}
-                  <Card className="border-l-4 border-l-[#DC2626] shadow-sm hover:shadow-md transition-shadow">
-                    <div className="p-5">
-                      <div className="flex items-start gap-3 mb-3">
-                        <div className="p-2 bg-[#DC2626]/10 rounded-lg">
-                          <Info className="w-5 h-5 text-[#DC2626]" />
-                        </div>
-                        <div>
-                          <h4 className="font-bold text-base text-gray-900 mb-1" style={{ fontFamily: 'var(--font-secondary)' }}>
-                            Player Ages
-                          </h4>
-                          <p className="text-sm text-gray-700 leading-relaxed">
-                            {divisionData.subdivisions && activeSubdivision
-                              ? divisionData.subdivisions[activeSubdivision].divisionInfo?.playerAges || 'Select a specific division to view details'
-                              : divisionData.divisionInfo?.playerAges || 'Select a specific division to view details'}
-                          </p>
-                        </div>
-                      </div>
-                    </div>
-                  </Card>
-
-                  {/* Playing Rights - also support subdivisions */}
-                  {((divisionData.subdivisions && activeSubdivision && divisionData.subdivisions[activeSubdivision]?.divisionInfo?.playingRights) ||
-                    divisionData.divisionInfo?.playingRights) && (
-                    <Card className="border-l-4 border-l-[#DC2626] shadow-sm hover:shadow-md transition-shadow md:col-span-2">
-                      <div className="p-5">
-                        <div className="flex items-start gap-3 mb-3">
-                          <div className="p-2 bg-[#DC2626]/10 rounded-lg">
-                            <FileText className="w-5 h-5 text-[#DC2626]" />
-                          </div>
-                          <div>
-                            <h4 className="font-bold text-base text-gray-900 mb-1" style={{ fontFamily: 'var(--font-secondary)' }}>
-                              Playing Rights
-                            </h4>
-                            <p className="text-sm text-gray-700 leading-relaxed whitespace-pre-line">
-                              {divisionData.subdivisions && activeSubdivision
-                                ? divisionData.subdivisions[activeSubdivision].divisionInfo?.playingRights
-                                : divisionData.divisionInfo?.playingRights}
-                            </p>
-                          </div>
-                        </div>
-                      </div>
-                    </Card>
-                  )}
-
-                  {/* North Graduating Draft (Junior B Tier I) */}
-                  {divisionData.divisionInfo?.northGraduatingDraft && (
-                    <Card className="border-l-4 border-l-[#013fac] shadow-sm hover:shadow-md transition-shadow md:col-span-2">
-                      <div className="p-5">
-                        <div className="flex items-start gap-3 mb-3">
-                          <div className="p-2 bg-[#013fac]/10 rounded-lg">
-                            <Users className="w-5 h-5 text-[#013fac]" />
-                          </div>
-                          <div>
-                            <h4 className="font-bold text-base text-gray-900 mb-1" style={{ fontFamily: 'var(--font-secondary)' }}>
-                              North Graduating U17 Player Draft
-                            </h4>
-                            <p className="text-sm text-gray-700 leading-relaxed whitespace-pre-line">
-                              {divisionData.divisionInfo.northGraduatingDraft}
-                            </p>
-                          </div>
-                        </div>
-                      </div>
-                    </Card>
-                  )}
-
-                  {/* Central Graduating Draft (Junior B Tier I) */}
-                  {divisionData.divisionInfo?.centralGraduatingDraft && (
-                    <Card className="border-l-4 border-l-[#DC2626] shadow-sm hover:shadow-md transition-shadow md:col-span-2">
-                      <div className="p-5">
-                        <div className="flex items-start gap-3 mb-3">
-                          <div className="p-2 bg-[#DC2626]/10 rounded-lg">
-                            <Users className="w-5 h-5 text-[#DC2626]" />
-                          </div>
-                          <div>
-                            <h4 className="font-bold text-base text-gray-900 mb-1" style={{ fontFamily: 'var(--font-secondary)' }}>
-                              Red Deer Rampage and Innisfail Mavericks Graduating U17 Draft
-                            </h4>
-                            <p className="text-sm text-gray-700 leading-relaxed whitespace-pre-line">
-                              {divisionData.divisionInfo.centralGraduatingDraft}
-                            </p>
-                          </div>
-                        </div>
-                      </div>
-                    </Card>
-                  )}
-
-                  {/* South Graduating Draft (Junior B Tier I) */}
-                  {divisionData.divisionInfo?.southGraduatingDraft && (
-                    <Card className="border-l-4 border-l-[#013fac] shadow-sm hover:shadow-md transition-shadow md:col-span-2">
-                      <div className="p-5">
-                        <div className="flex items-start gap-3 mb-3">
-                          <div className="p-2 bg-[#013fac]/10 rounded-lg">
-                            <Users className="w-5 h-5 text-[#013fac]" />
-                          </div>
-                          <div>
-                            <h4 className="font-bold text-base text-gray-900 mb-1" style={{ fontFamily: 'var(--font-secondary)' }}>
-                              South Graduating U17 Draft
-                            </h4>
-                            <p className="text-sm text-gray-700 leading-relaxed whitespace-pre-line">
-                              {divisionData.divisionInfo.southGraduatingDraft}
-                            </p>
-                          </div>
-                        </div>
-                      </div>
-                    </Card>
-                  )}
-
-                  {/* Protected List (Junior B Tier I specific or general) */}
-                  {divisionData.divisionInfo?.protectedList && (
-                    <Card className="border-l-4 border-l-[#DC2626] shadow-sm hover:shadow-md transition-shadow md:col-span-2">
-                      <div className="p-5">
-                        <div className="flex items-start gap-3 mb-3">
-                          <div className="p-2 bg-[#DC2626]/10 rounded-lg">
-                            <FileText className="w-5 h-5 text-[#DC2626]" />
-                          </div>
-                          <div>
-                            <h4 className="font-bold text-base text-gray-900 mb-1" style={{ fontFamily: 'var(--font-secondary)' }}>
-                              35 Player Protected List
-                            </h4>
-                            <p className="text-sm text-gray-700 leading-relaxed whitespace-pre-line">
-                              {divisionData.divisionInfo.protectedList}
-                            </p>
-                          </div>
-                        </div>
-                      </div>
-                    </Card>
-                  )}
-
-                  {/* Drafted/Protected Players (Junior B Tier I) */}
-                  {divisionData.divisionInfo?.draftedProtectedPlayers && (
-                    <Card className="border-l-4 border-l-[#013fac] shadow-sm hover:shadow-md transition-shadow md:col-span-2">
-                      <div className="p-5">
-                        <div className="flex items-start gap-3 mb-3">
-                          <div className="p-2 bg-[#013fac]/10 rounded-lg">
-                            <Users className="w-5 h-5 text-[#013fac]" />
-                          </div>
-                          <div>
-                            <h4 className="font-bold text-base text-gray-900 mb-1" style={{ fontFamily: 'var(--font-secondary)' }}>
-                              Drafted/Protected Players
-                            </h4>
-                            <p className="text-sm text-gray-700 leading-relaxed whitespace-pre-line">
-                              {divisionData.divisionInfo.draftedProtectedPlayers}
-                            </p>
-                          </div>
-                        </div>
-                      </div>
-                    </Card>
-                  )}
-
-                  {/* Free Agent (Junior B Tier I) */}
-                  {divisionData.divisionInfo?.freeAgent && (
-                    <Card className="border-l-4 border-l-[#DC2626] shadow-sm hover:shadow-md transition-shadow">
-                      <div className="p-5">
-                        <div className="flex items-start gap-3 mb-3">
-                          <div className="p-2 bg-[#DC2626]/10 rounded-lg">
-                            <Users className="w-5 h-5 text-[#DC2626]" />
-                          </div>
-                          <div>
-                            <h4 className="font-bold text-base text-gray-900 mb-1" style={{ fontFamily: 'var(--font-secondary)' }}>
-                              Jr. B Tier I Free Agent
-                            </h4>
-                            <p className="text-sm text-gray-700 leading-relaxed whitespace-pre-line">
-                              {divisionData.divisionInfo.freeAgent}
-                            </p>
-                          </div>
-                        </div>
-                      </div>
-                    </Card>
-                  )}
-
-                  {/* First Year Registration (Junior B Tier I) */}
-                  {divisionData.divisionInfo?.firstYearRegistration && (
-                    <Card className="border-l-4 border-l-[#013fac] shadow-sm hover:shadow-md transition-shadow">
-                      <div className="p-5">
-                        <div className="flex items-start gap-3 mb-3">
-                          <div className="p-2 bg-[#013fac]/10 rounded-lg">
-                            <FileText className="w-5 h-5 text-[#013fac]" />
-                          </div>
-                          <div>
-                            <h4 className="font-bold text-base text-gray-900 mb-1" style={{ fontFamily: 'var(--font-secondary)' }}>
-                              First-Year Player Registration
-                            </h4>
-                            <p className="text-sm text-gray-700 leading-relaxed whitespace-pre-line">
-                              {divisionData.divisionInfo.firstYearRegistration}
-                            </p>
-                          </div>
-                        </div>
-                      </div>
-                    </Card>
-                  )}
-
-                  {/* Graduating Junior Entry Draft (for other divisions) */}
-                  {divisionData.divisionInfo?.graduatingDraft && (
-                    <Card className="border-l-4 border-l-[#013fac] shadow-sm hover:shadow-md transition-shadow">
-                      <div className="p-5">
-                        <div className="flex items-start gap-3 mb-3">
-                          <div className="p-2 bg-[#013fac]/10 rounded-lg">
-                            <Users className="w-5 h-5 text-[#013fac]" />
-                          </div>
-                          <div>
-                            <h4 className="font-bold text-base text-gray-900 mb-1" style={{ fontFamily: 'var(--font-secondary)' }}>
-                              Graduating Junior Entry Draft
-                            </h4>
-                            <p className="text-sm text-gray-700 leading-relaxed">
-                              {divisionData.divisionInfo.graduatingDraft}
-                            </p>
-                          </div>
-                        </div>
-                      </div>
-                    </Card>
-                  )}
-
-                  {/* Minimum Games for Playoff Eligibility */}
-                  {divisionData.divisionInfo?.minGames && (
-                    <Card className="border-l-4 border-l-[#013fac] shadow-sm hover:shadow-md transition-shadow">
-                      <div className="p-5">
-                        <div className="flex items-start gap-3 mb-3">
-                          <div className="p-2 bg-[#013fac]/10 rounded-lg">
-                            <Trophy className="w-5 h-5 text-[#013fac]" />
-                          </div>
-                          <div>
-                            <h4 className="font-bold text-base text-gray-900 mb-1" style={{ fontFamily: 'var(--font-secondary)' }}>
-                              Minimum Games for Playoff Eligibility
-                            </h4>
-                            <p className="text-sm text-gray-700 leading-relaxed">
-                              {divisionData.divisionInfo.minGames}
-                            </p>
-                          </div>
-                        </div>
-                      </div>
-                    </Card>
-                  )}
-
-                  {/* Out of Province Players */}
-                  {divisionData.divisionInfo?.outOfProvince && (
-                    <Card className="border-l-4 border-l-[#DC2626] shadow-sm hover:shadow-md transition-shadow">
-                      <div className="p-5">
-                        <div className="flex items-start gap-3 mb-3">
-                          <div className="p-2 bg-[#DC2626]/10 rounded-lg">
-                            <FileText className="w-5 h-5 text-[#DC2626]" />
-                          </div>
-                          <div>
-                            <h4 className="font-bold text-base text-gray-900 mb-1" style={{ fontFamily: 'var(--font-secondary)' }}>
-                              Out of Province Players
-                            </h4>
-                            <p className="text-sm text-gray-700 leading-relaxed">
-                              {divisionData.divisionInfo.outOfProvince}
-                            </p>
-                          </div>
-                        </div>
-                      </div>
-                    </Card>
-                  )}
-
-                  {/* Out of Country Players */}
-                  {divisionData.divisionInfo?.outOfCountry && (
-                    <Card className="border-l-4 border-l-[#013fac] shadow-sm hover:shadow-md transition-shadow">
-                      <div className="p-5">
-                        <div className="flex items-start gap-3 mb-3">
-                          <div className="p-2 bg-[#013fac]/10 rounded-lg">
-                            <FileText className="w-5 h-5 text-[#013fac]" />
-                          </div>
-                          <div>
-                            <h4 className="font-bold text-base text-gray-900 mb-1" style={{ fontFamily: 'var(--font-secondary)' }}>
-                              Out of Country Players
-                            </h4>
-                            <p className="text-sm text-gray-700 leading-relaxed">
-                              {divisionData.divisionInfo.outOfCountry}
-                            </p>
-                          </div>
-                        </div>
-                      </div>
-                    </Card>
-                  )}
-
-                  {/* Other Jurisdiction Players */}
-                  {divisionData.divisionInfo?.otherJurisdiction && (
-                    <Card className="border-l-4 border-l-[#DC2626] shadow-sm hover:shadow-md transition-shadow">
-                      <div className="p-5">
-                        <div className="flex items-start gap-3 mb-3">
-                          <div className="p-2 bg-[#DC2626]/10 rounded-lg">
-                            <FileText className="w-5 h-5 text-[#DC2626]" />
-                          </div>
-                          <div>
-                            <h4 className="font-bold text-base text-gray-900 mb-1" style={{ fontFamily: 'var(--font-secondary)' }}>
-                              Other Jurisdiction Players
-                            </h4>
-                            <p className="text-sm text-gray-700 leading-relaxed">
-                              {divisionData.divisionInfo.otherJurisdiction}
-                            </p>
-                          </div>
-                        </div>
-                      </div>
-                    </Card>
-                  )}
-
-                  {/* Regular Season Standings */}
-                  {divisionData.divisionInfo?.regularSeasonStandings && (
-                    <Card className="border-l-4 border-l-[#013fac] shadow-sm hover:shadow-md transition-shadow">
-                      <div className="p-5">
-                        <div className="flex items-start gap-3 mb-3">
-                          <div className="p-2 bg-[#013fac]/10 rounded-lg">
-                            <FileText className="w-5 h-5 text-[#013fac]" />
-                          </div>
-                          <div>
-                            <h4 className="font-bold text-base text-gray-900 mb-1" style={{ fontFamily: 'var(--font-secondary)' }}>
-                              Regular Season Standings
-                            </h4>
-                            <p className="text-sm text-gray-700 leading-relaxed">
-                              {divisionData.divisionInfo.regularSeasonStandings}
-                            </p>
-                          </div>
-                        </div>
-                      </div>
-                    </Card>
-                  )}
-
-                  {/* Instagram - Alberta Major Female */}
-                  {divisionData.divisionInfo?.instagram && (
-                    <Card className="border-l-4 border-l-[#DC2626] shadow-sm hover:shadow-md transition-shadow md:col-span-2">
-                      <div className="p-5">
-                        <div className="flex items-start gap-3 mb-3">
-                          <div className="p-2 bg-[#DC2626]/10 rounded-lg">
-                            <Info className="w-5 h-5 text-[#DC2626]" />
-                          </div>
-                          <div>
-                            <h4 className="font-bold text-base text-gray-900 mb-1" style={{ fontFamily: 'var(--font-secondary)' }}>
-                              Division Instagram
-                            </h4>
-                            <p className="text-sm text-gray-700 leading-relaxed whitespace-pre-line">
-                              {divisionData.divisionInfo.instagram}
-                            </p>
-                          </div>
-                        </div>
-                      </div>
-                    </Card>
-                  )}
-
-                  {/* Draft Info - Alberta Major Female */}
-                  {divisionData.divisionInfo?.draftInfo && (
-                    <Card className="border-l-4 border-l-[#013fac] shadow-sm hover:shadow-md transition-shadow md:col-span-2">
-                      <div className="p-5">
-                        <div className="flex items-start gap-3 mb-3">
-                          <div className="p-2 bg-[#013fac]/10 rounded-lg">
-                            <Users className="w-5 h-5 text-[#013fac]" />
-                          </div>
-                          <div>
-                            <h4 className="font-bold text-base text-gray-900 mb-1" style={{ fontFamily: 'var(--font-secondary)' }}>
-                              U17 Player Draft
-                            </h4>
-                            <p className="text-sm text-gray-700 leading-relaxed whitespace-pre-line">
-                              {divisionData.divisionInfo.draftInfo}
-                            </p>
-                          </div>
-                        </div>
-                      </div>
-                    </Card>
-                  )}
-
-                  {/* Protected List Info - Alberta Major Female */}
-                  {divisionData.divisionInfo?.protectedListInfo && (
-                    <Card className="border-l-4 border-l-[#DC2626] shadow-sm hover:shadow-md transition-shadow md:col-span-2">
-                      <div className="p-5">
-                        <div className="flex items-start gap-3 mb-3">
-                          <div className="p-2 bg-[#DC2626]/10 rounded-lg">
-                            <FileText className="w-5 h-5 text-[#DC2626]" />
-                          </div>
-                          <div>
-                            <h4 className="font-bold text-base text-gray-900 mb-1" style={{ fontFamily: 'var(--font-secondary)' }}>
-                              35 Player Protected List
-                            </h4>
-                            <p className="text-sm text-gray-700 leading-relaxed whitespace-pre-line">
-                              {divisionData.divisionInfo.protectedListInfo}
-                            </p>
-                          </div>
-                        </div>
-                      </div>
-                    </Card>
-                  )}
-
-                  {/* Calgary Free Agents - Alberta Major Female */}
-                  {divisionData.divisionInfo?.calgaryFreeAgents && (
-                    <Card className="border-l-4 border-l-[#013fac] shadow-sm hover:shadow-md transition-shadow md:col-span-2">
-                      <div className="p-5">
-                        <div className="flex items-start gap-3 mb-3">
-                          <div className="p-2 bg-[#013fac]/10 rounded-lg">
-                            <Users className="w-5 h-5 text-[#013fac]" />
-                          </div>
-                          <div>
-                            <h4 className="font-bold text-base text-gray-900 mb-1" style={{ fontFamily: 'var(--font-secondary)' }}>
-                              Calgary Area Free Agents
-                            </h4>
-                            <p className="text-sm text-gray-700 leading-relaxed whitespace-pre-line">
-                              {divisionData.divisionInfo.calgaryFreeAgents}
-                            </p>
-                          </div>
-                        </div>
-                      </div>
-                    </Card>
-                  )}
-
-                  {/* St. Albert Drillers - Alberta Major Female */}
-                  {divisionData.divisionInfo?.stAlbertDrillers && (
-                    <Card className="border-l-4 border-l-[#DC2626] shadow-sm hover:shadow-md transition-shadow md:col-span-2">
-                      <div className="p-5">
-                        <div className="flex items-start gap-3 mb-3">
-                          <div className="p-2 bg-[#DC2626]/10 rounded-lg">
-                            <FileText className="w-5 h-5 text-[#DC2626]" />
-                          </div>
-                          <div>
-                            <h4 className="font-bold text-base text-gray-900 mb-1" style={{ fontFamily: 'var(--font-secondary)' }}>
-                              St. Albert Drillers Playing Rights
-                            </h4>
-                            <p className="text-sm text-gray-700 leading-relaxed whitespace-pre-line">
-                              {divisionData.divisionInfo.stAlbertDrillers}
-                            </p>
-                          </div>
-                        </div>
-                      </div>
-                    </Card>
-                  )}
-
-                  {/* Sherwood Park Titans - Alberta Major Female */}
-                  {divisionData.divisionInfo?.sherwoodParkTitans && (
-                    <Card className="border-l-4 border-l-[#013fac] shadow-sm hover:shadow-md transition-shadow md:col-span-2">
-                      <div className="p-5">
-                        <div className="flex items-start gap-3 mb-3">
-                          <div className="p-2 bg-[#013fac]/10 rounded-lg">
-                            <FileText className="w-5 h-5 text-[#013fac]" />
-                          </div>
-                          <div>
-                            <h4 className="font-bold text-base text-gray-900 mb-1" style={{ fontFamily: 'var(--font-secondary)' }}>
-                              Sherwood Park Titans Playing Rights
-                            </h4>
-                            <p className="text-sm text-gray-700 leading-relaxed whitespace-pre-line">
-                              {divisionData.divisionInfo.sherwoodParkTitans}
-                            </p>
-                          </div>
-                        </div>
-                      </div>
-                    </Card>
-                  )}
-
-                  {/* Capital Region Saints - Alberta Major Female */}
-                  {divisionData.divisionInfo?.capitalRegionSaints && (
-                    <Card className="border-l-4 border-l-[#DC2626] shadow-sm hover:shadow-md transition-shadow md:col-span-2">
-                      <div className="p-5">
-                        <div className="flex items-start gap-3 mb-3">
-                          <div className="p-2 bg-[#DC2626]/10 rounded-lg">
-                            <FileText className="w-5 h-5 text-[#DC2626]" />
-                          </div>
-                          <div>
-                            <h4 className="font-bold text-base text-gray-900 mb-1" style={{ fontFamily: 'var(--font-secondary)' }}>
-                              Capital Region Saints Playing Rights
-                            </h4>
-                            <p className="text-sm text-gray-700 leading-relaxed whitespace-pre-line">
-                              {divisionData.divisionInfo.capitalRegionSaints}
-                            </p>
-                          </div>
-                        </div>
-                      </div>
-                    </Card>
-                  )}
-
-                  {/* Red Deer Riot - Alberta Major Female */}
-                  {divisionData.divisionInfo?.redDeerRiot && (
-                    <Card className="border-l-4 border-l-[#013fac] shadow-sm hover:shadow-md transition-shadow md:col-span-2">
-                      <div className="p-5">
-                        <div className="flex items-start gap-3 mb-3">
-                          <div className="p-2 bg-[#013fac]/10 rounded-lg">
-                            <FileText className="w-5 h-5 text-[#013fac]" />
-                          </div>
-                          <div>
-                            <h4 className="font-bold text-base text-gray-900 mb-1" style={{ fontFamily: 'var(--font-secondary)' }}>
-                              Red Deer Riot Playing Rights
-                            </h4>
-                            <p className="text-sm text-gray-700 leading-relaxed whitespace-pre-line">
-                              {divisionData.divisionInfo.redDeerRiot}
-                            </p>
-                          </div>
-                        </div>
-                      </div>
-                    </Card>
-                  )}
-
-                  {/* Free Agents - Alberta Major Female */}
-                  {divisionData.divisionInfo?.freeAgents && (
-                    <Card className="border-l-4 border-l-[#DC2626] shadow-sm hover:shadow-md transition-shadow md:col-span-2">
-                      <div className="p-5">
-                        <div className="flex items-start gap-3 mb-3">
-                          <div className="p-2 bg-[#DC2626]/10 rounded-lg">
-                            <Users className="w-5 h-5 text-[#DC2626]" />
-                          </div>
-                          <div>
-                            <h4 className="font-bold text-base text-gray-900 mb-1" style={{ fontFamily: 'var(--font-secondary)' }}>
-                              Free Agents Outside Draft Territories
-                            </h4>
-                            <p className="text-sm text-gray-700 leading-relaxed whitespace-pre-line">
-                              {divisionData.divisionInfo.freeAgents}
-                            </p>
-                          </div>
-                        </div>
-                      </div>
-                    </Card>
-                  )}
-
-                  {/* Returning Players - Alberta Major Female */}
-                  {divisionData.divisionInfo?.returningPlayers && (
-                    <Card className="border-l-4 border-l-[#013fac] shadow-sm hover:shadow-md transition-shadow md:col-span-2">
-                      <div className="p-5">
-                        <div className="flex items-start gap-3 mb-3">
-                          <div className="p-2 bg-[#013fac]/10 rounded-lg">
-                            <Users className="w-5 h-5 text-[#013fac]" />
-                          </div>
-                          <div>
-                            <h4 className="font-bold text-base text-gray-900 mb-1" style={{ fontFamily: 'var(--font-secondary)' }}>
-                              Returning Players
-                            </h4>
-                            <p className="text-sm text-gray-700 leading-relaxed whitespace-pre-line">
-                              {divisionData.divisionInfo.returningPlayers}
-                            </p>
-                          </div>
-                        </div>
-                      </div>
-                    </Card>
-                  )}
+                      return (
+                        <Card
+                          key={config.id}
+                          className={`border-l-4 shadow-sm hover:shadow-md transition-shadow ${config.colSpan === 2 ? 'md:col-span-2' : ''}`}
+                          style={{ borderColor: color }}
+                        >
+                          {config.collapsible && (
+                            <button
+                              onClick={() => toggleSectionCollapse(config.id)}
+                              className="w-full flex items-center justify-between px-5 py-3 hover:bg-gray-50 transition-colors"
+                            >
+                              <div className="flex items-center gap-3">
+                                <div className="p-2 rounded-lg" style={{ backgroundColor: `${color}15` }}>
+                                  <Icon className="w-5 h-5" style={{ color }} />
+                                </div>
+                                <h4 className="font-bold text-base text-gray-900" style={{ fontFamily: 'var(--font-secondary)' }}>
+                                  {getSectionTitle(config)}
+                                </h4>
+                              </div>
+                              {isCollapsed ? (
+                                <ChevronRight className="w-5 h-5 text-gray-400" />
+                              ) : (
+                                <ChevronDown className="w-5 h-5 text-gray-400" />
+                              )}
+                            </button>
+                          )}
+                          {(!config.collapsible || !isCollapsed) && (
+                            <div className={`p-5 ${config.collapsible ? 'pt-2' : ''}`}>
+                              {!config.collapsible && (
+                                <div className="flex items-start gap-3 mb-3">
+                                  <div className="p-2 rounded-lg" style={{ backgroundColor: `${color}15` }}>
+                                    <Icon className="w-5 h-5" style={{ color }} />
+                                  </div>
+                                  <h4 className="font-bold text-base text-gray-900" style={{ fontFamily: 'var(--font-secondary)' }}>
+                                    {getSectionTitle(config)}
+                                  </h4>
+                                </div>
+                              )}
+                              <p className={`text-sm text-gray-700 leading-relaxed whitespace-pre-line ${config.collapsible ? 'pl-14' : ''}`}>
+                                {sectionValue || 'No content yet...'}
+                              </p>
+                            </div>
+                          )}
+                        </Card>
+                      );
+                    })}
                 </div>
-              </div>
-            </TabsContent>
-
             {/* Season Info Tab */}
             <TabsContent value="season-info" className="mt-0">
               {divisionData.seasonInfo ? (
