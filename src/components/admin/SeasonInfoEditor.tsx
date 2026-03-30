@@ -4,7 +4,7 @@ import { Button } from '../ui/button';
 import { Input } from '../ui/input';
 import { Label } from '../ui/label';
 import { Textarea } from '../ui/textarea';
-import { Plus, Trash2, AlertCircle, Eye } from 'lucide-react';
+import { Plus, Trash2, AlertCircle, Eye, ChevronUp, ChevronDown, Edit2, Check, X, Code } from 'lucide-react';
 import { Alert, AlertDescription } from '../ui/alert';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../ui/tabs';
 import { SeasonInfoDisplay } from '../SeasonInfoDisplay';
@@ -120,6 +120,28 @@ function ScenarioEditor({
     onChange(updated);
   };
 
+  const moveScenario = (idx: number, direction: 'up' | 'down') => {
+    const updated = [...scenarios];
+    const targetIdx = direction === 'up' ? idx - 1 : idx + 1;
+    if (targetIdx < 0 || targetIdx >= updated.length) return;
+    const temp = updated[idx];
+    updated[idx] = updated[targetIdx];
+    updated[targetIdx] = temp;
+    onChange(updated);
+  };
+
+  const moveGame = (scenarioIndex: number, gameIndex: number, direction: 'up' | 'down') => {
+    const updated = [...scenarios];
+    const games = [...updated[scenarioIndex].games];
+    const targetIdx = direction === 'up' ? gameIndex - 1 : gameIndex + 1;
+    if (targetIdx < 0 || targetIdx >= games.length) return;
+    const temp = games[gameIndex];
+    games[gameIndex] = games[targetIdx];
+    games[targetIdx] = temp;
+    updated[scenarioIndex] = { ...updated[scenarioIndex], games };
+    onChange(updated);
+  };
+
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
@@ -140,9 +162,21 @@ function ScenarioEditor({
         <Card key={sIdx} className="p-4 space-y-3">
           <div className="flex items-center justify-between">
             <span className="text-sm font-medium text-gray-700">Scenario {sIdx + 1}</span>
-            <Button onClick={() => removeScenario(sIdx)} variant="ghost" size="sm">
-              <Trash2 className="w-4 h-4 text-red-600" />
-            </Button>
+            <div className="flex items-center gap-1">
+              {sIdx > 0 && (
+                <Button onClick={() => moveScenario(sIdx, 'up')} variant="ghost" size="sm" className="h-7 w-7 p-0" title="Move up">
+                  <ChevronUp className="w-3 h-3" />
+                </Button>
+              )}
+              {sIdx < scenarios.length - 1 && (
+                <Button onClick={() => moveScenario(sIdx, 'down')} variant="ghost" size="sm" className="h-7 w-7 p-0" title="Move down">
+                  <ChevronDown className="w-3 h-3" />
+                </Button>
+              )}
+              <Button onClick={() => removeScenario(sIdx)} variant="ghost" size="sm">
+                <Trash2 className="w-4 h-4 text-red-600" />
+              </Button>
+            </div>
           </div>
 
           <div className="grid grid-cols-2 gap-3">
@@ -180,6 +214,28 @@ function ScenarioEditor({
 
             {(scenario.games || []).map((game, gIdx) => (
               <div key={gIdx} className="flex items-center gap-2 bg-gray-50 dark:bg-gray-800 rounded p-2">
+                {gIdx > 0 && (
+                  <Button
+                    onClick={() => moveGame(sIdx, gIdx, 'up')}
+                    variant="ghost"
+                    size="sm"
+                    className="h-6 w-6 p-0 shrink-0"
+                    title="Move up"
+                  >
+                    <ChevronUp className="w-3 h-3" />
+                  </Button>
+                )}
+                {gIdx < (scenario.games || []).length - 1 && (
+                  <Button
+                    onClick={() => moveGame(sIdx, gIdx, 'down')}
+                    variant="ghost"
+                    size="sm"
+                    className="h-6 w-6 p-0 shrink-0"
+                    title="Move down"
+                  >
+                    <ChevronDown className="w-3 h-3" />
+                  </Button>
+                )}
                 <div className="w-12 shrink-0">
                   <Label className="text-[10px] text-gray-500">Game #</Label>
                   <Input
@@ -235,6 +291,7 @@ export function SeasonInfoEditor({ value, onChange }: SeasonInfoEditorProps) {
   const [jsonValue, setJsonValue] = useState(value);
   const [jsonError, setJsonError] = useState<string | null>(null);
   const [data, setData] = useState<SeasonInfoData>({});
+  const [editingHeading, setEditingHeading] = useState<string | null>(null);
 
   // Parse initial value
   useEffect(() => {
@@ -267,6 +324,40 @@ export function SeasonInfoEditor({ value, onChange }: SeasonInfoEditorProps) {
     }
   };
 
+  // Get tab metadata
+  const getTabMetadata = (key: string) => data.__metadata?.[key] || {};
+  const updateTabMetadata = (key: string, field: string, value: any) => {
+    const metadata = data.__metadata || {};
+    metadata[key] = { ...metadata[key], [field]: value };
+    updateData({ ...data, __metadata: metadata });
+  };
+
+  const getTabLabel = (key: string) => {
+    const metadata = getTabMetadata(key);
+    if (metadata.title) return metadata.title;
+    switch (key) {
+      case 'drafts': return 'Drafts';
+      case 'regular': return 'Regular Season';
+      case 'playoffs': return 'Playoffs';
+      case 'provincial': return 'Provincial';
+      case 'presidents': return 'Presidents Cup';
+      case 'notes': return 'Notes';
+      default: return key;
+    }
+  };
+
+  const isTabCollapsed = (key: string) => {
+    const metadata = getTabMetadata(key);
+    return metadata.collapsed ?? false;
+  };
+
+  const isTabCollapsible = (key: string) => {
+    const metadata = getTabMetadata(key);
+    return metadata.collapsible ?? true;
+  };
+
+  const availableTabs = ['drafts', 'regular', 'playoffs', 'provincial', 'presidents', 'notes'];
+
   return (
     <div className="space-y-4">
       <div className="flex gap-2">
@@ -284,6 +375,7 @@ export function SeasonInfoEditor({ value, onChange }: SeasonInfoEditorProps) {
           onClick={() => setMode('json')}
           size="sm"
         >
+          <Code className="w-4 h-4 mr-2" />
           JSON Editor
         </Button>
         <Button
@@ -300,26 +392,69 @@ export function SeasonInfoEditor({ value, onChange }: SeasonInfoEditorProps) {
       {mode === 'visual' && (
         <div className="space-y-6">
           <Alert>
-            <AlertCircle className="w-4 h-4" />
+            <AlertCircle className="w-4 w-4" />
             <AlertDescription>
               Use the visual editor to build structured season information. This will be displayed as beautiful cards on the Division Info page.
             </AlertDescription>
           </Alert>
 
           <Tabs defaultValue="drafts" className="w-full">
-            <TabsList>
-              <TabsTrigger value="drafts">Drafts</TabsTrigger>
-              <TabsTrigger value="regular">Regular Season</TabsTrigger>
-              <TabsTrigger value="playoffs">Playoffs</TabsTrigger>
-              <TabsTrigger value="provincial">Provincial</TabsTrigger>
-              <TabsTrigger value="presidents">Presidents Cup</TabsTrigger>
-              <TabsTrigger value="notes">Notes</TabsTrigger>
+            <TabsList className="grid grid-cols-3 lg:grid-cols-6">
+              {availableTabs.map(tab => (
+                <TabsTrigger key={tab} value={tab}>
+                  {getTabLabel(tab)}
+                </TabsTrigger>
+              ))}
             </TabsList>
 
             {/* Drafts Tab */}
             <TabsContent value="drafts" className="space-y-4">
               <Card className="p-4">
-                <h4 className="font-bold mb-3">North Draft</h4>
+                <div className="flex items-center justify-between mb-3">
+                  <h4 className="font-bold">North Draft</h4>
+                  <div className="flex items-center gap-1">
+                    <Button
+                      onClick={() => setEditingHeading('drafts-north')}
+                      size="sm"
+                      variant="ghost"
+                      className="h-7 w-7 p-0"
+                      title="Edit heading"
+                    >
+                      <Edit2 className="w-3 h-3 text-gray-500" />
+                    </Button>
+                  </div>
+                </div>
+                {editingHeading === 'drafts-north' ? (
+                  <div className="flex items-center gap-2 mb-3">
+                    <Input
+                      value={getTabMetadata('drafts').northHeading || ''}
+                      onChange={(e) => {}}
+                      placeholder="Custom heading (optional)"
+                      className="h-7 w-48"
+                    />
+                    <Button
+                      onClick={() => {
+                        updateTabMetadata('drafts', 'northHeading', '');
+                        setEditingHeading(null);
+                      }}
+                      size="sm"
+                      variant="ghost"
+                      className="h-7 w-7 p-0"
+                    >
+                      <Check className="w-3 h-3 text-green-600" />
+                    </Button>
+                    <Button
+                      onClick={() => setEditingHeading(null)}
+                      size="sm"
+                      variant="ghost"
+                      className="h-7 w-7 p-0"
+                    >
+                      <X className="w-3 h-3 text-red-600" />
+                    </Button>
+                  </div>
+                ) : getTabMetadata('drafts').northHeading ? (
+                  <p className="text-sm text-gray-600 mb-3 italic">{getTabMetadata('drafts').northHeading}</p>
+                ) : null}
                 <div className="grid grid-cols-2 gap-3">
                   <div>
                     <Label className="text-xs">Title</Label>
@@ -409,7 +544,51 @@ export function SeasonInfoEditor({ value, onChange }: SeasonInfoEditorProps) {
               </Card>
 
               <Card className="p-4">
-                <h4 className="font-bold mb-3">South Draft</h4>
+                <div className="flex items-center justify-between mb-3">
+                  <h4 className="font-bold">South Draft</h4>
+                  <div className="flex items-center gap-1">
+                    <Button
+                      onClick={() => setEditingHeading('drafts-south')}
+                      size="sm"
+                      variant="ghost"
+                      className="h-7 w-7 p-0"
+                      title="Edit heading"
+                    >
+                      <Edit2 className="w-3 h-3 text-gray-500" />
+                    </Button>
+                  </div>
+                </div>
+                {editingHeading === 'drafts-south' ? (
+                  <div className="flex items-center gap-2 mb-3">
+                    <Input
+                      value={getTabMetadata('drafts').southHeading || ''}
+                      onChange={(e) => {}}
+                      placeholder="Custom heading (optional)"
+                      className="h-7 w-48"
+                    />
+                    <Button
+                      onClick={() => {
+                        updateTabMetadata('drafts', 'southHeading', '');
+                        setEditingHeading(null);
+                      }}
+                      size="sm"
+                      variant="ghost"
+                      className="h-7 w-7 p-0"
+                    >
+                      <Check className="w-3 h-3 text-green-600" />
+                    </Button>
+                    <Button
+                      onClick={() => setEditingHeading(null)}
+                      size="sm"
+                      variant="ghost"
+                      className="h-7 w-7 p-0"
+                    >
+                      <X className="w-3 h-3 text-red-600" />
+                    </Button>
+                  </div>
+                ) : getTabMetadata('drafts').southHeading ? (
+                  <p className="text-sm text-gray-600 mb-3 italic">{getTabMetadata('drafts').southHeading}</p>
+                ) : null}
                 <div className="grid grid-cols-2 gap-3">
                   <div>
                     <Label className="text-xs">Title</Label>
@@ -561,7 +740,7 @@ export function SeasonInfoEditor({ value, onChange }: SeasonInfoEditorProps) {
                     value={data.playoffs?.format || ''}
                     onChange={(e) => updateData({
                       ...data,
-                      playoffs: { ...data.playoffs, format: e.target.value, scenarios: data.playoffs?.scenarios || [] }
+                      playoffs: { format: e.target.value, scenarios: data.playoffs?.scenarios || [] }
                     })}
                     placeholder="e.g., Best of 5, Best of 7, Round Robin"
                   />
@@ -587,7 +766,7 @@ export function SeasonInfoEditor({ value, onChange }: SeasonInfoEditorProps) {
                     value={data.provincial?.format || ''}
                     onChange={(e) => updateData({
                       ...data,
-                      provincial: { ...data.provincial, format: e.target.value, scenarios: data.provincial?.scenarios || [] }
+                      provincial: { format: e.target.value, scenarios: data.provincial?.scenarios || [] }
                     })}
                     placeholder="e.g., Best of 5, Round Robin + Final"
                   />

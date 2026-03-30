@@ -1,11 +1,10 @@
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../ui/card';
 import { Button } from '../ui/button';
-import { Input } from '../ui/input';
 import { Label } from '../ui/label';
 import { Textarea } from '../ui/textarea';
 import { Badge } from '../ui/badge';
-import { Save, AlertCircle, CheckCircle2, Loader2, Info, Calendar, Users, Award, Trophy, FileText, ArrowRightLeft, ExternalLink, Database } from 'lucide-react';
+import { Save, AlertCircle, CheckCircle2, Loader2, Info, Calendar, Users, Award, Trophy, FileText, ArrowRightLeft, ExternalLink, Database, Edit2, X, Check } from 'lucide-react';
 import { Alert, AlertDescription } from '../ui/alert';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
@@ -13,6 +12,7 @@ import { projectId, publicAnonKey } from '../../utils/supabase/info';
 import { SeasonInfoEditor } from './SeasonInfoEditor';
 import { AwardsEditor } from './AwardsEditor';
 import { ChampionshipsEditor } from './ChampionshipsEditor';
+import { DivisionInfoSection, getDefaultSectionConfigs, SECTION_FIELDS, type SectionConfig } from './DivisionInfoSection';
 
 const divisions = [
   'Senior B',
@@ -35,7 +35,6 @@ interface DivisionData {
     minGames: string;
     outOfProvince: string;
     outOfCountry: string;
-    // Additional division-specific fields
     otherJurisdiction?: string;
     regularSeasonStandings?: string;
     tryouts?: string;
@@ -46,7 +45,6 @@ interface DivisionData {
     draftedProtectedPlayers?: string;
     freeAgent?: string;
     firstYearRegistration?: string;
-    // Alberta Major Female specific fields
     instagram?: string;
     draftInfo?: string;
     protectedListInfo?: string;
@@ -61,6 +59,7 @@ interface DivisionData {
   seasonInfo?: string;
   awards?: string;
   championships?: string;
+  sectionConfigs?: string; // JSON string of section configs
 }
 
 function SportzSoftDataNotice({ title, description }: { title: string; description: string }) {
@@ -110,51 +109,42 @@ export function DivisionManager() {
   const [saving, setSaving] = useState(false);
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  
-  // Division Description
+
+  // Section configurations
+  const [sectionConfigs, setSectionConfigs] = useState<SectionConfig[]>([]);
+
+  // Division Description (not in sections)
   const [divisionDescription, setDivisionDescription] = useState('');
 
-  // Division Info fields
-  const [teams, setTeams] = useState('');
-  const [playerAges, setPlayerAges] = useState('');
-  const [graduatingDraft, setGraduatingDraft] = useState('');
-  const [playingRights, setPlayingRights] = useState('');
-  const [minGames, setMinGames] = useState('');
-  const [outOfProvince, setOutOfProvince] = useState('');
-  const [outOfCountry, setOutOfCountry] = useState('');
-
-  // Division-specific fields
-  const [otherJurisdiction, setOtherJurisdiction] = useState('');
-  const [regularSeasonStandings, setRegularSeasonStandings] = useState('');
-  const [tryouts, setTryouts] = useState('');
-  const [northGraduatingDraft, setNorthGraduatingDraft] = useState('');
-  const [centralGraduatingDraft, setCentralGraduatingDraft] = useState('');
-  const [southGraduatingDraft, setSouthGraduatingDraft] = useState('');
-  const [protectedList, setProtectedList] = useState('');
-  const [draftedProtectedPlayers, setDraftedProtectedPlayers] = useState('');
-  const [freeAgent, setFreeAgent] = useState('');
-  const [firstYearRegistration, setFirstYearRegistration] = useState('');
-  // Alberta Major Female specific
-  const [instagram, setInstagram] = useState('');
-  const [draftInfo, setDraftInfo] = useState('');
-  const [protectedListInfo, setProtectedListInfo] = useState('');
-  const [calgaryFreeAgents, setCalgaryFreeAgents] = useState('');
-  const [stAlbertDrillers, setStAlbertDrillers] = useState('');
-  const [sherwoodParkTitans, setSherwoodParkTitans] = useState('');
-  const [capitalRegionSaints, setCapitalRegionSaints] = useState('');
-  const [redDeerRiot, setRedDeerRiot] = useState('');
-  const [freeAgentsAMF, setFreeAgentsAMF] = useState('');
-  const [returningPlayers, setReturningPlayers] = useState('');
+  // Field values
+  const [fieldValues, setFieldValues] = useState<Record<string, string>>({});
 
   // Other tab fields
   const [seasonInfo, setSeasonInfo] = useState('');
   const [awards, setAwards] = useState('');
   const [championships, setChampionships] = useState('');
 
+  // Initialize section configs when division changes
+  useEffect(() => {
+    const defaultConfigs = getDefaultSectionConfigs(selectedDivision);
+    setSectionConfigs(defaultConfigs);
+
+    // Initialize field values
+    const initialValues: Record<string, string> = {};
+    defaultConfigs.forEach(config => {
+      SECTION_FIELDS[config.id]?.forEach(field => {
+        initialValues[field.id] = '';
+      });
+    });
+    setFieldValues(initialValues);
+  }, [selectedDivision]);
+
   // Load division data
   useEffect(() => {
-    loadDivisionData();
-  }, [selectedDivision]);
+    if (selectedDivision) {
+      loadDivisionData();
+    }
+  }, [selectedDivision, sectionConfigs]);
 
   const loadDivisionData = async () => {
     setLoading(true);
@@ -171,53 +161,46 @@ export function DivisionManager() {
 
       if (response.ok) {
         const data: DivisionData = await response.json();
-        
+
         // Load division description
         setDivisionDescription(data.divisionDescription || '');
-        
-        // Load division info fields
-        setTeams(data.divisionInfo?.teams || '');
-        setPlayerAges(data.divisionInfo?.playerAges || '');
-        setGraduatingDraft(data.divisionInfo?.graduatingDraft || '');
-        setPlayingRights(data.divisionInfo?.playingRights || '');
-        setMinGames(data.divisionInfo?.minGames || '');
-        setOutOfProvince(data.divisionInfo?.outOfProvince || '');
-        setOutOfCountry(data.divisionInfo?.outOfCountry || '');
 
-        // Load division-specific fields
-        setOtherJurisdiction(data.divisionInfo?.otherJurisdiction || '');
-        setRegularSeasonStandings(data.divisionInfo?.regularSeasonStandings || '');
-        setTryouts(data.divisionInfo?.tryouts || '');
-        setNorthGraduatingDraft(data.divisionInfo?.northGraduatingDraft || '');
-        setCentralGraduatingDraft(data.divisionInfo?.centralGraduatingDraft || '');
-        setSouthGraduatingDraft(data.divisionInfo?.southGraduatingDraft || '');
-        setProtectedList(data.divisionInfo?.protectedList || '');
-        setDraftedProtectedPlayers(data.divisionInfo?.draftedProtectedPlayers || '');
-        setFreeAgent(data.divisionInfo?.freeAgent || '');
-        setFirstYearRegistration(data.divisionInfo?.firstYearRegistration || '');
-        // Alberta Major Female specific
-        setInstagram(data.divisionInfo?.instagram || '');
-        setDraftInfo(data.divisionInfo?.draftInfo || '');
-        setProtectedListInfo(data.divisionInfo?.protectedListInfo || '');
-        setCalgaryFreeAgents(data.divisionInfo?.calgaryFreeAgents || '');
-        setStAlbertDrillers(data.divisionInfo?.stAlbertDrillers || '');
-        setSherwoodParkTitans(data.divisionInfo?.sherwoodParkTitans || '');
-        setCapitalRegionSaints(data.divisionInfo?.capitalRegionSaints || '');
-        setRedDeerRiot(data.divisionInfo?.redDeerRiot || '');
-        setFreeAgentsAMF(data.divisionInfo?.freeAgents || '');
-        setReturningPlayers(data.divisionInfo?.returningPlayers || '');
+        // Load section configs if available
+        if (data.sectionConfigs) {
+          try {
+            const parsedConfigs = JSON.parse(data.sectionConfigs) as SectionConfig[];
+            // Merge with defaults to ensure all sections exist
+            const defaultConfigs = getDefaultSectionConfigs(selectedDivision);
+            const mergedConfigs = defaultConfigs.map(defaultConfig => {
+              const savedConfig = parsedConfigs.find(c => c.id === defaultConfig.id);
+              return savedConfig ? { ...defaultConfig, ...savedConfig } : defaultConfig;
+            });
+            setSectionConfigs(mergedConfigs);
+          } catch (e) {
+            console.error('Error parsing section configs:', e);
+          }
+        }
+
+        // Load division info fields
+        const newValues: Record<string, string> = { ...fieldValues };
+        if (data.divisionInfo) {
+          Object.entries(data.divisionInfo).forEach(([key, value]) => {
+            newValues[key] = value as string;
+          });
+        }
+        setFieldValues(newValues);
 
         // Load other tab fields
         setSeasonInfo(data.seasonInfo || '');
-        
-        // Handle awards - convert to string if it's an object
+
+        // Handle awards
         if (typeof data.awards === 'object' && data.awards !== null) {
           setAwards(JSON.stringify(data.awards, null, 2));
         } else {
           setAwards(data.awards || '');
         }
-        
-        // Handle championships - convert to string if it's an object
+
+        // Handle championships
         if (typeof data.championships === 'object' && data.championships !== null) {
           setChampionships(JSON.stringify(data.championships, null, 2));
         } else {
@@ -241,39 +224,38 @@ export function DivisionManager() {
       const data: DivisionData = {
         divisionDescription,
         divisionInfo: {
-          teams,
-          playerAges,
-          graduatingDraft,
-          playingRights,
-          minGames,
-          outOfProvince,
-          outOfCountry,
-          // Division-specific fields
-          otherJurisdiction,
-          regularSeasonStandings,
-          tryouts,
-          northGraduatingDraft,
-          centralGraduatingDraft,
-          southGraduatingDraft,
-          protectedList,
-          draftedProtectedPlayers,
-          freeAgent,
-          firstYearRegistration,
-          // Alberta Major Female specific
-          instagram,
-          draftInfo,
-          protectedListInfo,
-          calgaryFreeAgents,
-          stAlbertDrillers,
-          sherwoodParkTitans,
-          capitalRegionSaints,
-          redDeerRiot,
-          freeAgents: freeAgentsAMF,
-          returningPlayers,
+          teams: fieldValues.teams || '',
+          playerAges: fieldValues.playerAges || '',
+          graduatingDraft: fieldValues.graduatingDraft || '',
+          playingRights: fieldValues.playingRights || '',
+          minGames: fieldValues.minGames || '',
+          outOfProvince: fieldValues.outOfProvince || '',
+          outOfCountry: fieldValues.outOfCountry || '',
+          otherJurisdiction: fieldValues.otherJurisdiction,
+          regularSeasonStandings: fieldValues.regularSeasonStandings,
+          tryouts: fieldValues.tryouts,
+          northGraduatingDraft: fieldValues.northGraduatingDraft,
+          centralGraduatingDraft: fieldValues.centralGraduatingDraft,
+          southGraduatingDraft: fieldValues.southGraduatingDraft,
+          protectedList: fieldValues.protectedList,
+          draftedProtectedPlayers: fieldValues.draftedProtectedPlayers,
+          freeAgent: fieldValues.freeAgent,
+          firstYearRegistration: fieldValues.firstYearRegistration,
+          instagram: fieldValues.instagram,
+          draftInfo: fieldValues.draftInfo,
+          protectedListInfo: fieldValues.protectedListInfo,
+          calgaryFreeAgents: fieldValues.calgaryFreeAgents,
+          stAlbertDrillers: fieldValues.stAlbertDrillers,
+          sherwoodParkTitans: fieldValues.sherwoodParkTitans,
+          capitalRegionSaints: fieldValues.capitalRegionSaints,
+          redDeerRiot: fieldValues.redDeerRiot,
+          freeAgents: fieldValues.freeAgentsAMF,
+          returningPlayers: fieldValues.returningPlayers,
         },
         seasonInfo,
         awards,
         championships,
+        sectionConfigs: JSON.stringify(sectionConfigs),
       };
 
       const response = await fetch(
@@ -302,7 +284,34 @@ export function DivisionManager() {
     }
   };
 
-  // Check if the current tab has editable content (not SportzSoft tabs)
+  const handleFieldChange = (fieldId: string, value: string) => {
+    setFieldValues({ ...fieldValues, [fieldId]: value });
+  };
+
+  const handleSectionConfigChange = (config: SectionConfig) => {
+    const newConfigs = sectionConfigs.map(c =>
+      c.id === config.id ? config : c
+    );
+    setSectionConfigs(newConfigs);
+  };
+
+  const moveSection = (idx: number, direction: 'up' | 'down') => {
+    const newConfigs = [...sectionConfigs];
+    const targetIdx = direction === 'up' ? idx - 1 : idx + 1;
+
+    if (targetIdx < 0 || targetIdx >= newConfigs.length) return;
+
+    // Swap order values
+    const tempOrder = newConfigs[idx].order;
+    newConfigs[idx].order = newConfigs[targetIdx].order;
+    newConfigs[targetIdx].order = tempOrder;
+
+    // Re-sort by order
+    newConfigs.sort((a, b) => a.order - b.order);
+
+    setSectionConfigs(newConfigs);
+  };
+
   const isEditableTab = !['drafts', 'protected-list', 'transactions'].includes(activeTab);
 
   return (
@@ -393,364 +402,46 @@ export function DivisionManager() {
 
             {/* Division Info Tab */}
             <TabsContent value="division-info" className="space-y-4">
+              {/* Division Description - always visible */}
               <Card>
-                <CardHeader>
-                  <CardTitle>Division Information</CardTitle>
-                  <CardDescription>Rules, eligibility, and regulations for {selectedDivision}</CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="divisionDescription" className="text-base font-bold">Division Description</Label>
-                    <p className="text-xs text-gray-500">This text appears prominently at the top of the division page as an overview/about section. Use line breaks to separate paragraphs.</p>
-                    <Textarea
-                      id="divisionDescription"
-                      value={divisionDescription}
-                      onChange={(e) => setDivisionDescription(e.target.value)}
-                      placeholder="Enter a description of this division - its history, values, level of play, etc."
-                      rows={8}
-                      className="font-normal"
-                    />
+                <div className="flex items-center justify-between px-4 py-3 bg-gray-50 border-b">
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm font-semibold">Division Description</span>
                   </div>
-
-                  <hr className="my-2 border-gray-200" />
-
-                  <div className="space-y-2">
-                    <Label htmlFor="teams">Teams</Label>
-                    <Textarea
-                      id="teams"
-                      value={teams}
-                      onChange={(e) => setTeams(e.target.value)}
-                      placeholder="e.g., 8 teams compete in the Senior B division."
-                      rows={2}
-                    />
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="playerAges">Player Ages</Label>
-                    <Textarea
-                      id="playerAges"
-                      value={playerAges}
-                      onChange={(e) => setPlayerAges(e.target.value)}
-                      placeholder="e.g., Players must be 21 years of age or older on January 1st of the current year."
-                      rows={2}
-                    />
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="graduatingDraft">Graduating Junior Entry Draft</Label>
-                    <Textarea
-                      id="graduatingDraft"
-                      value={graduatingDraft}
-                      onChange={(e) => setGraduatingDraft(e.target.value)}
-                      placeholder="e.g., Not applicable - Senior divisions do not participate in the draft."
-                      rows={2}
-                    />
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="playingRights">Playing Rights</Label>
-                    <Textarea
-                      id="playingRights"
-                      value={playingRights}
-                      onChange={(e) => setPlayingRights(e.target.value)}
-                      placeholder="e.g., Teams may protect up to 15 players from the previous season."
-                      rows={2}
-                    />
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="minGames">Minimum Games for Playoff Eligibility</Label>
-                    <Textarea
-                      id="minGames"
-                      value={minGames}
-                      onChange={(e) => setMinGames(e.target.value)}
-                      placeholder="e.g., Players must play a minimum of 8 regular season games to be eligible for playoffs."
-                      rows={2}
-                    />
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="outOfProvince">Out of Province Players</Label>
-                    <Textarea
-                      id="outOfProvince"
-                      value={outOfProvince}
-                      onChange={(e) => setOutOfProvince(e.target.value)}
-                      placeholder="e.g., Out-of-province players must have a completed 'Proof of Residency' form on file."
-                      rows={2}
-                    />
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="outOfCountry">Out of Country Players</Label>
-                    <Textarea
-                      id="outOfCountry"
-                      value={outOfCountry}
-                      onChange={(e) => setOutOfCountry(e.target.value)}
-                      placeholder="e.g., Must have a completed 'Proof of Medical' form on file with the ALA."
-                      rows={2}
-                    />
-                  </div>
-
-                  {/* Tryouts - Conditional for some divisions */}
-                  {['Senior B', 'Senior C', 'Junior A', 'Junior B Tier I', 'Junior B Tier II', 'Junior B Tier III'].includes(selectedDivision) && (
-                    <>
-                      <hr className="my-2 border-gray-200" />
-                      <div className="space-y-2">
-                        <Label htmlFor="tryouts">Tryouts</Label>
-                        <Textarea
-                          id="tryouts"
-                          value={tryouts}
-                          onChange={(e) => setTryouts(e.target.value)}
-                          placeholder="Information about tryouts for this division"
-                          rows={2}
-                        />
-                      </div>
-                    </>
-                  )}
-
-                  {/* Regular Season Standings - Conditional */}
-                  {['Senior B', 'Senior C', 'Junior A', 'Junior B Tier I', 'Junior B Tier II'].includes(selectedDivision) && (
-                    <>
-                      <hr className="my-2 border-gray-200" />
-                      <div className="space-y-2">
-                        <Label htmlFor="regularSeasonStandings">Regular Season Standings</Label>
-                        <Textarea
-                          id="regularSeasonStandings"
-                          value={regularSeasonStandings}
-                          onChange={(e) => setRegularSeasonStandings(e.target.value)}
-                          placeholder="Information about regular season standings"
-                          rows={2}
-                        />
-                      </div>
-                    </>
-                  )}
-
-                  {/* Other Jurisdiction - Conditional */}
-                  {['Senior B', 'Senior C', 'Junior B Tier I', 'Junior B Tier II', 'Junior B Tier III'].includes(selectedDivision) && (
-                    <>
-                      <hr className="my-2 border-gray-200" />
-                      <div className="space-y-2">
-                        <Label htmlFor="otherJurisdiction">Other Jurisdiction Players</Label>
-                        <Textarea
-                          id="otherJurisdiction"
-                          value={otherJurisdiction}
-                          onChange={(e) => setOtherJurisdiction(e.target.value)}
-                          placeholder="Rules for players from other jurisdictions"
-                          rows={2}
-                        />
-                      </div>
-                    </>
-                  )}
-
-                  {/* Junior B Tier I specific fields */}
-                  {selectedDivision === 'Junior B Tier I' && (
-                    <>
-                      <hr className="my-2 border-gray-200" />
-                      <div className="space-y-2">
-                        <Label htmlFor="northGraduatingDraft">North Graduating Draft</Label>
-                        <Textarea
-                          id="northGraduatingDraft"
-                          value={northGraduatingDraft}
-                          onChange={(e) => setNorthGraduatingDraft(e.target.value)}
-                          placeholder="Information about the North graduating draft"
-                          rows={2}
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="centralGraduatingDraft">Central Graduating Draft</Label>
-                        <Textarea
-                          id="centralGraduatingDraft"
-                          value={centralGraduatingDraft}
-                          onChange={(e) => setCentralGraduatingDraft(e.target.value)}
-                          placeholder="Information about the Central graduating draft"
-                          rows={2}
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="southGraduatingDraft">South Graduating Draft</Label>
-                        <Textarea
-                          id="southGraduatingDraft"
-                          value={southGraduatingDraft}
-                          onChange={(e) => setSouthGraduatingDraft(e.target.value)}
-                          placeholder="Information about the South graduating draft"
-                          rows={2}
-                        />
-                      </div>
-                    </>
-                  )}
-
-                  {/* Protected List - Conditional */}
-                  {['Senior B', 'Senior C', 'Junior B Tier I', 'Junior B Tier II', 'Junior B Tier III'].includes(selectedDivision) && (
-                    <>
-                      <hr className="my-2 border-gray-200" />
-                      <div className="space-y-2">
-                        <Label htmlFor="protectedList">Protected List</Label>
-                        <Textarea
-                          id="protectedList"
-                          value={protectedList}
-                          onChange={(e) => setProtectedList(e.target.value)}
-                          placeholder="Information about protected lists"
-                          rows={2}
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="draftedProtectedPlayers">Drafted Protected Players</Label>
-                        <Textarea
-                          id="draftedProtectedPlayers"
-                          value={draftedProtectedPlayers}
-                          onChange={(e) => setDraftedProtectedPlayers(e.target.value)}
-                          placeholder="Information about drafted protected players"
-                          rows={2}
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="freeAgent">Free Agent</Label>
-                        <Textarea
-                          id="freeAgent"
-                          value={freeAgent}
-                          onChange={(e) => setFreeAgent(e.target.value)}
-                          placeholder="Information about free agents"
-                          rows={2}
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="firstYearRegistration">First Year Registration</Label>
-                        <Textarea
-                          id="firstYearRegistration"
-                          value={firstYearRegistration}
-                          onChange={(e) => setFirstYearRegistration(e.target.value)}
-                          placeholder="Information about first year players"
-                          rows={2}
-                        />
-                      </div>
-                    </>
-                  )}
-
-                  {/* Alberta Major Female specific fields */}
-                  {selectedDivision === 'Alberta Major Female' && (
-                    <>
-                      <hr className="my-2 border-gray-200" />
-                      <div className="space-y-2">
-                        <Label htmlFor="instagram">Instagram</Label>
-                        <Textarea
-                          id="instagram"
-                          value={instagram}
-                          onChange={(e) => setInstagram(e.target.value)}
-                          placeholder="Instagram handle or link"
-                          rows={1}
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="draftInfo">Draft Info</Label>
-                        <Textarea
-                          id="draftInfo"
-                          value={draftInfo}
-                          onChange={(e) => setDraftInfo(e.target.value)}
-                          placeholder="Information about the draft"
-                          rows={2}
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="protectedListInfo">Protected List Info</Label>
-                        <Textarea
-                          id="protectedListInfo"
-                          value={protectedListInfo}
-                          onChange={(e) => setProtectedListInfo(e.target.value)}
-                          placeholder="Information about protected lists"
-                          rows={2}
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="calgaryFreeAgents">Calgary Free Agents</Label>
-                        <Textarea
-                          id="calgaryFreeAgents"
-                          value={calgaryFreeAgents}
-                          onChange={(e) => setCalgaryFreeAgents(e.target.value)}
-                          placeholder="Calgary free agent information"
-                          rows={2}
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="stAlbertDrillers">St. Albert Drillers</Label>
-                        <Textarea
-                          id="stAlbertDrillers"
-                          value={stAlbertDrillers}
-                          onChange={(e) => setStAlbertDrillers(e.target.value)}
-                          placeholder="St. Albert Drillers team information"
-                          rows={2}
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="sherwoodParkTitans">Sherwood Park Titans</Label>
-                        <Textarea
-                          id="sherwoodParkTitans"
-                          value={sherwoodParkTitans}
-                          onChange={(e) => setSherwoodParkTitans(e.target.value)}
-                          placeholder="Sherwood Park Titans team information"
-                          rows={2}
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="capitalRegionSaints">Capital Region Saints</Label>
-                        <Textarea
-                          id="capitalRegionSaints"
-                          value={capitalRegionSaints}
-                          onChange={(e) => setCapitalRegionSaints(e.target.value)}
-                          placeholder="Capital Region Saints team information"
-                          rows={2}
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="redDeerRiot">Red Deer Riot</Label>
-                        <Textarea
-                          id="redDeerRiot"
-                          value={redDeerRiot}
-                          onChange={(e) => setRedDeerRiot(e.target.value)}
-                          placeholder="Red Deer Riot team information"
-                          rows={2}
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="freeAgentsAMF">Free Agents</Label>
-                        <Textarea
-                          id="freeAgentsAMF"
-                          value={freeAgentsAMF}
-                          onChange={(e) => setFreeAgentsAMF(e.target.value)}
-                          placeholder="Free agent information"
-                          rows={2}
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="returningPlayers">Returning Players</Label>
-                        <Textarea
-                          id="returningPlayers"
-                          value={returningPlayers}
-                          onChange={(e) => setReturningPlayers(e.target.value)}
-                          placeholder="Returning players information"
-                          rows={2}
-                        />
-                      </div>
-                    </>
-                  )}
-
-                  {/* Alberta Major Senior Female specific fields */}
-                  {selectedDivision === 'Alberta Major Senior Female' && (
-                    <>
-                      <hr className="my-2 border-gray-200" />
-                      <div className="space-y-2">
-                        <Label htmlFor="instagram">Instagram</Label>
-                        <Textarea
-                          id="instagram"
-                          value={instagram}
-                          onChange={(e) => setInstagram(e.target.value)}
-                          placeholder="Instagram handle or link"
-                          rows={1}
-                        />
-                      </div>
-                    </>
-                  )}
-                </CardContent>
+                </div>
+                <div className="p-4 space-y-2">
+                  <p className="text-xs text-gray-500">This text appears prominently at the top of the division page as an overview/about section. Use line breaks to separate paragraphs.</p>
+                  <Textarea
+                    value={divisionDescription}
+                    onChange={(e) => setDivisionDescription(e.target.value)}
+                    placeholder="Enter a description of this division - its history, values, level of play, etc."
+                    rows={8}
+                    className="font-normal"
+                  />
+                </div>
               </Card>
+
+              {/* Configurable Sections */}
+              {sectionConfigs
+                .sort((a, b) => a.order - b.order)
+                .map((config, idx) => {
+                  const fields = SECTION_FIELDS[config.id] || [];
+                  if (fields.length === 0) return null;
+
+                  return (
+                    <DivisionInfoSection
+                      key={config.id}
+                      config={config}
+                      fields={fields}
+                      values={fieldValues}
+                      onChange={handleFieldChange}
+                      onConfigChange={handleSectionConfigChange}
+                      onMove={(direction) => moveSection(idx, direction)}
+                      canMoveUp={idx > 0}
+                      canMoveDown={idx < sectionConfigs.length - 1}
+                    />
+                  );
+                })}
             </TabsContent>
 
             {/* Season Info Tab */}
