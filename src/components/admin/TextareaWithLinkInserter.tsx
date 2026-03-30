@@ -36,12 +36,13 @@ export const TextareaWithLinkInserter = forwardRef<HTMLTextAreaElement, Textarea
     // Handle link insertion from LinkInserter
     const handleInsertLink = (markdown: string) => {
       const textarea = textareaRef.current;
-      if (!textarea || !value) return;
+      if (!textarea) return;
 
+      const currentValue = value || '';
       const start = textarea.selectionStart;
       const end = textarea.selectionEnd;
 
-      const newValue = value.substring(0, start) + markdown + value.substring(end);
+      const newValue = currentValue.substring(0, start) + markdown + currentValue.substring(end);
       onChange?.(newValue);
 
       // Set cursor position after inserted text
@@ -54,11 +55,12 @@ export const TextareaWithLinkInserter = forwardRef<HTMLTextAreaElement, Textarea
     // Handle toolbar actions
     const handleFormat = (format: 'bold' | 'italic' | 'ul' | 'ol') => {
       const textarea = textareaRef.current;
-      if (!textarea || !value) return;
+      if (!textarea) return;
 
+      const currentValue = value || '';
       const start = textarea.selectionStart;
       const end = textarea.selectionEnd;
-      const selectedText = value.substring(start, end);
+      const selectedText = currentValue.substring(start, end);
 
       let formattedText = '';
       switch (format) {
@@ -80,7 +82,7 @@ export const TextareaWithLinkInserter = forwardRef<HTMLTextAreaElement, Textarea
           break;
       }
 
-      const newValue = value.substring(0, start) + formattedText + value.substring(end);
+      const newValue = currentValue.substring(0, start) + formattedText + currentValue.substring(end);
       onChange?.(newValue);
       setShowFormatting(false);
 
