@@ -14,6 +14,7 @@ import { SeasonInfoEditor } from './SeasonInfoEditor';
 import { AwardsEditor } from './AwardsEditor';
 import { ChampionshipsEditor } from './ChampionshipsEditor';
 import { DivisionInfoSection, getDefaultSectionConfigs, SECTION_FIELDS, type SectionConfig } from './DivisionInfoSection';
+import { TextareaWithLinkInserter } from './TextareaWithLinkInserter';
 
 const divisions = [
   'Senior B',
@@ -874,9 +875,9 @@ export function DivisionManager() {
                 </div>
                 <div className="p-4 space-y-2">
                   <p className="text-xs text-gray-500">This text appears prominently at the top of the division page as an overview/about section. Use line breaks to separate paragraphs.</p>
-                  <Textarea
+                  <TextareaWithLinkInserter
                     value={divisionDescription}
-                    onChange={(e) => setDivisionDescription(e.target.value)}
+                    onChange={setDivisionDescription}
                     placeholder="Enter a description of this division - its history, values, level of play, etc."
                     rows={8}
                     className="font-normal"

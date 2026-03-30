@@ -1,10 +1,9 @@
 import { useState, useRef, useEffect } from 'react';
 import { Card } from '../ui/card';
-import { Label } from '../ui/label';
-import { Textarea } from '../ui/textarea';
 import { ChevronUp, ChevronDown, MoveUp, MoveDown, ToggleLeft, ToggleRight, Edit2, Check, X, Trash2, Layout, Maximize2 } from 'lucide-react';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
+import { TextareaWithLinkInserter } from './TextareaWithLinkInserter';
 
 export interface SectionConfig {
   id: string;
@@ -224,20 +223,17 @@ export function DivisionInfoSection({
       {!isCollapsed && (
         <div className="p-4 space-y-4">
           {fields.map((field) => (
-            <div key={field.id} className="space-y-2">
-              <Label htmlFor={field.id}>
-                {field.label}
-                {field.required && <span className="text-red-500 ml-1">*</span>}
-              </Label>
-              <Textarea
-                id={field.id}
-                value={values[field.id] || ''}
-                onChange={(e) => onChange(field.id, e.target.value)}
-                placeholder={field.placeholder}
-                rows={field.rows || 2}
-                className={field.rows && field.rows > 4 ? 'font-normal' : ''}
-              />
-            </div>
+            <TextareaWithLinkInserter
+              key={field.id}
+              id={field.id}
+              label={field.label}
+              placeholder={field.placeholder}
+              value={values[field.id] || ''}
+              onChange={(value) => onChange(field.id, value)}
+              rows={field.rows || 2}
+              required={field.required}
+              className={field.rows && field.rows > 4 ? 'font-normal' : ''}
+            />
           ))}
           {children}
         </div>
