@@ -1,7 +1,7 @@
 import { Header } from '../components/Header';
 import { Footer } from '../components/Footer';
 import { Search, FileText, Download, Calendar, X, ChevronRight, Menu, FolderOpen } from 'lucide-react';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Input } from '../components/ui/input';
 import { Badge } from '../components/ui/badge';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '../components/ui/sheet';
@@ -206,6 +206,19 @@ export function DocumentsPageV1() {
   const [selectedYear, setSelectedYear] = useState('All Years');
   const [selectedDocument, setSelectedDocument] = useState<Document | null>(documents[0]);
   const [mobileView, setMobileView] = useState<'list' | 'preview'>('list');
+
+  // Handle URL parameter for document selection (e.g., /documents?id=1)
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const docId = params.get('id');
+    if (docId) {
+      const doc = documents.find(d => d.id === docId);
+      if (doc) {
+        setSelectedDocument(doc);
+        setMobileView('preview');
+      }
+    }
+  }, []);
 
   const filteredDocuments = documents.filter(doc => {
     const matchesSearch = doc.title.toLowerCase().includes(searchQuery.toLowerCase()) ||

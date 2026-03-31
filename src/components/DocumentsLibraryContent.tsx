@@ -76,6 +76,21 @@ export function DocumentsLibraryContent() {
   const [mobileView, setMobileView] = useState<'list' | 'preview'>('list');
   const [sidebarOpen, setSidebarOpen] = useState(true);
 
+  // Handle URL parameter for document selection (e.g., ?doc=123)
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const docId = params.get('doc');
+    if (docId && documents.length > 0) {
+      const doc = documents.find(d => d.id === docId);
+      if (doc) {
+        setSelectedDocument(doc);
+        setMobileView('preview');
+        // Remove the parameter from URL without triggering a hash change
+        window.history.replaceState({}, '', window.location.pathname);
+      }
+    }
+  }, [documents]);
+
   // Load documents from API
   useEffect(() => {
     loadDocuments();

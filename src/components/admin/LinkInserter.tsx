@@ -140,7 +140,7 @@ export function LinkInserter({ open, onOpenChange, onInsert, trigger }: LinkInse
   };
 
   const selectDocument = (doc: DocumentItem) => {
-    setSelectedItem({ url: `/documents/${doc.id}`, title: doc.title });
+    setSelectedItem({ url: `/league-info#documents?doc=${doc.id}`, title: doc.title });
     setCustomText(doc.title);
   };
 
@@ -251,7 +251,7 @@ export function LinkInserter({ open, onOpenChange, onInsert, trigger }: LinkInse
                       type="button"
                       onClick={() => selectDocument(doc)}
                       className={`w-full text-left p-3 rounded-lg transition-colors border group ${
-                        selectedItem?.url === `/documents/${doc.id}`
+                        selectedItem?.url === `/league-info#documents?doc=${doc.id}`
                           ? 'bg-[#013fac] text-white border-[#013fac]'
                           : 'hover:bg-gray-100 border-transparent hover:border-gray-200'
                       }`}
@@ -259,7 +259,7 @@ export function LinkInserter({ open, onOpenChange, onInsert, trigger }: LinkInse
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-3">
                           <div className={`p-2 rounded group-hover:transition-colors ${
-                            selectedItem?.url === `/documents/${doc.id}`
+                            selectedItem?.url === `/league-info#documents?doc=${doc.id}`
                               ? 'bg-blue-800'
                               : 'bg-red-50 group-hover:bg-red-100'
                           }`}>
@@ -270,7 +270,7 @@ export function LinkInserter({ open, onOpenChange, onInsert, trigger }: LinkInse
                               {doc.title}
                             </div>
                             <div className={`text-xs flex items-center gap-2 ${
-                              selectedItem?.url === `/documents/${doc.id}`
+                              selectedItem?.url === `/league-info#documents?doc=${doc.id}`
                                 ? 'text-blue-200'
                                 : 'text-gray-500'
                             }`}>

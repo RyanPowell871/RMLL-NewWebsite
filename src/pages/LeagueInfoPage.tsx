@@ -155,6 +155,34 @@ export const LeagueInfoPage = memo(function LeagueInfoPage() {
     loadNavigation();
   }, []);
 
+  // Handle hash navigation (e.g., /league-info#mission-statement)
+  useEffect(() => {
+    if (navigationStructure.length === 0) return;
+
+    const handleHash = () => {
+      const hash = window.location.hash.substring(1); // Remove #
+      if (!hash) return;
+
+      // Find the section and page that matches the hash
+      for (const section of navigationStructure) {
+        for (const item of section.items || []) {
+          if (item.id === hash) {
+            setActiveSection(section.title);
+            setActivePage(hash);
+            setExpandedSections(new Set([section.title]));
+            return;
+          }
+        }
+      }
+    };
+
+    handleHash();
+
+    // Listen for hash changes
+    window.addEventListener('hashchange', handleHash);
+    return () => window.removeEventListener('hashchange', handleHash);
+  }, [navigationStructure]);
+
   const loadNavigation = async () => {
     try {
       setLoading(true);
