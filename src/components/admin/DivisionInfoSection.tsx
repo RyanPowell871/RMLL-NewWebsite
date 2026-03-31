@@ -17,6 +17,7 @@ export interface SectionConfig {
   color?: string; // Custom color for custom sections (e.g., '#013fac', '#DC2626')
   iconName?: string; // Icon name for custom sections
   deleted?: boolean; // Mark section as deleted (hidden from view)
+  fieldLabel?: string; // Override for the field label (editable for all sections)
 }
 
 export interface DivisionInfoField {
@@ -226,7 +227,7 @@ export function DivisionInfoSection({
             <TextareaWithLinkInserter
               key={field.id}
               id={field.id}
-              label={field.label}
+              label={config.fieldLabel || field.label}
               placeholder={field.placeholder}
               value={values[field.id] || ''}
               onChange={(value) => onChange(field.id, value)}

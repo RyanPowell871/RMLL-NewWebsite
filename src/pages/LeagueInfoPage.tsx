@@ -151,37 +151,12 @@ export const LeagueInfoPage = memo(function LeagueInfoPage() {
   const [pageContent, setPageContent] = useState<{ title: string; content: any; isDraft?: boolean }>({ title: '', content: null });
   const [loadingPage, setLoadingPage] = useState(false);
 
+  // Track if initial page has been set (to prevent hash handler from overriding)
+  const [initialPageSet, setInitialPageSet] = useState(false);
+
   useEffect(() => {
     loadNavigation();
   }, []);
-
-  // Handle hash navigation (e.g., /league-info#mission-statement)
-  useEffect(() => {
-    if (navigationStructure.length === 0) return;
-
-    const handleHash = () => {
-      const hash = window.location.hash.substring(1); // Remove #
-      if (!hash) return;
-
-      // Find the section and page that matches the hash
-      for (const section of navigationStructure) {
-        for (const item of section.items || []) {
-          if (item.id === hash) {
-            setActiveSection(section.title);
-            setActivePage(hash);
-            setExpandedSections(new Set([section.title]));
-            return;
-          }
-        }
-      }
-    };
-
-    handleHash();
-
-    // Listen for hash changes
-    window.addEventListener('hashchange', handleHash);
-    return () => window.removeEventListener('hashchange', handleHash);
-  }, [navigationStructure]);
 
   const loadNavigation = async () => {
     try {
@@ -235,49 +210,126 @@ export const LeagueInfoPage = memo(function LeagueInfoPage() {
         });
 
         setNavigationStructure(nav);
-        
-        // Set initial active section and page
-        const firstSection = nav[0];
-        setActiveSection(firstSection.title);
-        setExpandedSections(new Set([firstSection.title]));
-        
-        if (firstSection.items && firstSection.items.length > 0) {
-          setActivePage(firstSection.items[0].id);
+
+        // Set initial active section and page based on hash or use default
+        const currentHash = window.location.hash.substring(1);
+        let initialSection = nav[0];
+        let initialPageId = initialSection?.items?.[0]?.id || '';
+
+        // Check if we have an initial hash to use
+        if (currentHash) {
+          const hashPageId = currentHash.split('?')[0];
+          for (const section of nav) {
+            const item = section.items?.find((i: NavItem) => i.id === hashPageId);
+            if (item) {
+              initialSection = section;
+              initialPageId = hashPageId;
+              break;
+            }
+          }
         }
+
+        setActiveSection(initialSection.title);
+        setExpandedSections(new Set([initialSection.title]));
+        if (initialPageId) {
+          setActivePage(initialPageId);
+        }
+        setInitialPageSet(true);
       } else {
         // If API fails, use default navigation
         setNavigationStructure(DEFAULT_NAVIGATION);
-        
-        // Set initial active section and page
+
+        // Set initial active section and page based on hash or use default
+        const currentHash = window.location.hash.substring(1);
         if (DEFAULT_NAVIGATION.length > 0) {
-          const firstSection = DEFAULT_NAVIGATION[0];
-          setActiveSection(firstSection.title);
-          setExpandedSections(new Set([firstSection.title]));
-          
-          if (firstSection.items && firstSection.items.length > 0) {
-            setActivePage(firstSection.items[0].id);
+          let initialSection = DEFAULT_NAVIGATION[0];
+          let initialPageId = initialSection?.items?.[0]?.id || '';
+
+          // Check if we have an initial hash to use
+          if (currentHash) {
+            const hashPageId = currentHash.split('?')[0];
+            for (const section of DEFAULT_NAVIGATION) {
+              const item = section.items?.find((i: NavItem) => i.id === hashPageId);
+              if (item) {
+                initialSection = section;
+                initialPageId = hashPageId;
+                break;
+              }
+            }
+          }
+
+          setActiveSection(initialSection.title);
+          setExpandedSections(new Set([initialSection.title]));
+          if (initialPageId) {
+            setActivePage(initialPageId);
           }
         }
+        setInitialPageSet(true);
       }
     } catch (error) {
       console.error('[League Info] Error loading navigation:', error);
       // If API fails, use default navigation
       setNavigationStructure(DEFAULT_NAVIGATION);
-      
-      // Set initial active section and page
+
+      // Set initial active section and page based on hash or use default
+      const currentHash = window.location.hash.substring(1);
       if (DEFAULT_NAVIGATION.length > 0) {
-        const firstSection = DEFAULT_NAVIGATION[0];
-        setActiveSection(firstSection.title);
-        setExpandedSections(new Set([firstSection.title]));
-        
-        if (firstSection.items && firstSection.items.length > 0) {
-          setActivePage(firstSection.items[0].id);
+        let initialSection = DEFAULT_NAVIGATION[0];
+        let initialPageId = initialSection?.items?.[0]?.id || '';
+
+        // Check if we have an initial hash to use
+        if (currentHash) {
+          const hashPageId = currentHash.split('?')[0];
+          for (const section of DEFAULT_NAVIGATION) {
+            const item = section.items?.find((i: NavItem) => i.id === hashPageId);
+            if (item) {
+              initialSection = section;
+              initialPageId = hashPageId;
+              break;
+            }
+          }
+        }
+
+        setActiveSection(initialSection.title);
+        setExpandedSections(new Set([initialSection.title]));
+        if (initialPageId) {
+          setActivePage(initialPageId);
         }
       }
+      setInitialPageSet(true);
     } finally {
       setLoading(false);
     }
   };
+
+  // Handle hash navigation for user-initiated hash changes (e.g., clicking nav links)
+  // The initial hash is handled in loadNavigation, so this only handles subsequent changes
+  useEffect(() => {
+    if (navigationStructure.length === 0 || !initialPageSet) return;
+
+    const handleHashChange = () => {
+      const hash = window.location.hash.substring(1); // Remove #
+
+      // Extract page ID from hash (strip query params like ?doc=123)
+      const pageId = hash.split('?')[0];
+      if (!pageId) return;
+
+      // Find the section and page that matches the hash
+      for (const section of navigationStructure) {
+        for (const item of section.items || []) {
+          if (item.id === pageId) {
+            setActiveSection(section.title);
+            setActivePage(pageId);
+            setExpandedSections(new Set([section.title]));
+            return;
+          }
+        }
+      }
+    };
+
+    window.addEventListener('hashchange', handleHashChange);
+    return () => window.removeEventListener('hashchange', handleHashChange);
+  }, [navigationStructure, initialPageSet]);
 
   const toggleSection = useCallback((section: string) => {
     setExpandedSections(prev => {

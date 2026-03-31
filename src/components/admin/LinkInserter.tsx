@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../ui/dialog';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
@@ -7,6 +7,7 @@ import { ScrollArea } from '../ui/scroll-area';
 import { Checkbox } from '../ui/checkbox';
 import { FileText, File, Search, ExternalLink, Book, Briefcase, Users, Scale, Menu as MenuIcon } from 'lucide-react';
 import { LinkInsertOptions } from './TextareaWithLinkInserter';
+import { fetchDocuments } from '../../services/cms-api';
 
 // Document types
 interface DocumentItem {
@@ -23,25 +24,6 @@ interface PageItem {
   category?: string;
   url: string;
 }
-
-// Document library data
-const DOCUMENTS: DocumentItem[] = [
-  { id: '1', title: 'RMLL Official Rulebook 2025', category: 'Rules & Regulations', year: 2025 },
-  { id: '2', title: 'Player Registration Form', category: 'Forms', year: 2025 },
-  { id: '3', title: 'Code of Conduct', category: 'Policies', year: 2025 },
-  { id: '4', title: 'League Bylaws', category: 'Rules & Regulations', year: 2024 },
-  { id: '5', title: 'Referee Guidelines', category: 'Officials', year: 2024 },
-  { id: '6', title: 'Safety Protocol', category: 'Policies', year: 2024 },
-  { id: '7', title: 'Team Registration Package', category: 'Forms', year: 2024 },
-  { id: '8', title: 'Playoff Format Guide', category: 'Rules & Regulations', year: 2024 },
-  { id: '9', title: 'Coaching Certification Requirements', category: 'Officials', year: 2024 },
-  { id: '10', title: 'Financial Report 2024', category: 'Reports', year: 2024 },
-  { id: '11', title: 'Equipment Standards', category: 'Rules & Regulations', year: 2024 },
-  { id: '12', title: 'Volunteer Application', category: 'Forms', year: 2024 },
-  { id: '13', title: 'RMLL Official Rulebook 2024', category: 'Rules & Regulations', year: 2024 },
-  { id: '14', title: 'Annual Report 2023', category: 'Reports', year: 2023 },
-  { id: '15', title: 'RMLL Official Rulebook 2023', category: 'Rules & Regulations', year: 2023 },
-];
 
 // Site pages
 const SITE_PAGES: PageItem[] = [
@@ -91,8 +73,6 @@ const LEAGUE_INFO_PAGES: PageItem[] = [
   { id: 'officiating-application-form', title: 'Application Form', url: '/league-info#officiating-application-form', category: 'Officiating' },
 ];
 
-const DOCUMENT_CATEGORIES = ['All Categories', 'Rules & Regulations', 'Forms', 'Policies', 'Officials', 'Reports'];
-
 interface LinkInserterProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -101,6 +81,7 @@ interface LinkInserterProps {
 }
 
 export function LinkInserter({ open, onOpenChange, onInsert, trigger }: LinkInserterProps) {
+  const [documents, setDocuments] = useState<DocumentItem[]>([]);
   const [docSearch, setDocSearch] = useState('');
   const [pageSearch, setPageSearch] = useState('');
   const [leagueInfoSearch, setLeagueInfoSearch] = useState('');
@@ -110,12 +91,29 @@ export function LinkInserter({ open, onOpenChange, onInsert, trigger }: LinkInse
   const [newTab, setNewTab] = useState(false);
   const [selectedItem, setSelectedItem] = useState<{ url: string; title?: string } | null>(null);
 
+  // Fetch documents when dialog opens
+  useEffect(() => {
+    if (open) {
+      fetchDocuments().then(docs => {
+        setDocuments(docs.map(doc => ({
+          id: doc.id,
+          title: doc.title,
+          category: doc.category || 'other',
+          year: doc.document_year || new Date(doc.upload_date).getFullYear(),
+        })));
+      });
+    }
+  }, [open]);
+
   // Filter documents
-  const filteredDocuments = DOCUMENTS.filter(doc => {
+  const filteredDocuments = documents.filter(doc => {
     const matchesSearch = doc.title.toLowerCase().includes(docSearch.toLowerCase());
-    const matchesCategory = docCategory === 'All Categories' || doc.category === doc.category;
+    const matchesCategory = docCategory === 'All Categories' || doc.category === docCategory;
     return matchesSearch && matchesCategory;
   });
+
+  // Derive categories from documents
+  const categories = ['All Categories', ...new Set(documents.map(d => d.category))];
 
   // Filter site pages
   const filteredSitePages = SITE_PAGES.filter(page =>
@@ -222,7 +220,7 @@ export function LinkInserter({ open, onOpenChange, onInsert, trigger }: LinkInse
                 />
               </div>
               <div className="flex gap-2 flex-wrap">
-                {DOCUMENT_CATEGORIES.map((cat) => (
+                {categories.map((cat) => (
                   <button
                     key={cat}
                     type="button"

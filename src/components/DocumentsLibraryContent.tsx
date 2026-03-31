@@ -76,19 +76,38 @@ export function DocumentsLibraryContent() {
   const [mobileView, setMobileView] = useState<'list' | 'preview'>('list');
   const [sidebarOpen, setSidebarOpen] = useState(true);
 
-  // Handle URL parameter for document selection (e.g., ?doc=123)
+  // Handle URL parameter for document selection (e.g., ?doc=123 or #documents?doc=123)
   useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    const docId = params.get('doc');
-    if (docId && documents.length > 0) {
-      const doc = documents.find(d => d.id === docId);
-      if (doc) {
-        setSelectedDocument(doc);
-        setMobileView('preview');
-        // Remove the parameter from URL without triggering a hash change
-        window.history.replaceState({}, '', window.location.pathname);
+    const handleHashWithDocId = () => {
+      // Check hash (for /league-info#documents?doc=123)
+      const hash = window.location.hash.substring(1); // Remove #
+      let docId = null;
+
+      if (hash.includes('?')) {
+        const params = new URLSearchParams(hash.split('?')[1]);
+        docId = params.get('doc');
       }
-    }
+
+      // Only proceed if the hash is for documents and has a doc parameter
+      if (!hash.startsWith('documents') || !docId) return;
+
+      if (documents.length > 0) {
+        const doc = documents.find(d => d.id === docId);
+        if (doc) {
+          setSelectedDocument(doc);
+          setMobileView('preview');
+          // Remove the doc parameter from hash using replaceState to avoid triggering hash change
+          window.history.replaceState({}, '', '#documents');
+        }
+      }
+    };
+
+    // Check on mount and when documents load
+    handleHashWithDocId();
+
+    // Listen for hash changes (e.g., user clicks another document link)
+    window.addEventListener('hashchange', handleHashWithDocId);
+    return () => window.removeEventListener('hashchange', handleHashWithDocId);
   }, [documents]);
 
   // Load documents from API

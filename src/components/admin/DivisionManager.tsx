@@ -319,7 +319,7 @@ function EditSectionModal({
         sectionId: initialData.sectionId,
         title: initialData.isCustom ? title.trim() : initialData.title, // Only custom sections can change title
         heading: initialData.isCustom ? undefined : (heading.trim() || undefined), // Existing sections use heading
-        fieldLabel: initialData.isCustom ? (fieldLabel.trim() || title.trim()) : '',
+        fieldLabel: fieldLabel.trim() || undefined, // Save field label for all sections (undefined means use default)
         colSpan,
         color: selectedColor,
         iconName: selectedIcon,
@@ -372,17 +372,16 @@ function EditSectionModal({
               </div>
             </>
           )}
-          {/* Field Label only for custom sections */}
-          {initialData.isCustom && (
-            <div>
-              <Label>Field Label</Label>
-              <Input
-                value={fieldLabel}
-                onChange={(e) => setFieldLabel(e.target.value)}
-                placeholder="e.g., Content"
-              />
-            </div>
-          )}
+          {/* Field Label for all sections */}
+          <div>
+            <Label>Field Label</Label>
+            <Input
+              value={fieldLabel}
+              onChange={(e) => setFieldLabel(e.target.value)}
+              placeholder="e.g., Content"
+            />
+            <p className="text-xs text-gray-500 mt-1">Label shown above the content input field. Leave empty to use the default.</p>
+          </div>
           <div>
             <Label>Color</Label>
             <div className="flex gap-2 mt-2 flex-wrap">
@@ -747,15 +746,17 @@ export function DivisionManager() {
   const openEditModal = (sectionId: string) => {
     const config = sectionConfigs.find(c => c.id === sectionId);
     if (config) {
+      // Get the default field label from SECTION_FIELDS or use config title
+      const defaultFieldLabel = SECTION_FIELDS[config.id]?.[0]?.label || config.title;
       setEditingSection({
         sectionId: config.id,
         title: config.title,
         heading: config.heading,
-        fieldLabel: config.isCustom ? config.title : '', // Only custom sections use field label
+        fieldLabel: config.fieldLabel || defaultFieldLabel || '',
         colSpan: config.colSpan || 1,
         color: config.color || '#013fac',
         iconName: config.iconName || 'Info',
-        isCustom: config.isCustom, // Track if this is a custom section
+        isCustom: config.isCustom,
       });
       setShowEditModal(true);
     }
@@ -768,6 +769,7 @@ export function DivisionManager() {
             ...c,
             title: data.title,
             heading: data.heading,
+            fieldLabel: data.fieldLabel,
             colSpan: data.colSpan,
             color: data.color,
             iconName: data.iconName,
