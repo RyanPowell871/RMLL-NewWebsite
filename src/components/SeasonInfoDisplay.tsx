@@ -118,15 +118,64 @@ interface SeasonInfoDisplayProps {
 // ============================================================================
 
 function migrateToUnified(data: any): UnifiedSeasonInfoData {
-  // If already has the new format (drafts array with first item having id), return as-is
-  if (data.drafts && Array.isArray(data.drafts) && data.drafts.length > 0 && data.drafts[0].id) {
-    return data as UnifiedSeasonInfoData;
-  }
-
-  // Start with only metadata, not copying legacy properties
+  // Start with metadata
   const unified: UnifiedSeasonInfoData = {
     __metadata: data.__metadata,
   };
+
+  // Helper to check if array is in new format (has id property)
+  const isNewFormatArray = (arr: any[]): boolean => {
+    return Array.isArray(arr) && (arr.length === 0 || arr[0]?.id !== undefined);
+  };
+
+  // Handle drafts - either already in new format or needs migration
+  if (isNewFormatArray(data.drafts)) {
+    unified.drafts = data.drafts;
+  } else if (data.drafts && typeof data.drafts === 'object' && !Array.isArray(data.drafts)) {
+    // Legacy drafts object -> drafts array
+    const drafts: DraftSection[] = [];
+    if (data.drafts.north) {
+      drafts.push({
+        id: 'north_draft',
+        title: data.drafts.north.title || 'North Draft',
+        subtitle: data.drafts.north.subtitle,
+        date: data.drafts.north.date,
+        time: data.drafts.north.time,
+        location: data.drafts.north.location,
+        notes: data.drafts.north.notes,
+        region: 'North',
+      });
+    }
+    if (data.drafts.south) {
+      drafts.push({
+        id: 'south_draft',
+        title: data.drafts.south.title || 'South Draft',
+        subtitle: data.drafts.south.subtitle,
+        date: data.drafts.south.date,
+        time: data.drafts.south.time,
+        notes: data.drafts.south.notes,
+        region: 'South',
+      });
+    }
+    if (drafts.length > 0) {
+      unified.drafts = drafts;
+    }
+  } else if (data.draft && typeof data.draft === 'object') {
+    // Junior A draft (legacy draft object -> drafts array)
+    unified.drafts = [
+      {
+        id: 'junior_a_draft',
+        title: data.draft.title || 'Junior A Entry Draft',
+        details: Array.isArray(data.draft.details) ? data.draft.details : undefined,
+        event: data.draft.event,
+        draftOrder: Array.isArray(data.draft.draftOrder) ? data.draft.draftOrder : undefined,
+        date: data.draft.event?.date,
+        time: data.draft.event?.time,
+        location: data.draft.event?.location,
+        notes: data.draft.draftEligible,
+      },
+    ];
+  }
 
   // Migrate drafts (legacy drafts object -> drafts array)
   if (data.drafts && typeof data.drafts === 'object' && !Array.isArray(data.drafts)) {
@@ -176,8 +225,11 @@ function migrateToUnified(data: any): UnifiedSeasonInfoData {
     ];
   }
 
-  // Migrate regularSeason (legacy regularSeason -> regularSeason array)
-  if (data.regularSeason && typeof data.regularSeason === 'object') {
+  // Handle regularSeason - either already in new format or needs migration
+  if (isNewFormatArray(data.regularSeason)) {
+    unified.regularSeason = data.regularSeason;
+  } else if (data.regularSeason && typeof data.regularSeason === 'object') {
+    // Legacy regularSeason -> regularSeason array
     unified.regularSeason = [
       {
         id: 'regular_season',
@@ -186,14 +238,12 @@ function migrateToUnified(data: any): UnifiedSeasonInfoData {
         seasonEnd: data.regularSeason.end,
         totalGames: data.regularSeason.totalGames?.toString(),
         format: data.regularSeason.format,
-        gameDays: data.regularSeason.gameDays?.join(', '),
+        gameDays: Array.isArray(data.regularSeason.gameDays) ? data.regularSeason.gameDays.join(', ') : undefined,
         notes: data.regularSeason.notes,
       },
     ];
-  }
-
-  // Migrate season (Junior A style season -> regularSeason array)
-  if (data.season && typeof data.season === 'object') {
+  } else if (data.season && typeof data.season === 'object') {
+    // Junior A style season -> regularSeason array
     unified.regularSeason = [
       {
         id: 'junior_a_season',
@@ -206,58 +256,64 @@ function migrateToUnified(data: any): UnifiedSeasonInfoData {
     ];
   }
 
-  // Migrate playoffs (legacy playoffs -> playoffs array)
-  if (data.playoffs && typeof data.playoffs === 'object') {
+  // Handle playoffs - either already in new format or needs migration
+  if (isNewFormatArray(data.playoffs)) {
+    unified.playoffs = data.playoffs;
+  } else if (data.playoffs && typeof data.playoffs === 'object') {
+    // Legacy playoffs -> playoffs array
     const playoff: PlayoffSection = {
       id: 'playoffs',
       format: data.playoffs.format,
       dates: data.playoffs.dates,
       note: data.playoffs.note,
     };
-    if (data.playoffs.scenarios) {
+    if (Array.isArray(data.playoffs.scenarios)) {
       playoff.scenarios = data.playoffs.scenarios.map((s: any, idx: number) => ({
         id: `scenario_${idx}`,
         name: s.name,
         condition: s.condition,
-        games: s.games.map((g: any, gIdx: number) => ({
+        games: Array.isArray(s.games) ? s.games.map((g: any, gIdx: number) => ({
           id: `game_${gIdx}`,
           number: g.number,
           date: g.date,
           time: g.time,
           optional: g.optional,
-        })),
+        })) : [],
       }));
     }
     unified.playoffs = [playoff];
   }
 
-  // Migrate provincial (legacy provincial -> provincial array)
-  if (data.provincial && typeof data.provincial === 'object') {
+  // Handle provincial - either already in new format or needs migration
+  if (isNewFormatArray(data.provincial)) {
+    unified.provincial = data.provincial;
+  } else if (data.provincial && typeof data.provincial === 'object') {
+    // Legacy provincial -> provincial array
     const provincial: ProvincialSection = {
       id: 'provincial',
       format: data.provincial.format,
-      formatType: data.provincial.schedule ? 'tournament' : data.provincial.note ? 'simple' : 'scenario',
+      formatType: Array.isArray(data.provincial.schedule) ? 'tournament' : data.provincial.note ? 'simple' : 'scenario',
       dates: data.provincial.dates,
       note: data.provincial.note,
       pools: data.provincial.pools,
       venues: data.provincial.venues,
       poolRoundNote: data.provincial.poolRoundNote,
     };
-    if (data.provincial.scenarios) {
+    if (Array.isArray(data.provincial.scenarios)) {
       provincial.scenarios = data.provincial.scenarios.map((s: any, idx: number) => ({
         id: `scenario_${idx}`,
         name: s.name,
         condition: s.condition,
-        games: s.games.map((g: any, gIdx: number) => ({
+        games: Array.isArray(s.games) ? s.games.map((g: any, gIdx: number) => ({
           id: `game_${gIdx}`,
           number: g.number,
           date: g.date,
           time: g.time,
           optional: g.optional,
-        })),
+        })) : [],
       }));
     }
-    if (data.provincial.schedule) {
+    if (Array.isArray(data.provincial.schedule)) {
       provincial.schedule = data.provincial.schedule.map((g: any, idx: number) => ({
         id: `game_${idx}`,
         number: g.number,
@@ -271,33 +327,43 @@ function migrateToUnified(data: any): UnifiedSeasonInfoData {
     unified.provincial = [provincial];
   }
 
-  // Migrate national (legacy national -> championships array)
-  if (data.national && typeof data.national === 'object') {
-    unified.championships = [
-      {
+  // Handle championships - either already in new format or needs migration
+  if (isNewFormatArray(data.championships)) {
+    unified.championships = data.championships;
+  } else {
+    const champs: ChampionshipSection[] = [];
+
+    // Migrate national (legacy national -> championships array)
+    if (data.national && typeof data.national === 'object') {
+      champs.push({
         id: 'national',
         title: data.national.title || 'National Championship',
         type: 'national',
         dates: data.national.dates,
         location: data.national.location,
-      },
-    ];
-  }
+      });
+    }
 
-  // Migrate presidentsCup (legacy presidentsCup -> championships array)
-  if (data.presidentsCup && typeof data.presidentsCup === 'object') {
-    unified.championships = [
-      {
+    // Migrate presidentsCup (legacy presidentsCup -> championships array)
+    if (data.presidentsCup && typeof data.presidentsCup === 'object') {
+      champs.push({
         id: 'presidents_cup',
         title: 'Presidents Cup',
         type: 'presidents-cup',
         dates: data.presidentsCup.dates,
         location: data.presidentsCup.location,
         city: data.presidentsCup.city,
-        travelDays: data.presidentsCup.travelDays,
-      },
-    ];
+        travelDays: Array.isArray(data.presidentsCup.travelDays) ? data.presidentsCup.travelDays : undefined,
+      });
+    }
+
+    if (champs.length > 0) {
+      unified.championships = champs;
+    }
   }
+
+  // Copy notes as-is
+  unified.notes = data.notes;
 
   return unified;
 }
@@ -410,7 +476,7 @@ export function SeasonInfoDisplay({ data }: SeasonInfoDisplayProps) {
                   )}
 
                   {/* Junior A style details */}
-                  {draft.details && draft.details.length > 0 && (
+                  {Array.isArray(draft.details) && draft.details.length > 0 && (
                     <div className="mt-4 pt-3 border-t border-gray-200">
                       <div className="space-y-1">
                         {draft.details.map((detail, dIdx) => (
@@ -424,11 +490,11 @@ export function SeasonInfoDisplay({ data }: SeasonInfoDisplayProps) {
             </div>
 
             {/* Draft Order (Junior A style) */}
-            {unified.drafts.some(d => d.draftOrder && d.draftOrder.length > 0) && (
+            {unified.drafts.some(d => Array.isArray(d.draftOrder) && d.draftOrder.length > 0) && (
               <div className="bg-gray-50 p-4 rounded-lg border-l-4 border-l-green-500">
                 <h4 className="font-bold text-base text-gray-900 mb-3">Draft Order</h4>
                 {unified.drafts.map((draft) => (
-                  draft.draftOrder && draft.draftOrder.length > 0 && (
+                  Array.isArray(draft.draftOrder) && draft.draftOrder.length > 0 && (
                     <div key={draft.id} className="mb-2">
                       <p className="text-xs font-semibold text-gray-500 mb-1">{draft.title}</p>
                       <div className="space-y-1">
@@ -489,7 +555,7 @@ export function SeasonInfoDisplay({ data }: SeasonInfoDisplayProps) {
                           </p>
                         </div>
                       )}
-                      {season.gameDays && (
+                      {typeof season.gameDays === 'string' && season.gameDays && (
                         <div>
                           <p className="text-xs font-bold text-gray-500 uppercase tracking-wide mb-1">Game Days</p>
                           <div className="flex flex-wrap gap-1.5">
@@ -528,7 +594,7 @@ export function SeasonInfoDisplay({ data }: SeasonInfoDisplayProps) {
                 Playoffs
               </h3>
             </div>
-            {unified.playoffs[0].format && (
+            {unified.playoffs[0]?.format && (
               <p className="text-xs text-white/80 mt-1">{unified.playoffs[0].format}</p>
             )}
           </div>
@@ -540,14 +606,14 @@ export function SeasonInfoDisplay({ data }: SeasonInfoDisplayProps) {
                 )}
 
                 {/* Scenarios */}
-                {playoff.scenarios && playoff.scenarios.length > 0 && (
+                {Array.isArray(playoff.scenarios) && playoff.scenarios.length > 0 && (
                   <div className="space-y-3">
                     {playoff.scenarios.map((scenario) => (
                       <div key={scenario.id} className="bg-gray-50 p-4 rounded-lg">
                         <h4 className="font-bold text-base text-gray-900 mb-1">{scenario.name}</h4>
                         <p className="text-sm text-gray-600 mb-3">{scenario.condition}</p>
                         <div className="space-y-2">
-                          {scenario.games.map((game) => (
+                          {Array.isArray(scenario.games) && scenario.games.map((game) => (
                             <div
                               key={game.id}
                               className="flex items-center justify-between py-2 px-3 bg-white rounded border border-gray-200"
@@ -596,7 +662,7 @@ export function SeasonInfoDisplay({ data }: SeasonInfoDisplayProps) {
                 Provincial Championship
               </h3>
             </div>
-            {unified.provincial[0].format && (
+            {unified.provincial[0]?.format && (
               <p className="text-xs text-white/80 mt-1">{unified.provincial[0].format}</p>
             )}
           </div>
@@ -619,11 +685,11 @@ export function SeasonInfoDisplay({ data }: SeasonInfoDisplayProps) {
                 )}
 
                 {/* Pool structure */}
-                {provincial.pools && (provincial.pools.poolA?.length > 0 || provincial.pools.poolB?.length > 0) && (
+                {provincial.pools && (Array.isArray(provincial.pools.poolA) && provincial.pools.poolA.length > 0 || Array.isArray(provincial.pools.poolB) && provincial.pools.poolB.length > 0) && (
                   <div className="bg-gray-50 p-4 rounded-lg mb-3">
                     <h4 className="font-bold text-base text-gray-900 mb-3">Pool Structure</h4>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      {provincial.pools.poolA && provincial.pools.poolA.length > 0 && (
+                      {Array.isArray(provincial.pools.poolA) && provincial.pools.poolA.length > 0 && (
                         <div className="bg-white p-3 rounded border border-gray-200">
                           <p className="text-sm font-bold text-[#DC2626] mb-2">POOL A</p>
                           <div className="space-y-1">
@@ -633,7 +699,7 @@ export function SeasonInfoDisplay({ data }: SeasonInfoDisplayProps) {
                           </div>
                         </div>
                       )}
-                      {provincial.pools.poolB && provincial.pools.poolB.length > 0 && (
+                      {Array.isArray(provincial.pools.poolB) && provincial.pools.poolB.length > 0 && (
                         <div className="bg-white p-3 rounded border border-gray-200">
                           <p className="text-sm font-bold text-[#DC2626] mb-2">POOL B</p>
                           <div className="space-y-1">
@@ -664,7 +730,7 @@ export function SeasonInfoDisplay({ data }: SeasonInfoDisplayProps) {
                 )}
 
                 {/* Tournament schedule */}
-                {provincial.schedule && provincial.schedule.length > 0 && (
+                {Array.isArray(provincial.schedule) && provincial.schedule.length > 0 && (
                   <div className="bg-gray-50 p-4 rounded-lg mb-3">
                     <h4 className="font-bold text-base text-gray-900 mb-3">Tournament Schedule</h4>
                     <div className="space-y-2">
@@ -699,14 +765,14 @@ export function SeasonInfoDisplay({ data }: SeasonInfoDisplayProps) {
                 )}
 
                 {/* Scenarios */}
-                {provincial.scenarios && provincial.scenarios.length > 0 && (
+                {Array.isArray(provincial.scenarios) && provincial.scenarios.length > 0 && (
                   <div className="space-y-3">
                     {provincial.scenarios.map((scenario) => (
                       <div key={scenario.id} className="bg-gray-50 p-4 rounded-lg">
                         <h4 className="font-bold text-base text-gray-900 mb-1">{scenario.name}</h4>
                         <p className="text-sm text-gray-600 mb-3">{scenario.condition}</p>
                         <div className="space-y-2">
-                          {scenario.games.map((game) => (
+                          {Array.isArray(scenario.games) && scenario.games.map((game) => (
                             <div
                               key={game.id}
                               className="flex items-center justify-between py-2 px-3 bg-white rounded border border-gray-200"
@@ -770,7 +836,7 @@ export function SeasonInfoDisplay({ data }: SeasonInfoDisplayProps) {
                       )}
                     </div>
                   </div>
-                  {champ.travelDays && champ.travelDays.length > 0 && (
+                  {Array.isArray(champ.travelDays) && champ.travelDays.length > 0 && (
                     <div className="bg-gray-50 p-3 rounded-lg">
                       <p className="text-xs font-bold text-gray-500 uppercase tracking-wide mb-2">Travel Days</p>
                       <div className="space-y-1">
