@@ -136,6 +136,213 @@ interface SeasonInfoEditorProps {
 // Helper to generate unique IDs
 const generateId = () => `section_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
 
+// ============================================================================
+// DATA MIGRATION - Convert legacy format to unified format
+// ============================================================================
+
+function migrateToUnified(data: any): SeasonInfoData {
+  // Helper to check if array is in new format (has id property)
+  const isNewFormatArray = (arr: any[]): boolean => {
+    return Array.isArray(arr) && (arr.length === 0 || arr[0]?.id !== undefined);
+  };
+
+  // Start with metadata
+  const unified: SeasonInfoData = {
+    __metadata: data.__metadata,
+  };
+
+  // Handle drafts - either already in new format or needs migration
+  if (isNewFormatArray(data.drafts)) {
+    unified.drafts = data.drafts;
+  } else if (data.drafts && typeof data.drafts === 'object' && !Array.isArray(data.drafts)) {
+    // Legacy drafts object -> drafts array
+    const drafts: DraftSection[] = [];
+    if (data.drafts.north) {
+      drafts.push({
+        id: 'north_draft',
+        title: data.drafts.north.title || 'North Draft',
+        subtitle: data.drafts.north.subtitle,
+        date: data.drafts.north.date,
+        time: data.drafts.north.time,
+        location: data.drafts.north.location,
+        notes: data.drafts.north.notes,
+        region: 'North',
+      });
+    }
+    if (data.drafts.south) {
+      drafts.push({
+        id: 'south_draft',
+        title: data.drafts.south.title || 'South Draft',
+        subtitle: data.drafts.south.subtitle,
+        date: data.drafts.south.date,
+        time: data.drafts.south.time,
+        notes: data.drafts.south.notes,
+        region: 'South',
+      });
+    }
+    if (drafts.length > 0) {
+      unified.drafts = drafts;
+    }
+  } else if (data.draft && typeof data.draft === 'object') {
+    // Junior A draft (legacy draft object -> drafts array)
+    unified.drafts = [
+      {
+        id: 'junior_a_draft',
+        title: data.draft.title || 'Junior A Entry Draft',
+        details: Array.isArray(data.draft.details) ? data.draft.details : undefined,
+        event: data.draft.event,
+        draftOrder: Array.isArray(data.draft.draftOrder) ? data.draft.draftOrder : undefined,
+        date: data.draft.event?.date,
+        time: data.draft.event?.time,
+        location: data.draft.event?.location,
+        notes: data.draft.draftEligible,
+      },
+    ];
+  }
+
+  // Handle regularSeason - either already in new format or needs migration
+  if (isNewFormatArray(data.regularSeason)) {
+    unified.regularSeason = data.regularSeason;
+  } else if (data.regularSeason && typeof data.regularSeason === 'object') {
+    // Legacy regularSeason -> regularSeason array
+    unified.regularSeason = [
+      {
+        id: 'regular_season',
+        title: 'Regular Season',
+        seasonStart: data.regularSeason.start,
+        seasonEnd: data.regularSeason.end,
+        totalGames: data.regularSeason.totalGames?.toString(),
+        format: data.regularSeason.format,
+        gameDays: Array.isArray(data.regularSeason.gameDays) ? data.regularSeason.gameDays.join(', ') : undefined,
+        notes: data.regularSeason.notes,
+      },
+    ];
+  } else if (data.season && typeof data.season === 'object') {
+    // Junior A style season -> regularSeason array
+    unified.regularSeason = [
+      {
+        id: 'junior_a_season',
+        title: data.season.title || 'Season',
+        seasonStart: data.season.seasonStart,
+        seasonEnd: data.season.seasonEnd,
+        gameDays: data.season.gameDays,
+        totalGames: data.season.regularSeasonGames,
+      },
+    ];
+  }
+
+  // Handle playoffs - either already in new format or needs migration
+  if (isNewFormatArray(data.playoffs)) {
+    unified.playoffs = data.playoffs;
+  } else if (data.playoffs && typeof data.playoffs === 'object') {
+    // Legacy playoffs -> playoffs array
+    const playoff: PlayoffSection = {
+      id: 'playoffs',
+      format: data.playoffs.format,
+      dates: data.playoffs.dates,
+      note: data.playoffs.note,
+    };
+    if (Array.isArray(data.playoffs.scenarios)) {
+      playoff.scenarios = data.playoffs.scenarios.map((s: any, idx: number) => ({
+        id: `scenario_${idx}`,
+        name: s.name,
+        condition: s.condition,
+        games: Array.isArray(s.games) ? s.games.map((g: any, gIdx: number) => ({
+          id: `game_${gIdx}`,
+          number: g.number,
+          date: g.date,
+          time: g.time,
+          optional: g.optional,
+        })) : [],
+      }));
+    }
+    unified.playoffs = [playoff];
+  }
+
+  // Handle provincial - either already in new format or needs migration
+  if (isNewFormatArray(data.provincial)) {
+    unified.provincial = data.provincial;
+  } else if (data.provincial && typeof data.provincial === 'object') {
+    // Legacy provincial -> provincial array
+    const provincial: ProvincialSection = {
+      id: 'provincial',
+      format: data.provincial.format,
+      formatType: Array.isArray(data.provincial.schedule) ? 'tournament' : data.provincial.note ? 'simple' : 'scenario',
+      dates: data.provincial.dates,
+      note: data.provincial.note,
+      pools: data.provincial.pools,
+      venues: data.provincial.venues,
+      poolRoundNote: data.provincial.poolRoundNote,
+    };
+    if (Array.isArray(data.provincial.scenarios)) {
+      provincial.scenarios = data.provincial.scenarios.map((s: any, idx: number) => ({
+        id: `scenario_${idx}`,
+        name: s.name,
+        condition: s.condition,
+        games: Array.isArray(s.games) ? s.games.map((g: any, gIdx: number) => ({
+          id: `game_${gIdx}`,
+          number: g.number,
+          date: g.date,
+          time: g.time,
+          optional: g.optional,
+        })) : [],
+      }));
+    }
+    if (Array.isArray(data.provincial.schedule)) {
+      provincial.schedule = data.provincial.schedule.map((g: any, idx: number) => ({
+        id: `game_${idx}`,
+        number: g.number,
+        date: g.date,
+        time: g.time,
+        matchup: g.matchup,
+        venue: g.venue,
+        label: g.label,
+      }));
+    }
+    unified.provincial = [provincial];
+  }
+
+  // Handle championships - either already in new format or needs migration
+  if (isNewFormatArray(data.championships)) {
+    unified.championships = data.championships;
+  } else {
+    const champs: ChampionshipSection[] = [];
+
+    // Migrate national (legacy national -> championships array)
+    if (data.national && typeof data.national === 'object') {
+      champs.push({
+        id: 'national',
+        title: data.national.title || 'National Championship',
+        type: 'national',
+        dates: data.national.dates,
+        location: data.national.location,
+      });
+    }
+
+    // Migrate presidentsCup (legacy presidentsCup -> championships array)
+    if (data.presidentsCup && typeof data.presidentsCup === 'object') {
+      champs.push({
+        id: 'presidents_cup',
+        title: 'Presidents Cup',
+        type: 'presidents-cup',
+        dates: data.presidentsCup.dates,
+        location: data.presidentsCup.location,
+        city: data.presidentsCup.city,
+        travelDays: Array.isArray(data.presidentsCup.travelDays) ? data.presidentsCup.travelDays : undefined,
+      });
+    }
+
+    if (champs.length > 0) {
+      unified.championships = champs;
+    }
+  }
+
+  // Copy notes as-is
+  unified.notes = data.notes;
+
+  return unified;
+}
+
 // Game editor component for playoff scenarios
 function GameEditor({
   games,
@@ -1211,8 +1418,9 @@ export function SeasonInfoEditor({ value, onChange, divisionName = '' }: SeasonI
   useEffect(() => {
     try {
       const parsed = value ? JSON.parse(value) : {};
-      setData(parsed);
-      setJsonValue(JSON.stringify(parsed, null, 2));
+      const migrated = migrateToUnified(parsed);
+      setData(migrated);
+      setJsonValue(JSON.stringify(migrated, null, 2));
       setJsonError(null);
     } catch (e) {
       setJsonError('Invalid JSON format');
@@ -1230,8 +1438,12 @@ export function SeasonInfoEditor({ value, onChange, divisionName = '' }: SeasonI
     setJsonValue(newJson);
     try {
       const parsed = JSON.parse(newJson);
-      setData(parsed);
-      onChange(newJson);
+      const migrated = migrateToUnified(parsed);
+      setData(migrated);
+      // Save the migrated version as JSON
+      const migratedJson = JSON.stringify(migrated);
+      setJsonValue(JSON.stringify(migrated, null, 2));
+      onChange(migratedJson);
       setJsonError(null);
     } catch (e) {
       setJsonError('Invalid JSON');
@@ -1313,7 +1525,7 @@ export function SeasonInfoEditor({ value, onChange, divisionName = '' }: SeasonI
                   <Plus className="w-4 h-4 mr-1" /> Add Draft Section
                 </Button>
               </div>
-              {(!data.drafts || data.drafts.length === 0) && (
+              {(!Array.isArray(data.drafts) || data.drafts.length === 0) && (
                 <div className="text-center py-12 bg-gray-50 rounded-lg border-2 border-dashed border-gray-200">
                   <p className="text-gray-500 mb-2">No draft sections added</p>
                   <Button
@@ -1334,18 +1546,18 @@ export function SeasonInfoEditor({ value, onChange, divisionName = '' }: SeasonI
                   </Button>
                 </div>
               )}
-              {(data.drafts || []).map((draft) => (
+              {Array.isArray(data.drafts) && data.drafts.map((draft) => (
                 <DraftSectionEditor
                   key={draft.id}
                   data={draft}
                   onChange={(updated) => {
-                    const drafts = (data.drafts || []).map(d =>
+                    const drafts = Array.isArray(data.drafts) ? data.drafts.map(d =>
                       d.id === draft.id ? updated : d
-                    );
+                    ) : [];
                     updateData({ ...data, drafts });
                   }}
                   onDelete={() => {
-                    const drafts = (data.drafts || []).filter(d => d.id !== draft.id);
+                    const drafts = Array.isArray(data.drafts) ? data.drafts.filter(d => d.id !== draft.id) : [];
                     updateData({ ...data, drafts });
                   }}
                 />
@@ -1358,7 +1570,7 @@ export function SeasonInfoEditor({ value, onChange, divisionName = '' }: SeasonI
                 <h3 className="text-lg font-semibold">Regular Season</h3>
                 <Button
                   onClick={() => {
-                    const seasons = data.regularSeason || [];
+                    const seasons = Array.isArray(data.regularSeason) ? data.regularSeason : [];
                     updateData({
                       ...data,
                       regularSeason: [...seasons, {
@@ -1373,7 +1585,7 @@ export function SeasonInfoEditor({ value, onChange, divisionName = '' }: SeasonI
                   <Plus className="w-4 h-4 mr-1" /> Add Regular Season Section
                 </Button>
               </div>
-              {(!data.regularSeason || data.regularSeason.length === 0) && (
+              {(!Array.isArray(data.regularSeason) || data.regularSeason.length === 0) && (
                 <div className="text-center py-12 bg-gray-50 rounded-lg border-2 border-dashed border-gray-200">
                   <p className="text-gray-500 mb-2">No regular season sections added</p>
                   <Button
@@ -1393,18 +1605,18 @@ export function SeasonInfoEditor({ value, onChange, divisionName = '' }: SeasonI
                   </Button>
                 </div>
               )}
-              {(data.regularSeason || []).map((season) => (
+              {Array.isArray(data.regularSeason) && data.regularSeason.map((season) => (
                 <RegularSeasonSectionEditor
                   key={season.id}
                   data={season}
                   onChange={(updated) => {
-                    const seasons = (data.regularSeason || []).map(s =>
+                    const seasons = Array.isArray(data.regularSeason) ? data.regularSeason.map(s =>
                       s.id === season.id ? updated : s
-                    );
+                    ) : [];
                     updateData({ ...data, regularSeason: seasons });
                   }}
                   onDelete={() => {
-                    const seasons = (data.regularSeason || []).filter(s => s.id !== season.id);
+                    const seasons = Array.isArray(data.regularSeason) ? data.regularSeason.filter(s => s.id !== season.id) : [];
                     updateData({ ...data, regularSeason: seasons });
                   }}
                 />
@@ -1417,7 +1629,7 @@ export function SeasonInfoEditor({ value, onChange, divisionName = '' }: SeasonI
                 <h3 className="text-lg font-semibold">Playoffs</h3>
                 <Button
                   onClick={() => {
-                    const playoffs = data.playoffs || [];
+                    const playoffs = Array.isArray(data.playoffs) ? data.playoffs : [];
                     updateData({
                       ...data,
                       playoffs: [...playoffs, {
@@ -1432,7 +1644,7 @@ export function SeasonInfoEditor({ value, onChange, divisionName = '' }: SeasonI
                   <Plus className="w-4 h-4 mr-1" /> Add Playoff Section
                 </Button>
               </div>
-              {(!data.playoffs || data.playoffs.length === 0) && (
+              {(!Array.isArray(data.playoffs) || data.playoffs.length === 0) && (
                 <div className="text-center py-12 bg-gray-50 rounded-lg border-2 border-dashed border-gray-200">
                   <p className="text-gray-500 mb-2">No playoff sections added</p>
                   <Button
@@ -1452,18 +1664,18 @@ export function SeasonInfoEditor({ value, onChange, divisionName = '' }: SeasonI
                   </Button>
                 </div>
               )}
-              {(data.playoffs || []).map((playoff) => (
+              {Array.isArray(data.playoffs) && data.playoffs.map((playoff) => (
                 <PlayoffSectionEditor
                   key={playoff.id}
                   data={playoff}
                   onChange={(updated) => {
-                    const playoffs = (data.playoffs || []).map(p =>
+                    const playoffs = Array.isArray(data.playoffs) ? data.playoffs.map(p =>
                       p.id === playoff.id ? updated : p
-                    );
+                    ) : [];
                     updateData({ ...data, playoffs });
                   }}
                   onDelete={() => {
-                    const playoffs = (data.playoffs || []).filter(p => p.id !== playoff.id);
+                    const playoffs = Array.isArray(data.playoffs) ? data.playoffs.filter(p => p.id !== playoff.id) : [];
                     updateData({ ...data, playoffs });
                   }}
                 />
@@ -1476,7 +1688,7 @@ export function SeasonInfoEditor({ value, onChange, divisionName = '' }: SeasonI
                 <h3 className="text-lg font-semibold">Provincial Championship</h3>
                 <Button
                   onClick={() => {
-                    const provincial = data.provincial || [];
+                    const provincial = Array.isArray(data.provincial) ? data.provincial : [];
                     updateData({
                       ...data,
                       provincial: [...provincial, {
@@ -1492,7 +1704,7 @@ export function SeasonInfoEditor({ value, onChange, divisionName = '' }: SeasonI
                   <Plus className="w-4 h-4 mr-1" /> Add Provincial Section
                 </Button>
               </div>
-              {(!data.provincial || data.provincial.length === 0) && (
+              {(!Array.isArray(data.provincial) || data.provincial.length === 0) && (
                 <div className="text-center py-12 bg-gray-50 rounded-lg border-2 border-dashed border-gray-200">
                   <p className="text-gray-500 mb-2">No provincial sections added</p>
                   <Button
@@ -1513,18 +1725,18 @@ export function SeasonInfoEditor({ value, onChange, divisionName = '' }: SeasonI
                   </Button>
                 </div>
               )}
-              {(data.provincial || []).map((prov) => (
+              {Array.isArray(data.provincial) && data.provincial.map((prov) => (
                 <ProvincialSectionEditor
                   key={prov.id}
                   data={prov}
                   onChange={(updated) => {
-                    const provincial = (data.provincial || []).map(p =>
+                    const provincial = Array.isArray(data.provincial) ? data.provincial.map(p =>
                       p.id === prov.id ? updated : p
-                    );
+                    ) : [];
                     updateData({ ...data, provincial });
                   }}
                   onDelete={() => {
-                    const provincial = (data.provincial || []).filter(p => p.id !== prov.id);
+                    const provincial = Array.isArray(data.provincial) ? data.provincial.filter(p => p.id !== prov.id) : [];
                     updateData({ ...data, provincial });
                   }}
                 />
@@ -1537,7 +1749,7 @@ export function SeasonInfoEditor({ value, onChange, divisionName = '' }: SeasonI
                 <h3 className="text-lg font-semibold">Championships</h3>
                 <Button
                   onClick={() => {
-                    const championships = data.championships || [];
+                    const championships = Array.isArray(data.championships) ? data.championships : [];
                     updateData({
                       ...data,
                       championships: [...championships, {
@@ -1555,7 +1767,7 @@ export function SeasonInfoEditor({ value, onChange, divisionName = '' }: SeasonI
                   <Plus className="w-4 h-4 mr-1" /> Add Championship
                 </Button>
               </div>
-              {(!data.championships || data.championships.length === 0) && (
+              {(!Array.isArray(data.championships) || data.championships.length === 0) && (
                 <div className="text-center py-12 bg-gray-50 rounded-lg border-2 border-dashed border-gray-200">
                   <p className="text-gray-500 mb-2">No championships added</p>
                   <Button
