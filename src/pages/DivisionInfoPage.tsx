@@ -18,6 +18,7 @@ import { ProtectedListDisplay } from '../components/ProtectedListDisplay';
 import { DraftsDisplay } from '../components/DraftsDisplay';
 import { PointLeaderAwards } from '../components/league-info/PointLeaderAwards';
 import { JrBTier1DivisionAwards } from '../components/league-info/JrBTier1DivisionAwards';
+import { MarkdownRenderer } from '../components/MarkdownRenderer';
 
 interface SectionConfig {
   id: string;
@@ -530,25 +531,8 @@ export function DivisionInfoPage() {
                   </div>
                   {divisionData.divisionDescription && (
                     <div className="p-5 bg-gradient-to-br from-white to-gray-50">
-                      <div className="max-w-none space-y-2.5">
-                        {divisionData.divisionDescription.split('\n').map((paragraph, idx) => {
-                          if (!paragraph.trim()) return null;
-                          // Auto-link URLs in the text
-                          const parts = paragraph.split(/(https?:\/\/[^\s]+)/g);
-                          return (
-                            <p key={idx} className="text-sm text-gray-700 leading-relaxed">
-                              {parts.map((part, i) =>
-                                part.match(/^https?:\/\//) ? (
-                                  <a key={i} href={part} target="_blank" rel="noopener noreferrer" className="text-[#013fac] hover:underline font-medium">
-                                    {part}
-                                  </a>
-                                ) : (
-                                  <span key={i}>{part}</span>
-                                )
-                              )}
-                            </p>
-                          );
-                        })}
+                      <div className="max-w-none">
+                        <MarkdownRenderer content={divisionData.divisionDescription} />
                       </div>
                     </div>
                   )}
@@ -626,9 +610,9 @@ export function DivisionInfoPage() {
                                   </h4>
                                 </div>
                               )}
-                              <p className={`text-sm text-gray-700 leading-relaxed whitespace-pre-line ${config.collapsible ? 'pl-14' : ''}`}>
-                                {sectionValue || 'No content yet...'}
-                              </p>
+                              <div className={`text-sm text-gray-700 leading-relaxed ${config.collapsible ? 'pl-14' : ''}`}>
+                                <MarkdownRenderer content={sectionValue} />
+                              </div>
                             </div>
                           )}
                         </Card>

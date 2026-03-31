@@ -38,23 +38,40 @@ export const TextareaWithLinkInserter = forwardRef<HTMLTextAreaElement, Textarea
   }, ref) {
     const textareaRef = useRef<HTMLTextAreaElement>(null);
     const [showFormatting, setShowFormatting] = useState(false);
-    const [cursorPosition, setCursorPosition] = useState(0);
+    const [lastCursorPos, setLastCursorPos] = useState(0);
     const [showLinkInserter, setShowLinkInserter] = useState(false);
 
-    // Focus textarea and capture cursor position when opening link inserter
-    const openLinkInserter = () => {
+    // Track cursor position as user types and navigates
+    const handleTextareaFocus = () => {
       const textarea = textareaRef.current;
       if (textarea) {
-        textarea.focus();
-        setCursorPosition(textarea.selectionStart);
+        setLastCursorPos(textarea.selectionStart);
       }
-      setShowLinkInserter(true);
+    };
+
+    const handleTextareaClick = () => {
+      const textarea = textareaRef.current;
+      if (textarea) {
+        setLastCursorPos(textarea.selectionStart);
+      }
+    };
+
+    const handleTextareaKeyUp = () => {
+      const textarea = textareaRef.current;
+      if (textarea) {
+        setLastCursorPos(textarea.selectionStart);
+      }
     };
 
     // Handle link insertion from LinkInserter
     const handleInsertLink = (options: LinkInsertOptions) => {
       const currentValue = value || '';
-      const position = cursorPosition;
+
+      // Determine insertion position - use last cursor position, or append to end if text exists
+      let position = lastCursorPos;
+      if (position === 0 && currentValue.length > 0) {
+        position = currentValue.length;
+      }
 
       // Build markdown: [text](url) or [text](url "_blank")
       const linkText = options.title || options.url;
@@ -69,8 +86,10 @@ export const TextareaWithLinkInserter = forwardRef<HTMLTextAreaElement, Textarea
       setTimeout(() => {
         const textarea = textareaRef.current;
         if (textarea) {
-          textarea.setSelectionRange(position + markdown.length, position + markdown.length);
+          const newPos = position + markdown.length;
+          textarea.setSelectionRange(newPos, newPos);
           textarea.focus();
+          setLastCursorPos(newPos);
         }
       }, 50);
     };
@@ -137,7 +156,6 @@ export const TextareaWithLinkInserter = forwardRef<HTMLTextAreaElement, Textarea
                 variant="ghost"
                 size="sm"
                 className="h-8 w-8 p-0"
-                onClick={openLinkInserter}
                 title="Insert Link"
               >
                 <Link2 className="w-4 h-4" />
@@ -210,6 +228,9 @@ export const TextareaWithLinkInserter = forwardRef<HTMLTextAreaElement, Textarea
           placeholder={placeholder}
           value={value}
           onChange={(e) => onChange?.(e.target.value)}
+          onFocus={handleTextareaFocus}
+          onClick={handleTextareaClick}
+          onKeyUp={handleTextareaKeyUp}
           rows={rows}
           className={`${className || ''} rounded-t-none border-t-0`}
         />
