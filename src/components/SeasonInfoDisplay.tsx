@@ -420,6 +420,9 @@ export function SeasonInfoDisplay({ data }: SeasonInfoDisplayProps) {
 
   // Migrate legacy data to unified format
   const unified = migrateToUnified(seasonInfo);
+  // Debug: log data for troubleshooting
+  console.log('SeasonInfoDisplay - Raw seasonInfo:', seasonInfo);
+  console.log('SeasonInfoDisplay - Migrated unified:', unified);
 
   return (
     <div className="space-y-4">
@@ -491,12 +494,11 @@ export function SeasonInfoDisplay({ data }: SeasonInfoDisplayProps) {
 
             {/* Draft Order (Junior A style) */}
             {unified.drafts.some(d => Array.isArray(d.draftOrder) && d.draftOrder.length > 0) && (
-              <div className="bg-gray-50 p-4 rounded-lg border-l-4 border-l-green-500">
-                <h4 className="font-bold text-base text-gray-900 mb-3">Draft Order</h4>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {unified.drafts.map((draft) => (
                   Array.isArray(draft.draftOrder) && draft.draftOrder.length > 0 && (
-                    <div key={draft.id} className="mb-2">
-                      <p className="text-xs font-semibold text-gray-500 mb-1">{draft.title}</p>
+                    <div key={draft.id} className="bg-gray-50 p-4 rounded-lg border-l-4 border-l-green-500">
+                      <h4 className="font-bold text-base text-gray-900 mb-3">{draft.title}</h4>
                       <div className="space-y-1">
                         {draft.draftOrder.map((order, idx) => (
                           <p key={idx} className="text-sm text-gray-700">{order}</p>

@@ -671,9 +671,59 @@ function DraftSectionEditor({
         />
       </div>
 
+      {/* Draft Order - always visible for easy access */}
+      {(data.draftOrder && data.draftOrder.length > 0) || (
+        <div className="border-t pt-4">
+          <div className="flex items-center justify-between mb-2">
+            <Label className="text-xs font-semibold">Draft Order</Label>
+            <Button onClick={addDraftOrderItem} size="sm" variant="outline" className="h-6 text-xs">
+              <Plus className="w-3 h-3 mr-1" /> Add Team
+            </Button>
+          </div>
+          {(data.draftOrder || []).map((team, idx) => (
+            <div key={idx} className="flex items-center gap-2 mb-2">
+              <div className="flex flex-col gap-0.5 shrink-0">
+                {idx > 0 && (
+                  <Button
+                    onClick={() => moveDraftOrderItem(idx, 'up')}
+                    variant="ghost"
+                    size="sm"
+                    className="h-4 w-4 p-0"
+                    title="Move up"
+                  >
+                    <ChevronUp className="w-2 h-2" />
+                  </Button>
+                )}
+                {idx < (data.draftOrder?.length || 0) - 1 && (
+                  <Button
+                    onClick={() => moveDraftOrderItem(idx, 'down')}
+                    variant="ghost"
+                    size="sm"
+                    className="h-4 w-4 p-0"
+                    title="Move down"
+                  >
+                    <ChevronDown className="w-2 h-2" />
+                  </Button>
+                )}
+              </div>
+              <span className="text-xs text-gray-500 w-5 shrink-0">{idx + 1}.</span>
+              <Input
+                value={team}
+                onChange={(e) => updateDraftOrderItem(idx, e.target.value)}
+                placeholder="Team name"
+                className="h-6 text-xs flex-1"
+              />
+              <Button onClick={() => removeDraftOrderItem(idx)} variant="ghost" size="sm" className="h-6 w-6 p-0">
+                <X className="w-3 h-3 text-red-500" />
+              </Button>
+            </div>
+          ))}
+        </div>
+      )}
+
       {/* Junior A style details */}
-      {(data.details && data.details.length > 0) || (
-        <details className="text-sm">
+      {(data.details && data.details.length > 0) || (data.event) || (
+        <details className="text-sm border-t pt-4">
           <summary className="cursor-pointer text-blue-600 font-medium hover:underline">Advanced Options</summary>
           <div className="mt-3 space-y-4 pl-2 border-l-2 border-blue-200">
             {/* Draft Details */}
@@ -693,54 +743,6 @@ function DraftSectionEditor({
                     className="h-6 text-xs flex-1"
                   />
                   <Button onClick={() => removeDetail(idx)} variant="ghost" size="sm" className="h-6 w-6 p-0">
-                    <X className="w-3 h-3 text-red-500" />
-                  </Button>
-                </div>
-              ))}
-            </div>
-
-            {/* Draft Order */}
-            <div>
-              <div className="flex items-center justify-between mb-2">
-                <Label className="text-xs font-semibold">Draft Order</Label>
-                <Button onClick={addDraftOrderItem} size="sm" variant="outline" className="h-6 text-xs">
-                  <Plus className="w-3 h-3 mr-1" /> Add Team
-                </Button>
-              </div>
-              {(data.draftOrder || []).map((team, idx) => (
-                <div key={idx} className="flex items-center gap-2 mb-2">
-                  <div className="flex flex-col gap-0.5 shrink-0">
-                    {idx > 0 && (
-                      <Button
-                        onClick={() => moveDraftOrderItem(idx, 'up')}
-                        variant="ghost"
-                        size="sm"
-                        className="h-4 w-4 p-0"
-                        title="Move up"
-                      >
-                        <ChevronUp className="w-2 h-2" />
-                      </Button>
-                    )}
-                    {idx < (data.draftOrder?.length || 0) - 1 && (
-                      <Button
-                        onClick={() => moveDraftOrderItem(idx, 'down')}
-                        variant="ghost"
-                        size="sm"
-                        className="h-4 w-4 p-0"
-                        title="Move down"
-                      >
-                        <ChevronDown className="w-2 h-2" />
-                      </Button>
-                    )}
-                  </div>
-                  <span className="text-xs text-gray-500 w-5 shrink-0">{idx + 1}.</span>
-                  <Input
-                    value={team}
-                    onChange={(e) => updateDraftOrderItem(idx, e.target.value)}
-                    placeholder="Team name"
-                    className="h-6 text-xs flex-1"
-                  />
-                  <Button onClick={() => removeDraftOrderItem(idx)} variant="ghost" size="sm" className="h-6 w-6 p-0">
                     <X className="w-3 h-3 text-red-500" />
                   </Button>
                 </div>
@@ -1418,11 +1420,17 @@ export function SeasonInfoEditor({ value, onChange, divisionName = '' }: SeasonI
   useEffect(() => {
     try {
       const parsed = value ? JSON.parse(value) : {};
+      // Debug: log the raw data for non-empty data
+      if (value && Object.keys(parsed).length > 0) {
+        console.log('SeasonInfoEditor - Raw data:', parsed);
+      }
       const migrated = migrateToUnified(parsed);
+      console.log('SeasonInfoEditor - Migrated data:', migrated);
       setData(migrated);
       setJsonValue(JSON.stringify(migrated, null, 2));
       setJsonError(null);
     } catch (e) {
+      console.error('SeasonInfoEditor - Parse error:', e);
       setJsonError('Invalid JSON format');
     }
   }, [value]);
