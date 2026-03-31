@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '../ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../ui/dialog';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../ui/tabs';
@@ -182,9 +182,10 @@ export function LinkInserter({ open, onOpenChange, onInsert, trigger }: LinkInse
   };
 
   return (
-    <Dialog open={open} onOpenChange={handleClose}>
-      {trigger && <DialogTrigger asChild>{trigger}</DialogTrigger>}
-      <DialogContent className="max-w-2xl max-h-[90vh] flex flex-col">
+    <>
+      {trigger}
+      <Dialog open={open} onOpenChange={handleClose}>
+        <DialogContent className="max-w-2xl max-h-[90vh] flex flex-col">
         <DialogHeader>
           <DialogTitle>Insert Link</DialogTitle>
         </DialogHeader>
@@ -502,5 +503,6 @@ export function LinkInserter({ open, onOpenChange, onInsert, trigger }: LinkInse
         )}
       </DialogContent>
     </Dialog>
+    </>
   );
 }

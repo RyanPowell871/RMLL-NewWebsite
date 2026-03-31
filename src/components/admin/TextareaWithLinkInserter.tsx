@@ -156,6 +156,7 @@ export const TextareaWithLinkInserter = forwardRef<HTMLTextAreaElement, Textarea
                 variant="ghost"
                 size="sm"
                 className="h-8 w-8 p-0"
+                onClick={() => setShowLinkInserter(true)}
                 title="Insert Link"
               >
                 <Link2 className="w-4 h-4" />
