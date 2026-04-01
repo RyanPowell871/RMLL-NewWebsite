@@ -2,7 +2,7 @@
  * DirectCodeEditor - Monaco-based code editor with Git integration
  */
 
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import Editor from '@monaco-editor/react';
 import { projectId } from '../../utils/supabase/info';
 import { getAccessToken } from '../../utils/supabase-client';
@@ -12,24 +12,18 @@ import {
   RefreshCw,
   GitBranch,
   GitCommit,
-  History,
-  X,
-  ChevronLeft,
-  ChevronRight,
   FileText,
   AlertTriangle,
-  CheckCircle,
   RotateCcw,
   Rocket,
-  ExternalLink,
   PanelLeftClose,
   PanelLeftOpen,
   PanelRightClose,
   PanelRightOpen,
+  ArrowLeft,
 } from 'lucide-react';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../ui/card';
 import { Badge } from '../ui/badge';
 import { Label } from '../ui/label';
 import {
@@ -72,7 +66,11 @@ interface EditorState {
   rightPanelOpen: boolean;
 }
 
-export function DirectCodeEditor() {
+interface DirectCodeEditorProps {
+  onBackToForm?: () => void;
+}
+
+export function DirectCodeEditor({ onBackToForm }: DirectCodeEditorProps = {}) {
   const [state, setState] = useState<EditorState>({
     files: [],
     fileTree: [],
@@ -354,18 +352,27 @@ export function DirectCodeEditor() {
     }
   };
 
-  const getShortHash = (hash: string) => hash.slice(0, 7);
-
   const getFileName = (path: string) => {
     const parts = path.split('/');
     return parts[parts.length - 1];
   };
 
   return (
-    <div className="h-screen flex flex-col bg-white dark:bg-gray-900">
+    <div className="flex flex-col h-full bg-white dark:bg-gray-900">
       {/* Header */}
-      <div className="flex items-center justify-between px-4 py-3 border-b border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800">
+      <div className="flex items-center justify-between px-4 py-3 border-b border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 shrink-0">
         <div className="flex items-center gap-4">
+          {onBackToForm && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={onBackToForm}
+              title="Back to Form Editor"
+              className="h-8 w-8 p-0"
+            >
+              <ArrowLeft className="w-4 h-4" />
+            </Button>
+          )}
           <div className="flex items-center gap-2">
             <FileText className="w-5 h-5 text-[#013fac]" />
             <h1 className="text-lg font-semibold text-gray-900 dark:text-white">Code Editor</h1>
@@ -418,7 +425,7 @@ export function DirectCodeEditor() {
 
       {/* Toolbar */}
       {state.selectedFile && (
-        <div className="flex items-center justify-between px-4 py-2 border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50">
+        <div className="flex items-center justify-between px-4 py-2 border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50 shrink-0">
           <div className="flex items-center gap-3 flex-1">
             <div className="flex-1 max-w-md">
               <Label htmlFor="commit-message" className="sr-only">Commit message</Label>
@@ -460,11 +467,11 @@ export function DirectCodeEditor() {
       )}
 
       {/* Main content */}
-      <div className="flex-1 flex overflow-hidden">
+      <div className="flex-1 flex overflow-hidden min-h-0">
         {/* Left Panel - File Tree */}
         {state.leftPanelOpen && (
-          <div className="w-64 border-r border-gray-200 dark:border-gray-700 flex flex-col bg-gray-50 dark:bg-gray-800/30">
-            <div className="p-3 border-b border-gray-200 dark:border-gray-700">
+          <div className="w-64 border-r border-gray-200 dark:border-gray-700 flex flex-col bg-gray-50 dark:bg-gray-800/30 shrink-0">
+            <div className="p-3 border-b border-gray-200 dark:border-gray-700 shrink-0">
               <div className="flex items-center gap-2 text-sm font-medium text-gray-700 dark:text-gray-300">
                 <GitBranch className="w-4 h-4" />
                 <span>Files</span>
@@ -474,13 +481,13 @@ export function DirectCodeEditor() {
               files={state.fileTree}
               selectedFile={state.selectedFile}
               onSelectFile={(path) => setState((prev) => ({ ...prev, selectedFile: path }))}
-              className="flex-1"
+              className="flex-1 overflow-y-auto"
             />
           </div>
         )}
 
         {/* Center - Editor */}
-        <div className="flex-1 flex flex-col overflow-hidden">
+        <div className="flex-1 flex flex-col overflow-hidden min-w-0">
           {state.isLoading ? (
             <div className="flex-1 flex items-center justify-center text-gray-500">
               <div className="w-8 h-8 border-3 border-[#013fac] border-t-transparent rounded-full animate-spin mr-3" />
@@ -493,35 +500,37 @@ export function DirectCodeEditor() {
               <p className="text-sm mt-1">Choose from the file tree on the left</p>
             </div>
           ) : (
-            <Editor
-              height="100%"
-              defaultLanguage="typescript"
-              value={state.fileContent}
-              onChange={(value) => setState((prev) => ({
-                ...prev,
-                fileContent: value || '',
-                isDirty: value !== prev.originalContent,
-              }))}
-              onMount={handleEditorDidMount}
-              theme="vs-dark"
-              options={{
-                minimap: { enabled: true },
-                fontSize: 14,
-                lineNumbers: 'on',
-                automaticLayout: true,
-                scrollBeyondLastLine: false,
-                renderWhitespace: 'selection',
-                tabSize: 2,
-                wordWrap: 'on',
-                padding: { top: 16, bottom: 16 },
-              }}
-            />
+            <div className="flex-1 overflow-hidden">
+              <Editor
+                height="100%"
+                defaultLanguage="typescript"
+                value={state.fileContent}
+                onChange={(value) => setState((prev) => ({
+                  ...prev,
+                  fileContent: value || '',
+                  isDirty: value !== prev.originalContent,
+                }))}
+                onMount={handleEditorDidMount}
+                theme="vs-dark"
+                options={{
+                  minimap: { enabled: true },
+                  fontSize: 14,
+                  lineNumbers: 'on',
+                  automaticLayout: true,
+                  scrollBeyondLastLine: false,
+                  renderWhitespace: 'selection',
+                  tabSize: 2,
+                  wordWrap: 'on',
+                  padding: { top: 16, bottom: 16 },
+                }}
+              />
+            </div>
           )}
         </div>
 
         {/* Right Panel - History */}
         {state.rightPanelOpen && (
-          <div className="w-80 border-l border-gray-200 dark:border-gray-700 flex flex-col bg-gray-50 dark:bg-gray-800/30">
+          <div className="w-80 border-l border-gray-200 dark:border-gray-700 flex flex-col bg-gray-50 dark:bg-gray-800/30 shrink-0">
             <CommitHistory
               commits={state.commits}
               isLoading={state.isLoadingHistory}
@@ -535,7 +544,7 @@ export function DirectCodeEditor() {
 
         {/* Diff Panel */}
         {state.diffOpen && state.diffData && (
-          <div className="w-[500px] border-l border-gray-200 dark:border-gray-700 flex flex-col">
+          <div className="w-[500px] border-l border-gray-200 dark:border-gray-700 flex flex-col shrink-0">
             <DiffViewer
               oldContent={state.originalContent}
               newContent={state.fileContent}
@@ -558,7 +567,7 @@ export function DirectCodeEditor() {
       )}
 
       {/* Info Banner */}
-      <div className="px-4 py-2 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/30 text-xs text-gray-500 dark:text-gray-400 flex items-center justify-between">
+      <div className="px-4 py-2 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/30 text-xs text-gray-500 dark:text-gray-400 flex items-center justify-between shrink-0">
         <div className="flex items-center gap-4">
           <div className="flex items-center gap-1">
             <GitCommit className="w-3 h-3" />

@@ -75,40 +75,7 @@ export function ComponentFileEditor() {
 
   // Show the DirectCodeEditor when in code mode
   if (editorMode === 'code') {
-    return (
-      <div className="h-screen flex flex-col">
-        <div className="flex items-center justify-between px-4 py-3 border-b border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800">
-          <div className="flex items-center gap-3">
-            <h2 className="text-xl font-bold text-gray-900 dark:text-white">Component File Editor</h2>
-            <div className="flex items-center gap-1 bg-gray-100 dark:bg-gray-700 rounded-lg p-1">
-              <button
-                onClick={() => setEditorMode('form')}
-                className={`
-                  px-3 py-1.5 rounded-md text-sm font-medium transition-colors flex items-center gap-2
-                  ${editorMode === 'form' ? 'bg-white dark:bg-gray-600 text-gray-900 dark:text-white shadow-sm' : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'}
-                `}
-              >
-                <LayoutTemplate className="w-4 h-4" />
-                Form Editor
-              </button>
-              <button
-                onClick={() => setEditorMode('code')}
-                className={`
-                  px-3 py-1.5 rounded-md text-sm font-medium transition-colors flex items-center gap-2
-                  ${editorMode === 'code' ? 'bg-white dark:bg-gray-600 text-gray-900 dark:text-white shadow-sm' : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'}
-                `}
-              >
-                <Code className="w-4 h-4" />
-                Code Editor
-              </button>
-            </div>
-          </div>
-        </div>
-        <div className="flex-1 overflow-hidden">
-          <DirectCodeEditor />
-        </div>
-      </div>
-    );
+    return <DirectCodeEditor onBackToForm={() => setEditorMode('form')} />;
   }
 
   // Load component data when a page is selected
