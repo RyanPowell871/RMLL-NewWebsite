@@ -54,7 +54,7 @@ const TIME_ENTRIES: TimeEntry[] = [
   { phase: 'Phase 3: Core Development', task: 'Standings System', description: 'Live standings tables with sorting, subdivision filtering, team linking, responsive mobile layout', hours: 6, status: 'complete', category: 'quoted' },
   { phase: 'Phase 3: Core Development', task: 'Stats & League Leaders', description: 'Player statistics tables with sorting, league leaders display, division/subdivision filtering', hours: 8, status: 'complete', category: 'quoted' },
   { phase: 'Phase 3: Core Development', task: 'Teams Listing Page', description: 'Team listing grid with division/subdivision filtering and team cards', hours: 4, status: 'complete', category: 'quoted' },
-  { phase: 'Phase 3: Core Development', task: 'Team Detail Pages Development', description: 'Individual team pages with roster, schedule, stats, transactions, team colors, logo integration (Change Request CR-001)', hours: 10, status: 'complete', category: 'change-request' },
+  { phase: 'Phase 3: Core Development', task: 'Team Detail Pages Development', description: 'Individual team pages with roster, schedule, stats, transactions, team colors, logo integration (Change Request CR-001)', hours: 14.5, status: 'complete', category: 'change-request' },
   { phase: 'Phase 3: Core Development', task: 'Player Profile System', description: 'Individual player profile pages with career stats and game logs (Change Request CR-002)', hours: 8, status: 'complete', category: 'change-request' },
   { phase: 'Phase 3: Core Development', task: 'Draft System', description: 'Division draft picks display with round-by-round view, season filtering, client-side season filter fix — NOT in original scope', hours: 6, status: 'complete', category: 'additional' },
   { phase: 'Phase 3: Core Development', task: 'Protected Lists System', description: 'Team protected player lists display — NOT in original scope', hours: 4, status: 'complete', category: 'additional' },
@@ -464,10 +464,10 @@ export function ProjectTimesheetPage() {
   // Invoice calculations
   const MAINTENANCE_PRICES: Record<string, number> = { none: 0, basic: 1800, standard: 4200, premium: 7800 };
   const maintenanceCost = MAINTENANCE_PRICES[selectedMaintenance] || 0;
-  const invoiceSubtotal = 16970 + 2700 + 1150 + 700 + maintenanceCost;
+  const invoiceSubtotal = 17532.5 + 2700 + 1150 + 700 + maintenanceCost;
   const invoiceGst = invoiceSubtotal * 0.05;
   const invoiceTotal = invoiceSubtotal + invoiceGst;
-  const totalPayments = 19031.25; // Updated to remove CR-003 through CR-010 from project
+  const totalPayments = 19621.88; // Updated to remove CR-003 through CR-010, add 4.5h to Team Detail Pages
   const balanceOwing = invoiceTotal - totalPayments;
 
   // Counts
