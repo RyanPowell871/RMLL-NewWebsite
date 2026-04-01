@@ -73,11 +73,6 @@ export function ComponentFileEditor() {
 
   const editableSchemas = getEditableSchemas();
 
-  // Show the DirectCodeEditor when in code mode
-  if (editorMode === 'code') {
-    return <DirectCodeEditor onBackToForm={() => setEditorMode('form')} />;
-  }
-
   // Load component data when a page is selected
   const loadComponent = useCallback(async (schema: ComponentSchema) => {
     setState((prev) => ({ ...prev, isLoading: true }));
@@ -317,7 +312,9 @@ export function ComponentFileEditor() {
         <div>
           <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Component File Editor</h2>
           <p className="text-gray-600 dark:text-gray-400">
-            Edit React component data. Initial data is loaded from source files, edits are saved to the database.
+            {editorMode === 'form'
+              ? 'Edit React component data. Initial data is loaded from source files, edits are saved to the database.'
+              : 'Direct code editing with Git integration. Changes are committed and deployed to Vercel.'}
           </p>
         </div>
         <div className="flex items-center gap-3">
@@ -343,7 +340,7 @@ export function ComponentFileEditor() {
               Code Editor
             </button>
           </div>
-          {state.isDirty && (
+          {state.isDirty && editorMode === 'form' && (
             <Badge className="bg-amber-100 text-amber-800 dark:bg-amber-900 dark:text-amber-200">
               Unsaved Changes
             </Badge>
@@ -351,121 +348,134 @@ export function ComponentFileEditor() {
         </div>
       </div>
 
-      {/* Info Banner */}
-      <Card className="border-blue-200 bg-blue-50 dark:bg-blue-950/20 dark:border-blue-800">
-        <CardContent className="p-4">
-          <div className="flex items-start gap-3">
-            <Info className="w-5 h-5 text-blue-600 dark:text-blue-400 shrink-0 mt-0.5" />
-            <div className="text-sm text-blue-800 dark:text-blue-200">
-              <p className="font-semibold mb-1">How it works</p>
-              <p className="mb-2">
-                This editor loads initial data from <code className="bg-blue-100 dark:bg-blue-900 px-1.5 py-0.5 rounded font-mono text-xs">
-                  src/components/league-info/
-                </code> and stores your edits in the database. Edits are currently saved separately from the source files.
-              </p>
-              <p>
-                Only components with array-based data structures are editable. Components with hardcoded JSX or
-                API-based content are not editable through this interface.
-              </p>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Two-column layout */}
-      <div className="flex gap-6 min-h-[600px]">
-        {/* Component List Sidebar */}
-        <Card className="w-72 shrink-0">
-          <CardHeader>
-            <CardTitle className="text-lg">Select Component</CardTitle>
-            <CardDescription>Choose a component to edit</CardDescription>
-          </CardHeader>
-          <CardContent className="p-0">
-            <div className="max-h-[500px] overflow-y-auto">
-              {editableSchemas.map((schema) => (
-                <button
-                  key={schema.pageId}
-                  onClick={() => loadComponent(schema)}
-                  className={`w-full text-left px-4 py-3 border-b border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors ${
-                    state.selectedPageId === schema.pageId
-                      ? 'bg-[#013fac]/5 border-l-4 border-l-[#013fac]'
-                      : 'border-l-4 border-l-transparent'
-                  }`}
-                >
-                  <div className="font-medium text-sm text-gray-900 dark:text-white">
-                    {schema.title}
-                  </div>
-                  {schema.description && (
-                    <div className="text-xs text-gray-500 dark:text-gray-400 mt-0.5 truncate">
-                      {schema.description}
-                    </div>
-                  )}
-                </button>
-              ))}
+      {/* Info Banner - only show in form mode */}
+      {editorMode === 'form' && (
+        <Card className="border-blue-200 bg-blue-50 dark:bg-blue-950/20 dark:border-blue-800">
+          <CardContent className="p-4">
+            <div className="flex items-start gap-3">
+              <Info className="w-5 h-5 text-blue-600 dark:text-blue-400 shrink-0 mt-0.5" />
+              <div className="text-sm text-blue-800 dark:text-blue-200">
+                <p className="font-semibold mb-1">How it works</p>
+                <p className="mb-2">
+                  This editor loads initial data from <code className="bg-blue-100 dark:bg-blue-900 px-1.5 py-0.5 rounded font-mono text-xs">
+                    src/components/league-info/
+                  </code> and stores your edits in the database. Edits are currently saved separately from the source files.
+                </p>
+                <p>
+                  Only components with array-based data structures are editable. Components with hardcoded JSX or
+                  API-based content are not editable through this interface.
+                </p>
+              </div>
             </div>
           </CardContent>
         </Card>
+      )}
 
-        {/* Editor Panel */}
-        <div className="flex-1">
-          {!state.schema ? (
-            <Card className="h-full">
-              <CardContent className="flex flex-col items-center justify-center h-[400px] text-gray-500">
-                <FileText className="w-16 h-16 mb-4 text-gray-300" />
-                <p className="text-lg font-medium">Select a component to edit</p>
-                <p className="text-sm mt-1">Choose from the list on the left</p>
-              </CardContent>
-            </Card>
-          ) : state.isLoading ? (
-            <Card className="h-full">
-              <CardContent className="flex flex-col items-center justify-center h-[400px]">
-                <RefreshCw className="w-8 h-8 mb-4 text-[#013fac] animate-spin" />
-                <p className="text-gray-600">Loading component...</p>
-              </CardContent>
-            </Card>
-          ) : (
-            <div className="space-y-4">
-              {/* Component Header */}
-              <Card>
-                <CardHeader>
-                  <div className="flex items-start justify-between">
-                    <div>
-                      <CardTitle className="text-xl">{state.schema.title}</CardTitle>
-                      <CardDescription className="mt-1">
-                        Editing: <code className="bg-gray-100 dark:bg-gray-800 px-2 py-0.5 rounded text-xs">
-                          {state.schema.componentFile}
-                        </code>
-                      </CardDescription>
-                    </div>
-                    <Button
-                      onClick={handleSave}
-                      disabled={!state.isDirty || state.isSaving}
-                      className="bg-[#013fac] hover:bg-[#0149c9]"
-                    >
-                      {state.isSaving ? (
-                        <>
-                          <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
-                          Saving...
-                        </>
-                      ) : (
-                        <>
-                          <Save className="w-4 h-4 mr-2" />
-                          Save Changes
-                        </>
-                      )}
-                    </Button>
-                  </div>
-                </CardHeader>
-              </Card>
-
-              {/* Fields */}
-              <div className="space-y-4">
-                {state.schema.editableFields.map((field) => renderFieldEditor(field))}
-              </div>
-            </div>
-          )}
+      {/* Content Area - Conditional rendering based on mode */}
+      {editorMode === 'code' ? (
+        // Code Editor Mode
+        <div key="code-editor" className="h-[calc(100vh-200px)] min-h-[600px]">
+          <DirectCodeEditor />
         </div>
-      </div>
+      ) : (
+        // Form Editor Mode
+        <div key="form-editor">
+          {/* Two-column layout */}
+          <div className="flex gap-6 min-h-[600px]">
+            {/* Component List Sidebar */}
+            <Card className="w-72 shrink-0">
+              <CardHeader>
+                <CardTitle className="text-lg">Select Component</CardTitle>
+                <CardDescription>Choose a component to edit</CardDescription>
+              </CardHeader>
+              <CardContent className="p-0">
+                <div className="max-h-[500px] overflow-y-auto">
+                  {editableSchemas.map((schema) => (
+                    <button
+                      key={schema.pageId}
+                      onClick={() => loadComponent(schema)}
+                      className={`w-full text-left px-4 py-3 border-b border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors ${
+                        state.selectedPageId === schema.pageId
+                          ? 'bg-[#013fac]/5 border-l-4 border-l-[#013fac]'
+                          : 'border-l-4 border-l-transparent'
+                      }`}
+                    >
+                      <div className="font-medium text-sm text-gray-900 dark:text-white">
+                        {schema.title}
+                      </div>
+                      {schema.description && (
+                        <div className="text-xs text-gray-500 dark:text-gray-400 mt-0.5 truncate">
+                          {schema.description}
+                        </div>
+                      )}
+                    </button>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Editor Panel */}
+            <div className="flex-1">
+              {!state.schema ? (
+                <Card className="h-full">
+                  <CardContent className="flex flex-col items-center justify-center h-[400px] text-gray-500">
+                    <FileText className="w-16 h-16 mb-4 text-gray-300" />
+                    <p className="text-lg font-medium">Select a component to edit</p>
+                    <p className="text-sm mt-1">Choose from the list on the left</p>
+                  </CardContent>
+                </Card>
+              ) : state.isLoading ? (
+                <Card className="h-full">
+                  <CardContent className="flex flex-col items-center justify-center h-[400px]">
+                    <RefreshCw className="w-8 h-8 mb-4 text-[#013fac] animate-spin" />
+                    <p className="text-gray-600">Loading component...</p>
+                  </CardContent>
+                </Card>
+              ) : (
+                <div className="space-y-4">
+                  {/* Component Header */}
+                  <Card>
+                    <CardHeader>
+                      <div className="flex items-start justify-between">
+                        <div>
+                          <CardTitle className="text-xl">{state.schema.title}</CardTitle>
+                          <CardDescription className="mt-1">
+                            Editing: <code className="bg-gray-100 dark:bg-gray-800 px-2 py-0.5 rounded text-xs">
+                              {state.schema.componentFile}
+                            </code>
+                          </CardDescription>
+                        </div>
+                        <Button
+                          onClick={handleSave}
+                          disabled={!state.isDirty || state.isSaving}
+                          className="bg-[#013fac] hover:bg-[#0149c9]"
+                        >
+                          {state.isSaving ? (
+                            <>
+                              <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
+                              Saving...
+                            </>
+                          ) : (
+                            <>
+                              <Save className="w-4 h-4 mr-2" />
+                              Save Changes
+                            </>
+                          )}
+                        </Button>
+                      </div>
+                    </CardHeader>
+                  </Card>
+
+                  {/* Fields */}
+                  <div className="space-y-4">
+                    {state.schema.editableFields.map((field) => renderFieldEditor(field))}
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

@@ -20,7 +20,6 @@ import {
   PanelLeftOpen,
   PanelRightClose,
   PanelRightOpen,
-  ArrowLeft,
 } from 'lucide-react';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
@@ -66,11 +65,7 @@ interface EditorState {
   rightPanelOpen: boolean;
 }
 
-interface DirectCodeEditorProps {
-  onBackToForm?: () => void;
-}
-
-export function DirectCodeEditor({ onBackToForm }: DirectCodeEditorProps = {}) {
+export function DirectCodeEditor() {
   const [state, setState] = useState<EditorState>({
     files: [],
     fileTree: [],
@@ -362,17 +357,6 @@ export function DirectCodeEditor({ onBackToForm }: DirectCodeEditorProps = {}) {
       {/* Header */}
       <div className="flex items-center justify-between px-4 py-3 border-b border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 shrink-0">
         <div className="flex items-center gap-4">
-          {onBackToForm && (
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={onBackToForm}
-              title="Back to Form Editor"
-              className="h-8 w-8 p-0"
-            >
-              <ArrowLeft className="w-4 h-4" />
-            </Button>
-          )}
           <div className="flex items-center gap-2">
             <FileText className="w-5 h-5 text-[#013fac]" />
             <h1 className="text-lg font-semibold text-gray-900 dark:text-white">Code Editor</h1>
