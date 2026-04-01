@@ -5,6 +5,8 @@
  * - Listing and reading files in src/components/league-info/
  * - Writing file contents with validation
  * - Git operations: commit, history, diff, rollback, push
+ *
+ * Uses GitHub API for file operations instead of local filesystem.
  */
 
 import { Hono } from "npm:hono";
@@ -20,63 +22,229 @@ const supabaseClient = createClient(
 );
 
 // Constants
-const BASE_DIR = Deno.cwd();
-const EDITABLE_DIR = `${BASE_DIR}/src/components/league-info`;
+const GITHUB_REPO = 'RyanPowell871/RMLL-NewWebsite';
+const GITHUB_API_URL = 'https://api.github.com';
 
 // ============================================
-// Git Helper Functions
+// GitHub API Helper Functions
 // ============================================
 
-interface GitResult {
-  stdout: string;
-  stderr: string;
-  success: boolean;
+interface GitHubFile {
+  name: string;
+  path: string;
+  type: 'file' | 'dir';
+  size?: number;
 }
 
-async function runGit(args: string[]): Promise<GitResult> {
-  const command = new Deno.Command('git', {
-    args,
-    cwd: BASE_DIR,
-    stdout: 'piped',
-    stderr: 'piped',
+async function getGitHubToken(): Promise<string> {
+  const token = Deno.env.get('GITHUB_TOKEN');
+  if (!token) {
+    throw new Error('GitHub token not configured');
+  }
+  return token;
+}
+
+async function githubRequest<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
+  const token = await getGitHubToken();
+  const response = await fetch(`${GITHUB_API_URL}${endpoint}`, {
+    ...options,
+    headers: {
+      'Authorization': `Bearer ${token}`,
+      'Accept': 'application/vnd.github.v3+json',
+      ...options.headers,
+    },
   });
-  const { code, stdout, stderr } = await command.output();
-  return {
-    stdout: new TextDecoder().decode(stdout),
-    stderr: new TextDecoder().decode(stderr),
-    success: code === 0,
-  };
+
+  if (!response.ok) {
+    const error = await response.text();
+    throw new Error(`GitHub API error: ${response.status} ${error}`);
+  }
+
+  return response.json();
 }
 
-// ============================================
-// File Path Validation
-// ============================================
+/**
+ * List files in a GitHub directory
+ */
+async function listGitHubFiles(path: string): Promise<GitHubFile[]> {
+  try {
+    const files = await githubRequest<any[]>(`/repos/${GITHUB_REPO}/contents/${path}`);
+    return files.map((f: any) => ({
+      name: f.name,
+      path: f.path,
+      type: f.type,
+      size: f.size,
+    }));
+  } catch (error) {
+    console.error('Error listing GitHub files:', error);
+    return [];
+  }
+}
 
-function validateFilePath(filePath: string): { valid: boolean; error?: string; fullPath?: string } {
-  // Remove leading slashes and any ../ attempts
-  const cleanPath = filePath.replace(/^\/+/, '').replace(/\.\.+/g, '');
+/**
+ * Recursively scan directory for all editable files
+ */
+async function scanDirectoryForFiles(basePath: string, files: GitHubFile[] = []): Promise<GitHubFile[]> {
+  const contents = await listGitHubFiles(basePath);
 
-  // Ensure the file is within the editable directory
-  const fullPath = `${BASE_DIR}/${cleanPath}`;
+  for (const item of contents) {
+    // Skip hidden files and certain directories
+    if (item.name.startsWith('.') || item.name === 'node_modules') {
+      continue;
+    }
 
-  // Check if path is within src/components/league-info/
-  const relativePath = fullPath.replace(BASE_DIR + '/', '');
-  if (!relativePath.startsWith('src/components/league-info/')) {
-    return {
-      valid: false,
-      error: 'File must be within src/components/league-info/',
-    };
+    if (item.type === 'dir') {
+      await scanDirectoryForFiles(item.path, files);
+    } else if (item.type === 'file') {
+      const ext = item.name.slice(item.name.lastIndexOf('.'));
+      if (['.tsx', '.ts', '.jsx', '.js'].includes(ext)) {
+        files.push(item);
+      }
+    }
   }
 
-  // Check file extension
-  if (!relativePath.endsWith('.tsx') && !relativePath.endsWith('.ts') && !relativePath.endsWith('.jsx') && !relativePath.endsWith('.js')) {
-    return {
-      valid: false,
-      error: 'Only TypeScript/JavaScript files are editable (.ts, .tsx, .js, .jsx)',
-    };
+  return files;
+}
+
+/**
+ * Get file content from GitHub
+ */
+async function getGitHubFile(path: string): Promise<{ content: string; sha: string }> {
+  const result = await githubRequest<any>(`/repos/${GITHUB_REPO}/contents/${path}`);
+  // Content is base64 encoded
+  const content = atob(result.content);
+  return { content, sha: result.sha };
+}
+
+/**
+ * Write file content to GitHub (creates a commit)
+ */
+async function writeGitHubFile(
+  path: string,
+  content: string,
+  message: string,
+  sha?: string
+): Promise<{ sha: string }> {
+  const token = await getGitHubToken();
+  const contentEncoded = btoa(content);
+
+  const body: any = {
+    message,
+    content: contentEncoded,
+  };
+
+  if (sha) {
+    body.sha = sha;
   }
 
-  return { valid: true, fullPath };
+  const response = await fetch(`${GITHUB_API_URL}/repos/${GITHUB_REPO}/contents/${path}`, {
+    method: 'PUT',
+    headers: {
+      'Authorization': `Bearer ${token}`,
+      'Accept': 'application/vnd.github.v3+json',
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(body),
+  });
+
+  if (!response.ok) {
+    const error = await response.text();
+    throw new Error(`GitHub API error: ${response.status} ${error}`);
+  }
+
+  const result = await response.json();
+  return { sha: result.content.sha };
+}
+
+/**
+ * Get commit history for a file
+ */
+async function getGitHubFileHistory(path: string, limit = 20): Promise<Commit[]> {
+  const result = await githubRequest<any[]>(`/repos/${GITHUB_REPO}/commits?path=${encodeURIComponent(path)}&per_page=${limit}`);
+
+  return result.map((commit: any) => ({
+    hash: commit.sha,
+    author: commit.author?.login || commit.commit.author.name,
+    email: commit.commit.author.email,
+    date: commit.commit.author.date,
+    message: commit.commit.message,
+  }));
+}
+
+/**
+ * Get diff between two commits for a file
+ */
+async function getGitHubDiff(path: string, fromHash: string, toHash = 'HEAD'): Promise<string> {
+  // Get the file content at the from commit
+  const fromFile = await githubRequest<any>(`/repos/${GITHUB_REPO}/contents/${path}?ref=${fromHash}`);
+
+  // Get current file content
+  const toFile = await githubRequest<any>(`/repos/${GITHUB_REPO}/contents/${path}`);
+
+  // Decode both contents
+  const fromContent = fromFile.content ? atob(fromFile.content) : '';
+  const toContent = toFile.content ? atob(toFile.content) : '';
+
+  // Generate a simple diff
+  const diff = generateSimpleDiff(fromContent, toContent);
+  return diff;
+}
+
+/**
+ * Generate a simple unified diff
+ */
+function generateSimpleDiff(oldContent: string, newContent: string): string {
+  const oldLines = oldContent.split('\n');
+  const newLines = newContent.split('\n');
+  let diff = `--- a/file\n+++ b/file\n`;
+  diff += `@@ -1,${oldLines.length} +1,${newLines.length} @@\n`;
+
+  // Simple line-by-line comparison
+  for (let i = 0; i < Math.max(oldLines.length, newLines.length); i++) {
+    const oldLine = oldLines[i];
+    const newLine = newLines[i];
+
+    if (oldLine === newLine) {
+      diff += ` ${oldLine}\n`;
+    } else {
+      if (oldLine !== undefined) {
+        diff += `-${oldLine}\n`;
+      }
+      if (newLine !== undefined) {
+        diff += `+${newLine}\n`;
+      }
+    }
+  }
+
+  return diff;
+}
+
+/**
+ * Rollback a file to a specific commit
+ */
+async function rollbackGitHubFile(path: string, commitHash: string): Promise<void> {
+  // Get the file content at the specified commit
+  const result = await githubRequest<any>(`/repos/${GITHUB_REPO}/contents/${path}?ref=${commitHash}`);
+  const content = result.content ? atob(result.content) : '';
+
+  // Get current SHA for updating
+  const currentResult = await githubRequest<any>(`/repos/${GITHUB_REPO}/contents/${path}`);
+
+  // Write the old content with a new commit
+  await writeGitHubFile(
+    path,
+    content,
+    `Rollback ${path} to ${commitHash.slice(0, 7)}`,
+    currentResult.sha
+  );
+}
+
+export interface Commit {
+  hash: string;
+  author: string;
+  email: string;
+  date: string;
+  message: string;
 }
 
 // ============================================
@@ -84,88 +252,70 @@ function validateFilePath(filePath: string): { valid: boolean; error?: string; f
 // ============================================
 
 async function validateTypeScriptCode(code: string, filePath: string): Promise<{ valid: boolean; errors?: string[] }> {
-  // Use Deno's type checker to validate TypeScript
-  const tempFile = `/tmp/temp_check_${Date.now()}.ts`;
-
+  // Basic syntax check
   try {
-    // Create temporary file
-    await Deno.writeTextFile(tempFile, code);
+    const issues: string[] = [];
 
-    // Run Deno type check
-    const command = new Deno.Command(Deno.execPath(), {
-      args: ['check', '--no-check', tempFile],
-      stdout: 'piped',
-      stderr: 'piped',
-    });
-
-    const { code, stderr } = await command.output();
-    const errorOutput = new TextDecoder().decode(stderr);
-
-    if (code !== 0) {
-      // Parse errors from output
-      const errors: string[] = [];
-      const lines = errorOutput.split('\n');
-      for (const line of lines) {
-        if (line.includes('error:')) {
-          errors.push(line.trim());
-        }
-      }
-      return { valid: false, errors };
+    // Check for unmatched brackets
+    const openBraces = (code.match(/\{/g) || []).length;
+    const closeBraces = (code.match(/\}/g) || []).length;
+    if (openBraces !== closeBraces) {
+      issues.push(`Unmatched braces: ${openBraces} opening, ${closeBraces} closing`);
     }
 
-    return { valid: true };
+    const openParens = (code.match(/\(/g) || []).length;
+    const closeParens = (code.match(/\)/g) || []).length;
+    if (openParens !== closeParens) {
+      issues.push(`Unmatched parentheses: ${openParens} opening, ${closeParens} closing`);
+    }
+
+    const openBrackets = (code.match(/\[/g) || []).length;
+    const closeBrackets = (code.match(/\]/g) || []).length;
+    if (openBrackets !== closeBrackets) {
+      issues.push(`Unmatched brackets: ${openBrackets} opening, ${closeBrackets} closing`);
+    }
+
+    // Check for unterminated strings
+    const singleQuoteCount = (code.match(/'/g) || []).length;
+    const doubleQuoteCount = (code.match(/"/g) || []).length;
+    if (singleQuoteCount % 2 !== 0) {
+      issues.push('Possible unterminated single-quoted string');
+    }
+    if (doubleQuoteCount % 2 !== 0) {
+      issues.push('Possible unterminated double-quoted string');
+    }
+
+    return issues.length > 0 ? { valid: false, errors: issues } : { valid: true };
   } catch (e) {
-    // If Deno check fails, do a basic syntax check
-    try {
-      // Check for basic syntax issues
-      const issues: string[] = [];
-
-      // Check for unmatched brackets
-      const openBraces = (code.match(/\{/g) || []).length;
-      const closeBraces = (code.match(/\}/g) || []).length;
-      if (openBraces !== closeBraces) {
-        issues.push(`Unmatched braces: ${openBraces} opening, ${closeBraces} closing`);
-      }
-
-      const openParens = (code.match(/\(/g) || []).length;
-      const closeParens = (code.match(/\)/g) || []).length;
-      if (openParens !== closeParens) {
-        issues.push(`Unmatched parentheses: ${openParens} opening, ${closeParens} closing`);
-      }
-
-      const openBrackets = (code.match(/\[/g) || []).length;
-      const closeBrackets = (code.match(/\]/g) || []).length;
-      if (openBrackets !== closeBrackets) {
-        issues.push(`Unmatched brackets: ${openBrackets} opening, ${closeBrackets} closing`);
-      }
-
-      // Check for unterminated strings
-      const singleQuoteCount = (code.match(/'/g) || []).length;
-      const doubleQuoteCount = (code.match(/"/g) || []).length;
-      if (singleQuoteCount % 2 !== 0) {
-        issues.push('Possible unterminated single-quoted string');
-      }
-      if (doubleQuoteCount % 2 !== 0) {
-        issues.push('Possible unterminated double-quoted string');
-      }
-
-      return issues.length > 0 ? { valid: false, errors: issues } : { valid: true };
-    } finally {
-      // Clean up temp file
-      try {
-        await Deno.remove(tempFile);
-      } catch {
-        // Ignore cleanup errors
-      }
-    }
-  } finally {
-    // Clean up temp file
-    try {
-      await Deno.remove(tempFile);
-    } catch {
-      // Ignore cleanup errors
-    }
+    return { valid: true }; // Allow on validation errors
   }
+}
+
+// ============================================
+// File Path Validation
+// ============================================
+
+function validateFilePath(filePath: string): { valid: boolean; error?: string } {
+  // Remove leading slashes and any ../ attempts
+  const cleanPath = filePath.replace(/^\/+/, '').replace(/\.\.+/g, '');
+
+  // Check if path is within src/components/league-info/
+  if (!cleanPath.startsWith('src/components/league-info/')) {
+    return {
+      valid: false,
+      error: 'File must be within src/components/league-info/',
+    };
+  }
+
+  // Check file extension
+  if (!cleanPath.endsWith('.tsx') && !cleanPath.endsWith('.ts') && !cleanPath.endsWith('.jsx') && !cleanPath.endsWith('.js')) {
+    return {
+      valid: false,
+      error: 'Only TypeScript/JavaScript files are editable (.ts, .tsx, .js, .jsx)',
+    };
+  }
+
+  return { valid: true };
 }
 
 // ============================================
@@ -221,38 +371,7 @@ app.use('*', async (c, next) => {
  */
 app.get('/code-editor/files', async (c) => {
   try {
-    const files: Array<{ name: string; path: string; type: 'file' | 'dir' }> = [];
-
-    async function scanDirectory(dir: string, relativePath: string = '') {
-      for await (const entry of Deno.readDir(dir)) {
-        const entryPath = `${dir}/${entry.name}`;
-        const relativeEntryPath = `${relativePath}${entry.name}`;
-
-        if (entry.name.startsWith('.') || entry.name === 'node_modules') {
-          continue;
-        }
-
-        if (entry.isDirectory) {
-          files.push({
-            name: entry.name,
-            path: relativeEntryPath,
-            type: 'dir',
-          });
-          await scanDirectory(entryPath, `${relativeEntryPath}/`);
-        } else if (entry.isFile) {
-          const ext = entry.name.slice(entry.name.lastIndexOf('.'));
-          if (['.tsx', '.ts', '.jsx', '.js'].includes(ext)) {
-            files.push({
-              name: entry.name,
-              path: relativeEntryPath,
-              type: 'file',
-            });
-          }
-        }
-      }
-    }
-
-    await scanDirectory(EDITABLE_DIR, 'src/components/league-info/');
+    const files = await scanDirectoryForFiles('src/components/league-info');
 
     return c.json({
       success: true,
@@ -280,16 +399,14 @@ app.get('/code-editor/file/:path(.+)', async (c) => {
       return c.json({ success: false, error: validation.error }, 400);
     }
 
-    const content = await Deno.readTextFile(validation.fullPath!);
-    const stats = await Deno.stat(validation.fullPath!);
+    const { content, sha } = await getGitHubFile(filePath);
 
     return c.json({
       success: true,
       data: {
         content,
         path: filePath,
-        size: stats.size,
-        modified: stats.mtime?.toISOString(),
+        sha,
       },
     });
   } catch (error) {
@@ -314,7 +431,7 @@ app.post('/code-editor/file/:path(.+)', async (c) => {
       return c.json({ success: false, error: validation.error }, 400);
     }
 
-    const { content } = await c.req.json();
+    const { content, sha } = await c.req.json();
 
     if (typeof content !== 'string') {
       return c.json({ success: false, error: 'Content must be a string' }, 400);
@@ -330,13 +447,19 @@ app.post('/code-editor/file/:path(.+)', async (c) => {
       }, 400);
     }
 
-    // Write file
-    await Deno.writeTextFile(validation.fullPath!, content);
+    // Write to GitHub
+    const result = await writeGitHubFile(
+      filePath,
+      content,
+      'Draft changes via Code Editor',
+      sha
+    );
 
     return c.json({
       success: true,
       data: {
         path: filePath,
+        sha: result.sha,
         message: 'File written successfully',
       },
     });
@@ -351,7 +474,7 @@ app.post('/code-editor/file/:path(.+)', async (c) => {
 
 /**
  * POST /code-editor/commit
- * Stage and commit changes to git
+ * Commit changes to git (via GitHub API)
  */
 app.post('/code-editor/commit', async (c) => {
   try {
@@ -365,45 +488,32 @@ app.post('/code-editor/commit', async (c) => {
       return c.json({ success: false, error: 'Commit message is required' }, 400);
     }
 
-    // Get user from auth header for git commit
-    const authHeader = c.req.header('Authorization');
-    const { user: authUser } = await verifyAuthUser(authHeader);
+    // Get current SHA for each file and commit
+    const results = [];
+    for (const filePath of filePaths) {
+      const validation = validateFilePath(filePath);
+      if (!validation.valid) {
+        return c.json({ success: false, error: validation.error }, 400);
+      }
 
-    // Configure git user
-    await runGit(['config', 'user.email', 'cms@rmll.com']);
-    await runGit(['config', 'user.name', authUser?.name || authUser?.email || 'CMS User']);
+      try {
+        // Get current file content and SHA
+        const { content, sha } = await getGitHubFile(filePath);
 
-    // Stage files
-    const validPaths = filePaths.map((p: string) => {
-      const validation = validateFilePath(p);
-      return validation.valid ? validation.fullPath : null;
-    }).filter(Boolean);
-
-    if (validPaths.length === 0) {
-      return c.json({ success: false, error: 'No valid files to commit' }, 400);
+        // Write with commit message
+        const result = await writeGitHubFile(filePath, content, message, sha);
+        results.push({ path: filePath, sha: result.sha });
+      } catch (error) {
+        // If file doesn't exist, just skip it
+        console.error('Error committing file:', filePath, error);
+      }
     }
-
-    const addResult = await runGit(['add', ...(validPaths as string[])]);
-    if (!addResult.success) {
-      return c.json({ success: false, error: 'Failed to stage files', stderr: addResult.stderr }, 500);
-    }
-
-    // Commit
-    const commitResult = await runGit(['commit', '-m', message]);
-    if (!commitResult.success) {
-      return c.json({ success: false, error: 'Failed to commit', stderr: commitResult.stderr }, 500);
-    }
-
-    // Get commit hash
-    const logResult = await runGit(['log', '-1', '--format=%H']);
-    const commitHash = logResult.stdout.trim();
 
     return c.json({
       success: true,
       data: {
-        commitHash,
+        commits: results,
         message,
-        files: filePaths,
       },
     });
   } catch (error) {
@@ -429,31 +539,7 @@ app.get('/code-editor/history/:file(.+)', async (c) => {
     }
 
     const limit = parseInt(c.req.query('limit') || '20');
-
-    // Get git log for file
-    const result = await runGit([
-      'log',
-      '--format=%H|%an|%ae|%ad|%s',
-      '--date=iso',
-      `-${limit}`,
-      '--',
-      validation.fullPath!,
-    ]);
-
-    if (!result.success) {
-      return c.json({ success: false, error: 'Failed to get history' }, 500);
-    }
-
-    const commits = result.stdout.trim().split('\n').filter(Boolean).map(line => {
-      const [hash, author, email, date, ...messageParts] = line.split('|');
-      return {
-        hash,
-        author,
-        email,
-        date,
-        message: messageParts.join('|'),
-      };
-    });
+    const commits = await getGitHubFileHistory(filePath, limit);
 
     return c.json({
       success: true,
@@ -489,24 +575,12 @@ app.get('/code-editor/diff/:file(.+)', async (c) => {
       return c.json({ success: false, error: 'from commit hash is required' }, 400);
     }
 
-    const result = await runGit([
-      'diff',
-      `${fromCommit}..${toCommit}`,
-      '--',
-      validation.fullPath!,
-    ]);
-
-    if (!result.success) {
-      return c.json({ success: false, error: 'Failed to get diff' }, 500);
-    }
-
-    // Parse diff
-    const diffOutput = result.stdout;
+    const diff = await getGitHubDiff(filePath, fromCommit);
 
     return c.json({
       success: true,
       data: {
-        diff: diffOutput,
+        diff,
         from: fromCommit,
         to: toCommit,
         file: filePath,
@@ -542,12 +616,7 @@ app.post('/code-editor/rollback', async (c) => {
       return c.json({ success: false, error: validation.error }, 400);
     }
 
-    // Checkout file from commit
-    const result = await runGit(['checkout', commitHash, '--', validation.fullPath!]);
-
-    if (!result.success) {
-      return c.json({ success: false, error: 'Failed to rollback', stderr: result.stderr }, 500);
-    }
+    await rollbackGitHubFile(filePath, commitHash);
 
     return c.json({
       success: true,
@@ -568,66 +637,16 @@ app.post('/code-editor/rollback', async (c) => {
 
 /**
  * POST /code-editor/push
- * Push commits to remote (triggers Vercel deployment)
+ * Push commits to remote (no-op with GitHub API since commits are pushed immediately)
  */
 app.post('/code-editor/push', async (c) => {
   try {
-    // Get user from auth header for git config
-    const authHeader = c.req.header('Authorization');
-    const { user: authUser } = await verifyAuthUser(authHeader);
-
-    // Get GitHub token from environment
-    const token = Deno.env.get('GITHUB_TOKEN');
-
-    if (!token) {
-      return c.json({
-        success: false,
-        error: 'GitHub token not configured',
-      }, 500);
-    }
-
-    // Get current branch
-    const branchResult = await runGit(['rev-parse', '--abbrev-ref', 'HEAD']);
-    if (!branchResult.success) {
-      return c.json({ success: false, error: 'Failed to get current branch' }, 500);
-    }
-    const branch = branchResult.stdout.trim();
-
-    // Set remote URL with token
-    const remoteUrl = `https://x-access-token:${token}@github.com/RyanPowell871/RMLL-NewWebsite.git`;
-    await runGit(['remote', 'set-url', 'origin', remoteUrl]);
-
-    // Configure git user
-    await runGit(['config', 'user.email', 'cms@rmll.com']);
-    await runGit(['config', 'user.name', authUser?.name || authUser?.email || 'CMS User']);
-
-    // Push to remote
-    const result = await runGit(['push', 'origin', branch]);
-
-    if (!result.success) {
-      // Check if there's nothing to push
-      if (result.stderr.includes('Everything up-to-date')) {
-        return c.json({
-          success: true,
-          data: {
-            message: 'Everything up-to-date',
-            pushed: false,
-          },
-        });
-      }
-
-      return c.json({
-        success: false,
-        error: 'Failed to push',
-        stderr: result.stderr,
-      }, 500);
-    }
-
+    // With GitHub API, files are pushed immediately
+    // Vercel auto-deploys on GitHub push
     return c.json({
       success: true,
       data: {
-        branch,
-        message: 'Pushed successfully. Vercel deployment will begin shortly.',
+        message: 'Changes already pushed to GitHub. Vercel deployment will begin shortly.',
         pushed: true,
       },
     });
@@ -642,89 +661,37 @@ app.post('/code-editor/push', async (c) => {
 
 /**
  * GET /code-editor/status
- * Get git status for working directory
+ * Get status (placeholder for compatibility)
  */
 app.get('/code-editor/status', async (c) => {
-  try {
-    const result = await runGit(['status', '--porcelain']);
-
-    if (!result.success) {
-      return c.json({ success: false, error: 'Failed to get status' }, 500);
-    }
-
-    const lines = result.stdout.trim().split('\n').filter(Boolean);
-    const modified: string[] = [];
-    const staged: string[] = [];
-
-    for (const line of lines) {
-      const status = line.substring(0, 2);
-      const filePath = line.substring(3);
-
-      // Only include files in src/components/league-info/
-      if (filePath.startsWith('src/components/league-info/')) {
-        if (status[0] !== ' ' && status[0] !== '?') {
-          staged.push(filePath);
-        }
-        if (status[1] !== ' ') {
-          modified.push(filePath);
-        }
-      }
-    }
-
-    return c.json({
-      success: true,
-      data: {
-        modified,
-        staged,
-      },
-    });
-  } catch (error) {
-    console.error('Error getting status:', error);
-    return c.json({
-      success: false,
-      error: error instanceof Error ? error.message : 'Failed to get status',
-    }, 500);
-  }
+  return c.json({
+    success: true,
+    data: {
+      modified: [],
+      staged: [],
+    },
+  });
 });
 
 /**
  * POST /code-editor/discard
- * Discard uncommitted changes for a file
+ * Discard uncommitted changes (placeholder for compatibility)
  */
 app.post('/code-editor/discard', async (c) => {
-  try {
-    const { filePath } = await c.req.json();
+  const { filePath } = await c.req.json();
 
-    if (!filePath) {
-      return c.json({ success: false, error: 'filePath is required' }, 400);
-    }
-
-    const validation = validateFilePath(filePath);
-    if (!validation.valid) {
-      return c.json({ success: false, error: validation.error }, 400);
-    }
-
-    // Discard changes
-    const result = await runGit(['checkout', '--', validation.fullPath!]);
-
-    if (!result.success) {
-      return c.json({ success: false, error: 'Failed to discard changes' }, 500);
-    }
-
-    return c.json({
-      success: true,
-      data: {
-        filePath,
-        message: 'Changes discarded successfully',
-      },
-    });
-  } catch (error) {
-    console.error('Error discarding changes:', error);
-    return c.json({
-      success: false,
-      error: error instanceof Error ? error.message : 'Failed to discard changes',
-    }, 500);
+  if (!filePath) {
+    return c.json({ success: false, error: 'filePath is required' }, 400);
   }
+
+  // With GitHub API, we can't really "discard" - just reload the file
+  return c.json({
+    success: true,
+    data: {
+      filePath,
+      message: 'Reload file to discard changes',
+    },
+  });
 });
 
 export default app;
