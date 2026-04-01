@@ -20,11 +20,17 @@ import {
   PanelLeftOpen,
   PanelRightClose,
   PanelRightOpen,
+  Link2,
+  Eye,
+  EyeOff,
+  Copy,
+  Check,
 } from 'lucide-react';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
 import { Badge } from '../ui/badge';
 import { Label } from '../ui/label';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '../ui/tabs';
 import {
   FileTree,
   buildFileTree,
@@ -36,6 +42,7 @@ import {
   type Commit,
 } from './CommitHistory';
 import { DiffViewer } from './DiffViewer';
+import { LinkInserter, type LinkInsertOptions } from './LinkInserter';
 
 const EDGE_FUNCTION_BASE_URL = `https://${projectId}.supabase.co/functions/v1/make-server-9a1ba23f`;
 
@@ -63,6 +70,8 @@ interface EditorState {
   diffData: { diff: string; from: string; to: string; fileName: string } | null;
   leftPanelOpen: boolean;
   rightPanelOpen: boolean;
+  showLivePreview: boolean;
+  linkInserterOpen: boolean;
 }
 
 export function DirectCodeEditor() {
@@ -84,8 +93,11 @@ export function DirectCodeEditor() {
     diffData: null,
     leftPanelOpen: true,
     rightPanelOpen: false,
+    showLivePreview: false,
+    linkInserterOpen: false,
   });
 
+  const [copyStatus, setCopyStatus] = useState<'idle' | 'copied'>('idle');
   const editorRef = useRef<any>(null);
 
   // Load file list on mount
@@ -353,6 +365,59 @@ export function DirectCodeEditor() {
     }
   };
 
+  // Insert text at cursor position in Monaco Editor
+  const insertTextAtCursor = (text: string) => {
+    const editor = editorRef.current;
+    if (!editor) return;
+
+    const position = editor.getPosition();
+    if (!position) return;
+
+    editor.executeEdits('insert-link', [
+      {
+        range: {
+          startLineNumber: position.lineNumber,
+          startColumn: position.column,
+          endLineNumber: position.lineNumber,
+          endColumn: position.column,
+        },
+        text,
+      },
+    ]);
+
+    // Move cursor after inserted text
+    const newPosition = {
+      lineNumber: position.lineNumber,
+      column: position.column + text.length,
+    };
+    editor.setPosition(newPosition);
+    editor.focus();
+  };
+
+  // Handle link insertion from LinkInserter
+  const handleInsertLink = (options: LinkInsertOptions) => {
+    // Build markdown-style link: [text](url) or <a href="url" target="_blank">text</a> for JSX
+    const linkText = options.title || options.url;
+    const targetAttr = options.newTab ? ' target="_blank" rel="noopener noreferrer"' : '';
+
+    // For React/JSX, use the <a> tag format
+    const link = `<a href="${options.url}"${targetAttr}>${linkText}</a>`;
+
+    insertTextAtCursor(link);
+    setState((prev) => ({ ...prev, linkInserterOpen: false }));
+  };
+
+  const handleCopyToClipboard = async () => {
+    try {
+      await navigator.clipboard.writeText(state.fileContent);
+      setCopyStatus('copied');
+      toast.success('Code copied to clipboard');
+      setTimeout(() => setCopyStatus('idle'), 2000);
+    } catch (error) {
+      toast.error('Failed to copy to clipboard');
+    }
+  };
+
   const getFileName = (path: string) => {
     const parts = path.split('/');
     return parts[parts.length - 1];
@@ -383,6 +448,31 @@ export function DirectCodeEditor() {
         </div>
 
         <div className="flex items-center gap-2">
+          <LinkInserter
+            open={state.linkInserterOpen}
+            onOpenChange={(open) => setState((prev) => ({ ...prev, linkInserterOpen: open }))}
+            onInsert={handleInsertLink}
+            trigger={
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setState((prev) => ({ ...prev, linkInserterOpen: true }))}
+                title="Insert Link"
+              >
+                <Link2 className="w-4 h-4" />
+              </Button>
+            }
+          />
+          {state.selectedFile && state.isDirty && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setState((prev) => ({ ...prev, showLivePreview: !prev.showLivePreview }))}
+              title={state.showLivePreview ? 'Hide Preview' : 'Show Preview'}
+            >
+              {state.showLivePreview ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+            </Button>
+          )}
           <Button
             variant="ghost"
             size="sm"
@@ -434,6 +524,24 @@ export function DirectCodeEditor() {
             </div>
           </div>
           <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleCopyToClipboard}
+              title="Copy to clipboard"
+            >
+              {copyStatus === 'copied' ? (
+                <>
+                  <Check className="w-4 h-4 mr-2 text-green-600" />
+                  Copied
+                </>
+              ) : (
+                <>
+                  <Copy className="w-4 h-4 mr-2" />
+                  Copy
+                </>
+              )}
+            </Button>
             <Button
               onClick={handleSave}
               disabled={!state.isDirty || !state.commitMessage.trim() || state.isSaving || state.isPushing}
@@ -562,6 +670,28 @@ export function DirectCodeEditor() {
             </div>
           )}
         </div>
+
+        {/* Live Preview Panel */}
+        {state.showLivePreview && state.selectedFile && (
+          <div className="w-[500px] border-l border-gray-200 dark:border-gray-700 flex flex-col bg-gray-50 dark:bg-gray-800/30 shrink-0">
+            <div className="flex items-center justify-between p-3 border-b border-gray-200 dark:border-gray-700">
+              <div className="flex items-center gap-2">
+                <Eye className="w-4 h-4 text-gray-500" />
+                <h3 className="font-semibold text-sm">Live Preview</h3>
+              </div>
+              <Badge variant="outline" className="text-xs">
+                {state.isDirty ? 'Unsaved Changes' : 'No Changes'}
+              </Badge>
+            </div>
+            <div className="flex-1 overflow-hidden">
+              <DiffViewer
+                oldContent={state.originalContent}
+                newContent={state.fileContent}
+                fileName={getFileName(state.selectedFile)}
+              />
+            </div>
+          </div>
+        )}
 
         {/* Right Panel - History */}
         {state.rightPanelOpen && (
