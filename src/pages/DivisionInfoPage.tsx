@@ -678,8 +678,8 @@ export function DivisionInfoPage() {
             <TabsContent value="awards" className="mt-0">
               {selectedDivision === 'Junior B Tier I' ? (
                 <div className="space-y-8">
-                  <JrBTier1DivisionAwards />
                   <PointLeaderAwards />
+                  <JrBTier1DivisionAwards />
                 </div>
               ) : divisionData.awards ? (
                 selectedDivision === 'Junior B Tier II' ? (
