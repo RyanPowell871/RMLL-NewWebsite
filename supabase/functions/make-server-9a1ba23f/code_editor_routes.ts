@@ -379,32 +379,77 @@ app.use('*', async (c, next) => {
  * List all editable files in src/components/league-info/
  */
 app.get('/code-editor/files', async (c) => {
-  try {
-    console.log('[CodeEditor] Listing files in src/components/league-info');
+  console.log('[CodeEditor] Listing files in src/components/league-info');
 
-    // Check GitHub token
+  // Fallback list of known league-info files
+  const fallbackFiles = [
+    { name: 'AffiliateLinksPage.tsx', path: 'src/components/league-info/AffiliateLinksPage.tsx', type: 'file' },
+    { name: 'AwardsPage.tsx', path: 'src/components/league-info/AwardsPage.tsx', type: 'file' },
+    { name: 'BadStandingPage.tsx', path: 'src/components/league-info/BadStandingPage.tsx', type: 'file' },
+    { name: 'BrandGuidelinesPage.tsx', path: 'src/components/league-info/BrandGuidelinesPage.tsx', type: 'file' },
+    { name: 'BylawsPage.tsx', path: 'src/components/league-info/BylawsPage.tsx', type: 'file' },
+    { name: 'CodeOfConductPage.tsx', path: 'src/components/league-info/CodeOfConductPage.tsx', type: 'file' },
+    { name: 'CoachingRequirementsPage.tsx', path: 'src/components/league-info/CoachingRequirementsPage.tsx', type: 'file' },
+    { name: 'CombinesPage.tsx', path: 'src/components/league-info/CombinesPage.tsx', type: 'file' },
+    { name: 'ContentBlockRenderer.tsx', path: 'src/components/league-info/ContentBlockRenderer.tsx', type: 'file' },
+    { name: 'FacilitiesPage.tsx', path: 'src/components/league-info/FacilitiesPage.tsx', type: 'file' },
+    { name: 'GraduatingU17InfoPage.tsx', path: 'src/components/league-info/GraduatingU17InfoPage.tsx', type: 'file' },
+    { name: 'HistoryPage.tsx', path: 'src/components/league-info/HistoryPage.tsx', type: 'file' },
+    { name: 'JrBTier1DivisionAwards.tsx', path: 'src/components/league-info/JrBTier1DivisionAwards.tsx', type: 'file' },
+    { name: 'LCALAInfoPage.tsx', path: 'src/components/league-info/LCALAInfoPage.tsx', type: 'file' },
+    { name: 'MissionStatementPage.tsx', path: 'src/components/league-info/MissionStatementPage.tsx', type: 'file' },
+    { name: 'NewPlayerInfoFemalePage.tsx', path: 'src/components/league-info/NewPlayerInfoFemalePage.tsx', type: 'file' },
+    { name: 'NewPlayerInfoPage.tsx', path: 'src/components/league-info/NewPlayerInfoPage.tsx', type: 'file' },
+    { name: 'OfficiatingApplicationFormPage.tsx', path: 'src/components/league-info/OfficiatingApplicationFormPage.tsx', type: 'file' },
+    { name: 'OfficiatingFloorEquipmentPage.tsx', path: 'src/components/league-info/OfficiatingFloorEquipmentPage.tsx', type: 'file' },
+    { name: 'OfficiatingOffFloorOfficialsPage.tsx', path: 'src/components/league-info/OfficiatingOffFloorOfficialsPage.tsx', type: 'file' },
+    { name: 'OfficiatingRuleInterpretationsPage.tsx', path: 'src/components/league-info/OfficiatingRuleInterpretationsPage.tsx', type: 'file' },
+    { name: 'OfficiatingRulebookPage.tsx', path: 'src/components/league-info/OfficiatingRulebookPage.tsx', type: 'file' },
+    { name: 'PlanningMeetingAGMPage.tsx', path: 'src/components/league-info/PlanningMeetingAGMPage.tsx', type: 'file' },
+    { name: 'PointLeaderAwards.tsx', path: 'src/components/league-info/PointLeaderAwards.tsx', type: 'file' },
+    { name: 'PrivacyPolicyPage.tsx', path: 'src/components/league-info/PrivacyPolicyPage.tsx', type: 'file' },
+    { name: 'RMLLExecutivePage.tsx', path: 'src/components/league-info/RMLLExecutivePage.tsx', type: 'file' },
+    { name: 'RecordBooksPage.tsx', path: 'src/components/league-info/RecordBooksPage.tsx', type: 'file' },
+    { name: 'RegulationsPage.tsx', path: 'src/components/league-info/RegulationsPage.tsx', type: 'file' },
+    { name: 'RegistrationPage.tsx', path: 'src/components/league-info/RegistrationPage.tsx', type: 'file' },
+    { name: 'RulesOfPlayPage.tsx', path: 'src/components/league-info/RulesOfPlayPage.tsx', type: 'file' },
+    { name: 'SuperCoachingClinicPage.tsx', path: 'src/components/league-info/SuperCoachingClinicPage.tsx', type: 'file' },
+    { name: 'SuspensionsPage.tsx', path: 'src/components/league-info/SuspensionsPage.tsx', type: 'file' },
+    { name: 'suspensions-data.ts', path: 'src/components/league-info/suspensions-data.ts', type: 'file' },
+  ];
+
+  try {
+    // Try to fetch from GitHub API first
     const token = Deno.env.get('GITHUB_TOKEN');
     if (!token) {
-      console.error('[CodeEditor] GitHub token not configured');
+      console.log('[CodeEditor] GitHub token not configured, using fallback');
       return c.json({
-        success: false,
-        error: 'GitHub token not configured',
-      }, 500);
+        success: true,
+        data: { files: fallbackFiles },
+      });
     }
 
     const files = await scanDirectoryForFiles('src/components/league-info');
-    console.log('[CodeEditor] Found', files.length, 'files');
+    console.log('[CodeEditor] Found', files.length, 'files from GitHub API');
+
+    if (files.length === 0) {
+      console.log('[CodeEditor] No files from GitHub, using fallback');
+      return c.json({
+        success: true,
+        data: { files: fallbackFiles },
+      });
+    }
 
     return c.json({
       success: true,
       data: { files },
     });
   } catch (error) {
-    console.error('[CodeEditor] Error listing files:', error);
+    console.error('[CodeEditor] Error listing files, using fallback:', error);
     return c.json({
-      success: false,
-      error: error instanceof Error ? error.message : 'Failed to list files',
-    }, 500);
+      success: true,
+      data: { files: fallbackFiles },
+    });
   }
 });
 
