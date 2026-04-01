@@ -140,16 +140,228 @@ const generateId = () => `section_${Date.now()}_${Math.random().toString(36).sub
 // DATA MIGRATION - Convert legacy format to unified format
 // ============================================================================
 
+// Helper to extract date/time/location from content text
+function parseContentInfo(content: string): { date?: string; time?: string; location?: string } {
+  const info: { date?: string; time?: string; location?: string } = {};
+
+  const dateMatch = content.match(/(?:Date:\s*)?(.+?)(?:\n|,\s*Time:|$)/);
+  if (dateMatch) info.date = dateMatch[1].trim();
+
+  const timeMatch = content.match(/(?:Time:\s*)?(.+?)(?:\n|,\s*Loc|$)/);
+  if (timeMatch) info.time = timeMatch[1].trim();
+
+  const locMatch = content.match(/(?:Loc(?:ation)?:\s*)?(.+?)(?:\n|,|\n\n|$)/);
+  if (locMatch) info.location = locMatch[1].trim();
+
+  return info;
+}
+
+// Migrate generic section array format to unified format
+function migrateGenericSections(sections: any[]): SeasonInfoData {
+  const unified: SeasonInfoData = {};
+  const drafts: DraftSection[] = [];
+  const regularSeason: RegularSeasonSection[] = [];
+  const playoffs: PlayoffSection[] = [];
+  const provincial: ProvincialSection[] = [];
+  const championships: ChampionshipSection[] = [];
+
+  for (const section of sections) {
+    const title = section.title || '';
+    const subtitle = section.subtitle || '';
+    const content = section.content || '';
+
+    // Draft-related sections
+    if (title.includes('Draft') || title.includes('Entry Draft')) {
+      const info = parseContentInfo(content);
+
+      // Try to extract region from title
+      let region: string | undefined;
+      if (title.includes('North')) region = 'North';
+      else if (title.includes('South')) region = 'South';
+      else if (title.includes('Central')) region = 'Central';
+
+      drafts.push({
+        id: generateId(),
+        title,
+        subtitle,
+        date: info.date,
+        time: info.time,
+        location: info.location,
+        notes: content,
+        region,
+      });
+    }
+    // Regular Season related sections
+    else if (title.includes('Regular Season') || title.includes('Game Days')) {
+      if (title.includes('Game Days')) {
+        // Try to find or update existing regular season section
+        const existing = regularSeason.find(s => s.title === 'Regular Season');
+        if (existing) {
+          existing.gameDays = content;
+        } else {
+          regularSeason.push({
+            id: generateId(),
+            title: 'Regular Season',
+            gameDays: content,
+          });
+        }
+      } else if (title.includes('Regular Season Games')) {
+        // Try to extract games count
+        const gamesMatch = content.match(/(\d+)\s*games/i);
+        const gamesCount = gamesMatch ? gamesMatch[1] : undefined;
+
+        const existing = regularSeason.find(s => s.title === 'Regular Season');
+        if (existing) {
+          existing.totalGames = gamesCount;
+        } else {
+          regularSeason.push({
+            id: generateId(),
+            title: 'Regular Season',
+            totalGames: gamesCount,
+          });
+        }
+      } else {
+        // Main regular season section with dates
+        const existing = regularSeason.find(s => s.title === 'Regular Season');
+        if (existing) {
+          existing.notes = content; // Add subtitle/content as notes
+        } else {
+          regularSeason.push({
+            id: generateId(),
+            title: 'Regular Season',
+            notes: content,
+          });
+        }
+      }
+    }
+    // Playoffs related sections
+    else if (title.includes('Playoffs') || title.includes('Playoff')) {
+      if (title.includes('Format')) {
+        const existing = playoffs.find(s => s.id === 'playoffs');
+        if (existing) {
+          existing.format = content;
+        } else {
+          playoffs.push({
+            id: 'playoffs',
+            format: content,
+          });
+        }
+      } else {
+        const existing = playoffs.find(s => s.id === 'playoffs');
+        if (existing) {
+          existing.dates = content;
+          existing.note = subtitle || '';
+        } else {
+          playoffs.push({
+            id: 'playoffs',
+            dates: content,
+            note: subtitle || '',
+          });
+        }
+      }
+    }
+    // Provincial related sections
+    else if (title.includes('Provincial')) {
+      if (title.includes('Format')) {
+        const existing = provincial.find(s => s.id === 'provincial');
+        if (existing) {
+          existing.format = content;
+        } else {
+          provincial.push({
+            id: 'provincial',
+            format: content,
+          });
+        }
+      } else if (title.includes('Dates')) {
+        const existing = provincial.find(s => s.id === 'provincial');
+        if (existing) {
+          existing.dates = content;
+        } else {
+          provincial.push({
+            id: 'provincial',
+            dates: content,
+          });
+        }
+      } else {
+        const existing = provincial.find(s => s.id === 'provincial');
+        if (existing) {
+          existing.note = content;
+        } else {
+          provincial.push({
+            id: 'provincial',
+            note: content,
+          });
+        }
+      }
+    }
+    // National / Championship sections
+    else if (title.includes('National') || title.includes('Championship') || title.includes('Founders Cup') || title.includes('Minto Cup')) {
+      const existing = championships.find(s => s.type === 'national');
+      if (existing) {
+        existing.title = existing.title || title;
+        existing.dates = existing.dates || (title.includes('Sunday') && subtitle ? subtitle : '');
+        existing.location = existing.location || content;
+      } else {
+        championships.push({
+          id: generateId(),
+          title,
+          type: 'national',
+          dates: subtitle || content,
+          location: content,
+        });
+      }
+    }
+    // RMLL Championship
+    else if (title.includes('RMLL Championship')) {
+      const existing = championships.find(s => s.type === 'presidents-cup');
+      if (existing) {
+        existing.dates = existing.dates || subtitle;
+        existing.location = existing.location || content;
+      } else {
+        championships.push({
+          id: generateId(),
+          title: 'RMLL Championship',
+          type: 'other',
+          dates: subtitle,
+          location: content,
+        });
+      }
+    }
+    // Unknown sections - add as notes
+    else {
+      unified.notes = (unified.notes || '') + `\n\n${title}\n${content}`;
+    }
+  }
+
+  if (drafts.length > 0) unified.drafts = drafts;
+  if (regularSeason.length > 0) unified.regularSeason = regularSeason;
+  if (playoffs.length > 0) unified.playoffs = playoffs;
+  if (provincial.length > 0) unified.provincial = provincial;
+  if (championships.length > 0) unified.championships = championships;
+
+  return unified;
+}
+
 function migrateToUnified(data: any): SeasonInfoData {
   // Helper to check if array is in new format (has id property)
   const isNewFormatArray = (arr: any[]): boolean => {
     return Array.isArray(arr) && (arr.length === 0 || arr[0]?.id !== undefined);
   };
 
+  // Helper to check if array is in generic section format (title/subtitle/content)
+  const isGenericSectionArray = (arr: any): boolean => {
+    return Array.isArray(arr) && (arr.length === 0 || arr[0]?.title !== undefined && arr[0]?.content !== undefined);
+  };
+
   // Start with metadata
   const unified: SeasonInfoData = {
     __metadata: data.__metadata,
   };
+
+  // Handle generic section array format (old format with title/subtitle/content sections)
+  if (isGenericSectionArray(data)) {
+    return migrateGenericSections(data);
+  }
 
   // Handle drafts - either already in new format or needs migration
   if (isNewFormatArray(data.drafts)) {
