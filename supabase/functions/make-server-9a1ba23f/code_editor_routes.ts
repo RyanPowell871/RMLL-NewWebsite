@@ -305,11 +305,16 @@ async function validateTypeScriptCode(code: string, filePath: string): Promise<{
 // ============================================
 
 function validateFilePath(filePath: string): { valid: boolean; error?: string } {
+  console.log('[validateFilePath] Raw path:', filePath);
+
   // URL decode the path (Hono should do this but let's be safe)
   const decodedPath = decodeURIComponent(filePath);
+  console.log('[validateFilePath] Decoded path:', decodedPath);
 
   // Remove leading slashes and any ../ attempts
   const cleanPath = decodedPath.replace(/^\/+/, '').replace(/\.\.+/g, '');
+  console.log('[validateFilePath] Clean path:', cleanPath);
+  console.log('[validateFilePath] Starts with src/components/league-info/?:', cleanPath.startsWith('src/components/league-info/'));
 
   // Check if path is within src/components/league-info/
   if (!cleanPath.startsWith('src/components/league-info/')) {
@@ -457,12 +462,14 @@ app.get('/code-editor/files', async (c) => {
 });
 
 /**
- * GET /code-editor/file/:path
+ * GET /code-editor/file?path=xxx
  * Read file contents
  */
-app.get('/code-editor/file/:path(.+)', async (c) => {
+app.get('/code-editor/file', async (c) => {
+  const filePath = c.req.query('path') || '';
+  console.log('[GET /code-editor/file] Received path from query:', filePath);
+
   try {
-    const filePath = c.req.param('path') || '';
     const validation = validateFilePath(filePath);
 
     if (!validation.valid) {
@@ -489,12 +496,12 @@ app.get('/code-editor/file/:path(.+)', async (c) => {
 });
 
 /**
- * POST /code-editor/file/:path
+ * POST /code-editor/file
  * Write file contents with validation
  */
-app.post('/code-editor/file/:path(.+)', async (c) => {
+app.post('/code-editor/file', async (c) => {
   try {
-    const filePath = c.req.param('path') || '';
+    const filePath = c.req.query('path') || '';
     const validation = validateFilePath(filePath);
 
     if (!validation.valid) {
@@ -596,12 +603,12 @@ app.post('/code-editor/commit', async (c) => {
 });
 
 /**
- * GET /code-editor/history/:file
+ * GET /code-editor/history
  * Get commit history for a file
  */
-app.get('/code-editor/history/:file(.+)', async (c) => {
+app.get('/code-editor/history', async (c) => {
   try {
-    const filePath = c.req.param('file') || '';
+    const filePath = c.req.query('file') || '';
     const validation = validateFilePath(filePath);
 
     if (!validation.valid) {
@@ -625,13 +632,13 @@ app.get('/code-editor/history/:file(.+)', async (c) => {
 });
 
 /**
- * GET /code-editor/diff/:file
+ * GET /code-editor/diff
  * Get diff between commits
- * Query params: from (commit hash), to (commit hash, defaults to HEAD)
+ * Query params: file (path), from (commit hash), to (commit hash, defaults to HEAD)
  */
-app.get('/code-editor/diff/:file(.+)', async (c) => {
+app.get('/code-editor/diff', async (c) => {
   try {
-    const filePath = c.req.param('file') || '';
+    const filePath = c.req.query('file') || '';
     const validation = validateFilePath(filePath);
 
     if (!validation.valid) {

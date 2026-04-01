@@ -172,7 +172,7 @@ export function DirectCodeEditor() {
     try {
       setState((prev) => ({ ...prev, isLoading: true }));
 
-      const result = await apiCall(`/code-editor/file/${encodeURIComponent(filePath)}`);
+      const result = await apiCall(`/code-editor/file?path=${encodeURIComponent(filePath)}`);
 
       if (!result.success) {
         throw new Error(result.error || 'Failed to load file');
@@ -196,7 +196,7 @@ export function DirectCodeEditor() {
     try {
       setState((prev) => ({ ...prev, isLoadingHistory: true }));
 
-      const result = await apiCall(`/code-editor/history/${encodeURIComponent(filePath)}?limit=20`);
+      const result = await apiCall(`/code-editor/history?file=${encodeURIComponent(filePath)}&limit=20`);
 
       if (!result.success) {
         throw new Error(result.error || 'Failed to load history');
@@ -223,7 +223,7 @@ export function DirectCodeEditor() {
 
     try {
       // Write file
-      await apiCall(`/code-editor/file/${encodeURIComponent(state.selectedFile)}`, {
+      await apiCall(`/code-editor/file?path=${encodeURIComponent(state.selectedFile)}`, {
         method: 'POST',
         body: JSON.stringify({ content: state.fileContent }),
       });
@@ -306,7 +306,7 @@ export function DirectCodeEditor() {
     if (!state.selectedFile) return;
 
     try {
-      const result = await apiCall(`/code-editor/diff/${encodeURIComponent(state.selectedFile)}?from=${commitHash}`);
+      const result = await apiCall(`/code-editor/diff?file=${encodeURIComponent(state.selectedFile)}&from=${commitHash}`);
 
       if (!result.success) {
         throw new Error(result.error || 'Failed to get diff');
