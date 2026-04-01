@@ -502,6 +502,30 @@ export function DirectCodeEditor() {
                 }))}
                 onMount={handleEditorDidMount}
                 theme="vs-dark"
+                beforeMount={(monaco) => {
+                  // Configure TypeScript to suppress all diagnostics
+                  monaco.languages.typescript.typescriptDefaults.setDiagnosticsOptions({
+                    noSemanticValidation: true,
+                    noSyntaxValidation: true,
+                  });
+                  monaco.languages.typescript.javascriptDefaults.setDiagnosticsOptions({
+                    noSemanticValidation: true,
+                    noSyntaxValidation: true,
+                  });
+                  // Disable all compiler options
+                  monaco.languages.typescript.typescriptDefaults.setCompilerOptions({
+                    target: monaco.languages.typescript.ScriptTarget.ES2020,
+                    allowNonTsExtensions: true,
+                    moduleResolution: monaco.languages.typescript.ModuleResolutionKind.NodeJs,
+                    module: monaco.languages.typescript.ModuleKind.CommonJS,
+                    noEmit: true,
+                    esModuleInterop: true,
+                    jsx: monaco.languages.typescript.JsxEmit.React,
+                    reactNamespace: 'React',
+                    allowJs: true,
+                    typeRoots: [],
+                  });
+                }}
                 options={{
                   minimap: { enabled: true },
                   fontSize: 14,
@@ -512,17 +536,27 @@ export function DirectCodeEditor() {
                   tabSize: 2,
                   wordWrap: 'on',
                   padding: { top: 16, bottom: 16 },
-                  // Disable TypeScript diagnostics to show red underlines
-                  diagnostics: { disabled: true },
-                  // Disable semantic validation
+                  // Completely disable all validation
+                  readOnly: false,
+                  domReadOnly: false,
+                  disableTranslate3D: true,
+                  // Disable diagnostics at the model level
+                  noValidation: true,
+                  // Disable semantic highlighting to avoid type-based coloring
                   semanticHighlighting: { enabled: false },
-                  // Disable suggestions
+                  // Disable all suggestions
                   suggestOnTriggerCharacters: false,
-                  quickSuggestions: { other: false, comments: false, strings: false },
-                  // Disable error squigglies
-                  errorSquiggles: 'disabled',
-                  warningSquiggles: 'disabled',
-                  infoSquiggles 'disabled': 'disabled',
+                  quickSuggestions: false,
+                  // Disable hover
+                  hover: { enabled: false },
+                  // Disable parameter hints
+                  parameterHints: { enabled: false },
+                  // Disable code lens
+                  codeLens: false,
+                  // Disable folding
+                  folding: false,
+                  // Disable lightbulb actions
+                  lightbulb: { enabled: false },
                 }}
               />
             </div>
