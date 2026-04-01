@@ -117,7 +117,7 @@ function ValueCard({
 }: {
   icon: React.ReactNode;
   title: string;
-  description: string;
+  description: React.ReactNode;
   color: 'blue' | 'red';
 }) {
   const colorClasses =
@@ -130,7 +130,7 @@ function ValueCard({
     >
       <div className="flex items-start gap-3">
         <div className={`p-2 rounded-lg ${iconBg} shrink-0`}>{icon}</div>
-        <div>
+        <div className="flex-1">
           <h4 className="font-bold text-gray-900 mb-1.5">{title}</h4>
           <p className="text-sm text-gray-600 leading-relaxed">{description}</p>
         </div>
