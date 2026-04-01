@@ -305,8 +305,11 @@ async function validateTypeScriptCode(code: string, filePath: string): Promise<{
 // ============================================
 
 function validateFilePath(filePath: string): { valid: boolean; error?: string } {
+  // URL decode the path (Hono should do this but let's be safe)
+  const decodedPath = decodeURIComponent(filePath);
+
   // Remove leading slashes and any ../ attempts
-  const cleanPath = filePath.replace(/^\/+/, '').replace(/\.\.+/g, '');
+  const cleanPath = decodedPath.replace(/^\/+/, '').replace(/\.\.+/g, '');
 
   // Check if path is within src/components/league-info/
   if (!cleanPath.startsWith('src/components/league-info/')) {
