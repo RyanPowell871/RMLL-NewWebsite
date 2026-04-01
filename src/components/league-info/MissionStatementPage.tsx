@@ -54,7 +54,7 @@ export function MissionStatementPage() {
           <ValueCard
             icon={<Star className="w-5 h-5" />}
             title="Pursuit of Excellence"
-            description="We provide continual participant development opportunities for athletes striving for excellence at every level of competition. TEST2"
+            description="We provide continual participant development opportunities for athletes striving for excellence at every level of competition."
             color="blue"
           />
           <ValueCard
