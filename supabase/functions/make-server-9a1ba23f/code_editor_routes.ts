@@ -305,16 +305,11 @@ async function validateTypeScriptCode(code: string, filePath: string): Promise<{
 // ============================================
 
 function validateFilePath(filePath: string): { valid: boolean; error?: string } {
-  console.log('[validateFilePath] Raw path:', filePath);
-
   // URL decode the path (Hono should do this but let's be safe)
   const decodedPath = decodeURIComponent(filePath);
-  console.log('[validateFilePath] Decoded path:', decodedPath);
 
   // Remove leading slashes and any ../ attempts
   const cleanPath = decodedPath.replace(/^\/+/, '').replace(/\.\.+/g, '');
-  console.log('[validateFilePath] Clean path:', cleanPath);
-  console.log('[validateFilePath] Starts with src/components/league-info/?:', cleanPath.startsWith('src/components/league-info/'));
 
   // Check if path is within src/components/league-info/
   if (!cleanPath.startsWith('src/components/league-info/')) {
@@ -467,7 +462,6 @@ app.get('/code-editor/files', async (c) => {
  */
 app.get('/code-editor/file', async (c) => {
   const filePath = c.req.query('path') || '';
-  console.log('[GET /code-editor/file] Received path from query:', filePath);
 
   try {
     const validation = validateFilePath(filePath);
@@ -524,12 +518,23 @@ app.post('/code-editor/file', async (c) => {
       }, 400);
     }
 
+    // Get current SHA if not provided (GitHub requires it for existing files)
+    let fileSha = sha;
+    if (!fileSha) {
+      try {
+        const currentFile = await githubRequest<any>(`/repos/${GITHUB_REPO}/contents/${filePath}`);
+        fileSha = currentFile.sha;
+      } catch {
+        // File doesn't exist yet, sha is not required
+      }
+    }
+
     // Write to GitHub
     const result = await writeGitHubFile(
       filePath,
       content,
       'Draft changes via Code Editor',
-      sha
+      fileSha
     );
 
     return c.json({
