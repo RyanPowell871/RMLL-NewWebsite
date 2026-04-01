@@ -122,6 +122,7 @@ export function DirectCodeEditor() {
   };
 
   const apiCall = async (endpoint: string, options: RequestInit = {}) => {
+    console.log('[DirectCodeEditor] API Call:', endpoint);
     const response = await fetch(`${EDGE_FUNCTION_BASE_URL}${endpoint}`, {
       ...options,
       headers: {
@@ -131,23 +132,40 @@ export function DirectCodeEditor() {
       },
     });
 
+    console.log('[DirectCodeEditor] Response status:', response.status);
+    const responseText = await response.text();
+    console.log('[DirectCodeEditor] Response text (first 500 chars):', responseText.substring(0, 500));
+
     if (!response.ok) {
-      const error = await response.json();
+      let error = { error: `Server error: ${response.status}` };
+      try {
+        error = JSON.parse(responseText);
+      } catch {
+        // Keep default error
+      }
       throw new Error(error.error || `Server error: ${response.status}`);
     }
 
-    return response.json();
+    try {
+      return JSON.parse(responseText);
+    } catch (e) {
+      throw new Error('Invalid JSON response from server');
+    }
   };
 
   const loadFiles = async () => {
+    console.log('[DirectCodeEditor] loadFiles() called');
     try {
       const result = await apiCall('/code-editor/files');
+      console.log('[DirectCodeEditor] API result:', result);
 
       if (!result.success) {
         throw new Error(result.error || 'Failed to load files');
       }
 
-      const fileTree = buildFileTree(result.data.files);
+      console.log('[DirectCodeEditor] Files from API:', result.data?.files);
+      const fileTree = buildFileTree(result.data.files || []);
+      console.log('[DirectCodeEditor] Built file tree:', fileTree);
 
       setState((prev) => ({
         ...prev,
