@@ -1059,7 +1059,7 @@ export function ProjectTimesheetPage() {
 
                 {/* Balance Owing */}
                 <tr className="bg-gradient-to-r from-blue-100 to-indigo-100 font-bold text-lg">
-                  <td className="p-4 border border-blue-300" colSpan={4}>Balance Owing</td>
+                  <td className="p-4 border border-blue-300" colSpan={4}>Balance Owing (incl. GST)</td>
                   <td className="p-4 border border-blue-300 text-right text-blue-900">${balanceOwing.toLocaleString(undefined, { minimumFractionDigits: 2 })}</td>
                 </tr>
               </tbody>
