@@ -76,33 +76,42 @@ async function listGitHubFiles(path: string): Promise<GitHubFile[]> {
       size: f.size,
     }));
   } catch (error) {
-    console.error('Error listing GitHub files:', error);
-    return [];
+    console.error('Error listing GitHub files for path:', path, error);
+    throw error;
   }
 }
 
 /**
  * Recursively scan directory for all editable files
  */
-async function scanDirectoryForFiles(basePath: string, files: GitHubFile[] = []): Promise<GitHubFile[]> {
-  const contents = await listGitHubFiles(basePath);
+async function scanDirectoryForFiles(basePath: string): Promise<GitHubFile[]> {
+  const files: GitHubFile[] = [];
 
-  for (const item of contents) {
-    // Skip hidden files and certain directories
-    if (item.name.startsWith('.') || item.name === 'node_modules') {
-      continue;
-    }
+  async function scan(path: string) {
+    try {
+      const contents = await listGitHubFiles(path);
 
-    if (item.type === 'dir') {
-      await scanDirectoryForFiles(item.path, files);
-    } else if (item.type === 'file') {
-      const ext = item.name.slice(item.name.lastIndexOf('.'));
-      if (['.tsx', '.ts', '.jsx', '.js'].includes(ext)) {
-        files.push(item);
+      for (const item of contents) {
+        // Skip hidden files and certain directories
+        if (item.name.startsWith('.') || item.name === 'node_modules') {
+          continue;
+        }
+
+        if (item.type === 'dir') {
+          await scan(item.path);
+        } else if (item.type === 'file') {
+          const ext = item.name.slice(item.name.lastIndexOf('.'));
+          if (['.tsx', '.ts', '.jsx', '.js'].includes(ext)) {
+            files.push(item);
+          }
+        }
       }
+    } catch (error) {
+      console.error('Error scanning directory:', path, error);
     }
   }
 
+  await scan(basePath);
   return files;
 }
 
@@ -371,14 +380,27 @@ app.use('*', async (c, next) => {
  */
 app.get('/code-editor/files', async (c) => {
   try {
+    console.log('[CodeEditor] Listing files in src/components/league-info');
+
+    // Check GitHub token
+    const token = Deno.env.get('GITHUB_TOKEN');
+    if (!token) {
+      console.error('[CodeEditor] GitHub token not configured');
+      return c.json({
+        success: false,
+        error: 'GitHub token not configured',
+      }, 500);
+    }
+
     const files = await scanDirectoryForFiles('src/components/league-info');
+    console.log('[CodeEditor] Found', files.length, 'files');
 
     return c.json({
       success: true,
       data: { files },
     });
   } catch (error) {
-    console.error('Error listing files:', error);
+    console.error('[CodeEditor] Error listing files:', error);
     return c.json({
       success: false,
       error: error instanceof Error ? error.message : 'Failed to list files',
