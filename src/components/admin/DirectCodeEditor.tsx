@@ -512,6 +512,17 @@ export function DirectCodeEditor() {
                   tabSize: 2,
                   wordWrap: 'on',
                   padding: { top: 16, bottom: 16 },
+                  // Disable TypeScript diagnostics to show red underlines
+                  diagnostics: { disabled: true },
+                  // Disable semantic validation
+                  semanticHighlighting: { enabled: false },
+                  // Disable suggestions
+                  suggestOnTriggerCharacters: false,
+                  quickSuggestions: { other: false, comments: false, strings: false },
+                  // Disable error squigglies
+                  errorSquiggles: 'disabled',
+                  warningSquiggles: 'disabled',
+                  infoSquiggles 'disabled': 'disabled',
                 }}
               />
             </div>
