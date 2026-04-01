@@ -467,7 +467,7 @@ export function ProjectTimesheetPage() {
   const invoiceSubtotal = 17532.5 + 2700 + 1150 + 700 + maintenanceCost;
   const invoiceGst = invoiceSubtotal * 0.05;
   const invoiceTotal = invoiceSubtotal + invoiceGst;
-  const totalPayments = 19621.88; // Updated to remove CR-003 through CR-010, add 4.5h to Team Detail Pages
+  const totalPayments = 19031.25; // Updated to remove CR-003 through CR-010 from project
   const balanceOwing = invoiceTotal - totalPayments;
 
   // Counts
