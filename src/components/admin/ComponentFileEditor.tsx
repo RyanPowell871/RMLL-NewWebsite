@@ -27,6 +27,7 @@ import {
   ArrowUp,
   ArrowDown,
   Copy,
+  LayoutTemplate,
 } from 'lucide-react';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
@@ -36,6 +37,9 @@ import { Badge } from '../ui/badge';
 import { Label } from '../ui/label';
 import { toast } from 'sonner@2.0.3';
 import { COMPONENT_SCHEMAS, getEditableSchemas, type ComponentSchema, type EditableField, type ArrayField } from '../../utils/component-schemas';
+import { DirectCodeEditor } from './DirectCodeEditor';
+
+type EditorMode = 'form' | 'code';
 
 interface ComponentData {
   [fieldName: string]: unknown;
@@ -54,6 +58,7 @@ interface EditingState {
 }
 
 export function ComponentFileEditor() {
+  const [editorMode, setEditorMode] = useState<EditorMode>('form');
   const [state, setState] = useState<EditingState>({
     selectedPageId: null,
     schema: null,
@@ -67,6 +72,44 @@ export function ComponentFileEditor() {
   });
 
   const editableSchemas = getEditableSchemas();
+
+  // Show the DirectCodeEditor when in code mode
+  if (editorMode === 'code') {
+    return (
+      <div className="h-screen flex flex-col">
+        <div className="flex items-center justify-between px-4 py-3 border-b border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800">
+          <div className="flex items-center gap-3">
+            <h2 className="text-xl font-bold text-gray-900 dark:text-white">Component File Editor</h2>
+            <div className="flex items-center gap-1 bg-gray-100 dark:bg-gray-700 rounded-lg p-1">
+              <button
+                onClick={() => setEditorMode('form')}
+                className={`
+                  px-3 py-1.5 rounded-md text-sm font-medium transition-colors flex items-center gap-2
+                  ${editorMode === 'form' ? 'bg-white dark:bg-gray-600 text-gray-900 dark:text-white shadow-sm' : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'}
+                `}
+              >
+                <LayoutTemplate className="w-4 h-4" />
+                Form Editor
+              </button>
+              <button
+                onClick={() => setEditorMode('code')}
+                className={`
+                  px-3 py-1.5 rounded-md text-sm font-medium transition-colors flex items-center gap-2
+                  ${editorMode === 'code' ? 'bg-white dark:bg-gray-600 text-gray-900 dark:text-white shadow-sm' : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'}
+                `}
+              >
+                <Code className="w-4 h-4" />
+                Code Editor
+              </button>
+            </div>
+          </div>
+        </div>
+        <div className="flex-1 overflow-hidden">
+          <DirectCodeEditor />
+        </div>
+      </div>
+    );
+  }
 
   // Load component data when a page is selected
   const loadComponent = useCallback(async (schema: ComponentSchema) => {
@@ -310,11 +353,35 @@ export function ComponentFileEditor() {
             Edit React component data. Initial data is loaded from source files, edits are saved to the database.
           </p>
         </div>
-        {state.isDirty && (
-          <Badge className="bg-amber-100 text-amber-800 dark:bg-amber-900 dark:text-amber-200">
-            Unsaved Changes
-          </Badge>
-        )}
+        <div className="flex items-center gap-3">
+          <div className="flex items-center gap-1 bg-gray-100 dark:bg-gray-800 rounded-lg p-1">
+            <button
+              onClick={() => setEditorMode('form')}
+              className={`
+                px-3 py-1.5 rounded-md text-sm font-medium transition-colors flex items-center gap-2
+                ${editorMode === 'form' ? 'bg-white dark:bg-gray-700 text-gray-900 dark:text-white shadow-sm' : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'}
+              `}
+            >
+              <LayoutTemplate className="w-4 h-4" />
+              Form Editor
+            </button>
+            <button
+              onClick={() => setEditorMode('code')}
+              className={`
+                px-3 py-1.5 rounded-md text-sm font-medium transition-colors flex items-center gap-2
+                ${editorMode === 'code' ? 'bg-white dark:bg-gray-700 text-gray-900 dark:text-white shadow-sm' : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'}
+              `}
+            >
+              <Code className="w-4 h-4" />
+              Code Editor
+            </button>
+          </div>
+          {state.isDirty && (
+            <Badge className="bg-amber-100 text-amber-800 dark:bg-amber-900 dark:text-amber-200">
+              Unsaved Changes
+            </Badge>
+          )}
+        </div>
       </div>
 
       {/* Info Banner */}

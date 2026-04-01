@@ -13,6 +13,7 @@ import configRoutes from "./config_routes.ts";
 import emailRoutes from "./email_routes.ts";
 import suspensionsRoutes from "./suspensions_routes.ts";
 import linkCheckerRoutes from "./link_checker_routes.ts";
+import codeEditorRoutes from "./code_editor_routes.ts";
 
 const app = new Hono();
 
@@ -72,6 +73,7 @@ app.route(basePath, configRoutes);
 app.route(basePath, emailRoutes);
 app.route(basePath, suspensionsRoutes);
 app.route(basePath, linkCheckerRoutes);
+app.route(basePath, codeEditorRoutes);
 
 // Health check
 app.get("/health", (c) => c.json({ status: "ok" }));
