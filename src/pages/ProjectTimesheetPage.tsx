@@ -464,7 +464,7 @@ export function ProjectTimesheetPage() {
   // Invoice calculations
   const MAINTENANCE_PRICES: Record<string, number> = { none: 0, basic: 1800, standard: 4200, premium: 7800 };
   const maintenanceCost = MAINTENANCE_PRICES[selectedMaintenance] || 0;
-  const invoiceSubtotal = 17532.5 + 2700 + 1150 + 700 + maintenanceCost;
+  const invoiceSubtotal = 17420 + 2700 + 1150 + 700 + maintenanceCost;
   const invoiceGst = invoiceSubtotal * 0.05;
   const invoiceTotal = invoiceSubtotal + invoiceGst;
   const totalPayments = 19031.25; // Updated to remove CR-003 through CR-010 from project
@@ -895,10 +895,10 @@ export function ProjectTimesheetPage() {
                 </tr>
                 <tr>
                   <td className="p-3 border border-gray-200 font-medium">CR-001: Team Detail Pages</td>
-                  <td className="p-3 border border-gray-200 text-xs text-gray-600">Individual team profile pages with dynamic team colors, logos, full roster, team-specific schedule, stats, and transaction history. Includes design (5h) and development (10h).</td>
-                  <td className="p-3 border border-gray-200 text-right">15</td>
+                  <td className="p-3 border border-gray-200 text-xs text-gray-600">Individual team profile pages with dynamic team colors, logos, full roster, team-specific schedule, stats, and transaction history. Includes design (5h) and development (14.5h).</td>
+                  <td className="p-3 border border-gray-200 text-right">19.5</td>
                   <td className="p-3 border border-gray-200 text-right">$100/hr</td>
-                  <td className="p-3 border border-gray-200 text-right font-medium">$1,500</td>
+                  <td className="p-3 border border-gray-200 text-right font-medium">$1,950</td>
                 </tr>
                 <tr className="bg-gray-50">
                   <td className="p-3 border border-gray-200 font-medium">CR-002: Player Profile Pages</td>
@@ -909,7 +909,7 @@ export function ProjectTimesheetPage() {
                 </tr>
                 <tr className="bg-amber-50 font-semibold">
                   <td className="p-3 border border-gray-200" colSpan={4}>Change Requests Subtotal</td>
-                  <td className="p-3 border border-gray-200 text-right text-amber-800">$2,200</td>
+                  <td className="p-3 border border-gray-200 text-right text-amber-800">$2,650</td>
                 </tr>
 
                 {/* Beyond Scope — No Charge */}
