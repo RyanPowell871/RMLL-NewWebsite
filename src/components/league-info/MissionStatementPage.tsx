@@ -66,7 +66,7 @@ export function MissionStatementPage() {
           <ValueCard
             icon={<Users className="w-5 h-5" />}
             title="Community Spirit"
-            description="We foster a general community spirit among our Members, building connections through the game of lacrosse across Alberta."
+            description="We foster a general community spirit among our Members, building connections through the game of lacrosse across Alberta.<a href="/league-info#documents?doc=b30d0d10-1adf-4f1a-a89b-86b0ef6cffca" target="_blank" rel="noopener noreferrer">2025 Rmll Oic Report</a>"
             color="red"
           />
           <ValueCard
