@@ -9,6 +9,7 @@
 
 import { Hono } from "npm:hono";
 import { createClient } from "npm:@supabase/supabase-js@2";
+import * as db from "./db.ts";
 
 const app = new Hono();
 
@@ -171,45 +172,42 @@ async function validateTypeScriptCode(code: string, filePath: string): Promise<{
 // Authentication Middleware
 // ============================================
 
-interface User {
-  id: string;
-  email: string;
-  role: string;
-}
+async function verifyAuthUser(authHeader: string | null): Promise<{ authorized: boolean; userId?: string; role?: string; user?: any; error?: string }> {
+  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    return { authorized: false, error: 'No authorization token provided' };
+  }
 
-async function getUserFromToken(authorization: string | null): Promise<User | null> {
-  if (!authorization) return null;
+  const token = authHeader.substring(7);
 
-  const token = authorization.replace('Bearer ', '');
-  const { data, error } = await supabaseClient.auth.getUser(token);
+  // Get user from token
+  const { data: { user }, error } = await supabaseClient.auth.getUser(token);
 
-  if (error || !data.user) return null;
+  if (error || !user) {
+    return { authorized: false, error: 'Invalid token' };
+  }
 
   // Get user role from database
-  const { data: profile } = await supabaseClient
-    .from('cms_users')
-    .select('role')
-    .eq('id', data.user.id)
-    .single();
+  const userProfile = await db.getUserById(user.id);
 
-  if (!profile) return null;
+  if (!userProfile) {
+    return { authorized: false, error: 'User profile not found' };
+  }
 
-  return {
-    id: data.user.id,
-    email: data.user.email || '',
-    role: profile.role,
-  };
+  if (!['admin', 'editor'].includes(userProfile.role)) {
+    return { authorized: false, error: 'Access denied: Admin or Editor role required' };
+  }
+
+  return { authorized: true, userId: user.id, role: userProfile.role, user };
 }
 
 app.use('*', async (c, next) => {
-  const authorization = c.req.header('Authorization');
-  const user = await getUserFromToken(authorization);
+  const authHeader = c.req.header('Authorization');
+  const { authorized, error } = await verifyAuthUser(authHeader);
 
-  if (!user || (user.role !== 'admin' && user.role !== 'editor')) {
-    return c.json({ success: false, error: 'Unauthorized' }, 401);
+  if (!authorized) {
+    return c.json({ success: false, error: error || 'Unauthorized' }, 401);
   }
 
-  c.set('user', user);
   await next();
 });
 
@@ -367,11 +365,13 @@ app.post('/code-editor/commit', async (c) => {
       return c.json({ success: false, error: 'Commit message is required' }, 400);
     }
 
-    const user = c.get('user') as User;
+    // Get user from auth header for git commit
+    const authHeader = c.req.header('Authorization');
+    const { user: authUser } = await verifyAuthUser(authHeader);
 
     // Configure git user
     await runGit(['config', 'user.email', 'cms@rmll.com']);
-    await runGit(['config', 'user.name', user.name || user.email]);
+    await runGit(['config', 'user.name', authUser?.name || authUser?.email || 'CMS User']);
 
     // Stage files
     const validPaths = filePaths.map((p: string) => {
@@ -572,7 +572,9 @@ app.post('/code-editor/rollback', async (c) => {
  */
 app.post('/code-editor/push', async (c) => {
   try {
-    const user = c.get('user') as User;
+    // Get user from auth header for git config
+    const authHeader = c.req.header('Authorization');
+    const { user: authUser } = await verifyAuthUser(authHeader);
 
     // Get GitHub token from environment
     const token = Deno.env.get('GITHUB_TOKEN');
@@ -597,7 +599,7 @@ app.post('/code-editor/push', async (c) => {
 
     // Configure git user
     await runGit(['config', 'user.email', 'cms@rmll.com']);
-    await runGit(['config', 'user.name', user.name || user.email]);
+    await runGit(['config', 'user.name', authUser?.name || authUser?.email || 'CMS User']);
 
     // Push to remote
     const result = await runGit(['push', 'origin', branch]);
