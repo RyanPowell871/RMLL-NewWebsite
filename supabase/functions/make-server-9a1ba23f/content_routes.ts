@@ -625,6 +625,98 @@ app.get("/division/:name", async (c) => {
         data.championships = JSON.stringify(tier2ChampionshipsData);
       }
 
+      // Inject default season info if not set via CMS
+      if (!hasRealContent(data.seasonInfo)) {
+        data.seasonInfo = JSON.stringify({
+          playoffs: [{
+            id: 'playoffs_1',
+            title: 'Playoffs',
+            format: 'Sunday, July 12 to Sunday, July 26, 2026',
+            note: 'Note: All dates/times are subject to change due to official and facility availability.',
+            scenarios: [
+              {
+                id: 'scenario_1',
+                name: 'Round One',
+                condition: 'Sunday, July 12, 2026 - Best of 1 (ONE) Series – 3 vs 6 and 4 vs 5 – Game to be played in the facility of the highest-ranking team from Regular Season.',
+                games: [
+                  { id: 'g1_1', number: 1, date: 'Sunday, July 12, 2026', time: '2:00 PM' }
+                ]
+              },
+              {
+                id: 'scenario_2',
+                name: 'Round Two',
+                condition: 'Friday, July 17 to Sunday, July 19, 2026 - Playoff Format: 1st ranked North team plays North winner of lowest ranking from 1st round and 2nd ranked North team plays next highest rank North winner from 1st round – Best of 3 Series – All games played in the facility of the first and second place teams from Regular Season.',
+                games: [
+                  { id: 'g2_1', number: 1, date: 'Friday, July 17, 2026', time: '8:00 PM' },
+                  { id: 'g2_2', number: 2, date: 'Saturday, July 18, 2026', time: '2:00 PM' },
+                  { id: 'g2_3', number: 3, date: 'Sunday, July 19, 2026', time: '11:00 AM', optional: true }
+                ],
+                note: 'Note: If there is no travel involved, the series can start on Wednesday July 15 if both teams agree.'
+              },
+              {
+                id: 'scenario_3',
+                name: 'Round Two - Over 250km',
+                condition: 'If two teams over 250kms',
+                games: [
+                  { id: 'g3_1', number: 1, date: 'Saturday, July 18, 2026', time: '1:00 PM' },
+                  { id: 'g3_2', number: 2, date: 'Sunday, July 19, 2026', time: '10:00 AM' },
+                  { id: 'g3_3', number: 3, date: 'Sunday, July 19, 2026', time: '3:00 PM', optional: true }
+                ]
+              },
+              {
+                id: 'scenario_4',
+                name: 'Round Three',
+                condition: 'Friday, July 24 to Sunday, July 26, 2026 - Playoff Format: The North winners from Round Two will play a Best of 3 Series to determine the North Champion. The games will be played in the facility of the highest-ranking North team from Regular Season.',
+                games: [
+                  { id: 'g4_1', number: 1, date: 'Friday, July 24, 2026', time: '8:00 PM' },
+                  { id: 'g4_2', number: 2, date: 'Saturday, July 25, 2026', time: '2:00 PM' },
+                  { id: 'g4_3', number: 3, date: 'Sunday, July 26, 2026', time: '11:00 AM', optional: true }
+                ],
+                note: 'Note: If no travel involved, then the series can start Wednesday, July 22 if both teams agree.'
+              },
+              {
+                id: 'scenario_5',
+                name: 'Round Three - Over 250km',
+                condition: 'If two teams over 250kms',
+                games: [
+                  { id: 'g5_1', number: 1, date: 'Saturday, July 25, 2026', time: '1:00 PM' },
+                  { id: 'g5_2', number: 2, date: 'Sunday, July 26, 2026', time: '10:00 AM' },
+                  { id: 'g5_3', number: 3, date: 'Sunday, July 26, 2026', time: '3:00 PM', optional: true }
+                ]
+              }
+            ]
+          }],
+          provincial: [{
+            id: 'provincial_1',
+            title: 'Provincials',
+            format: 'Friday, July 31 to Monday, August 3, 2026',
+            note: 'Provincial Format: Best of 3 Series between the North and South Winners of Round 3. All games will be played in the facility of the North Division Champion. The Series dates and times will be determined once the North and South Champions are known.',
+            scenarios: [
+              {
+                id: 'prov_scenario_1',
+                name: 'Within 250 kms',
+                condition: 'If the North and South Champions are between 250 kms then the Series may start on Friday, July 31, 2026.',
+                games: [
+                  { id: 'pg1_1', number: 1, date: 'Friday, July 31, 2026', time: 'TBD' },
+                  { id: 'pg1_2', number: 2, date: 'Saturday, August 1, 2026', time: 'TBD' },
+                  { id: 'pg1_3', number: 3, date: 'Sunday, August 2, 2026', time: 'TBD', optional: true }
+                ]
+              },
+              {
+                id: 'prov_scenario_2',
+                name: 'Over 250 kms',
+                condition: 'If the North and South Champions are over 250 kms then the Series must start on Saturday August 1, 2026.',
+                games: [
+                  { id: 'pg2_1', number: 1, date: 'Saturday, August 1, 2026', time: 'TBD' },
+                  { id: 'pg2_2', number: 2, date: 'Sunday, August 2, 2026', time: 'TBD' },
+                  { id: 'pg2_3', number: 3, date: 'Monday, August 3, 2026', time: 'TBD', optional: true }
+                ]
+              }
+            ]
+          }]
+        });
+      }
+
       // Inject default description if not set via CMS
       if (!data.divisionDescription) {
         data.divisionDescription = `RMLL Junior B Tier II

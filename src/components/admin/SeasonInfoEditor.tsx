@@ -66,6 +66,7 @@ export interface PlayoffSection {
   // Simple format (just dates + note)
   dates?: string;
   note?: string;
+  notes?: string;
 }
 
 export interface PlayoffScenario {
@@ -73,6 +74,7 @@ export interface PlayoffScenario {
   name: string;
   condition: string;
   games: PlayoffGame[];
+  note?: string;
 }
 
 export interface PlayoffGame {
@@ -141,17 +143,64 @@ const generateId = () => `section_${Date.now()}_${Math.random().toString(36).sub
 // ============================================================================
 
 // Helper to extract date/time/location from content text
-function parseContentInfo(content: string): { date?: string; time?: string; location?: string } {
-  const info: { date?: string; time?: string; location?: string } = {};
+function parseContentInfo(content: string): { date?: string; time?: string; location?: string; draftOrder?: string[]; cleanContent?: string } {
+  const info: { date?: string; time?: string; location?: string; draftOrder?: string[]; cleanContent?: string } = {};
 
+  // Extract date
   const dateMatch = content.match(/(?:Date:\s*)?(.+?)(?:\n|,\s*Time:|$)/);
   if (dateMatch) info.date = dateMatch[1].trim();
 
+  // Extract time
   const timeMatch = content.match(/(?:Time:\s*)?(.+?)(?:\n|,\s*Loc|$)/);
   if (timeMatch) info.time = timeMatch[1].trim();
 
+  // Extract location
   const locMatch = content.match(/(?:Loc(?:ation)?:\s*)?(.+?)(?:\n|,|\n\n|$)/);
   if (locMatch) info.location = locMatch[1].trim();
+
+  // Extract draft order
+  const draftOrderMatch = content.match(/(?:Draft Order:?)([\s\S]*?)(?:\n\n|And by trade|$)/);
+  if (draftOrderMatch) {
+    const orderText = draftOrderMatch[1].trim();
+    // Parse numbered list
+    const orderLines = orderText.split('\n').filter(line => line.trim());
+    const orders: string[] = [];
+    for (const line of orderLines) {
+      const match = line.match(/^\s*\d+\.\s*(.+)$/);
+      if (match) {
+        orders.push(match[1].trim());
+      }
+    }
+    if (orders.length > 0) {
+      info.draftOrder = orders;
+    }
+  }
+
+  // Clean content by removing extracted lines
+  let cleanContent = content;
+  if (info.date) {
+    cleanContent = cleanContent.replace(/Date:\s*.+?\n/, '');
+  }
+  if (info.time) {
+    cleanContent = cleanContent.replace(/Time:\s*.+?\n/, '');
+  }
+  if (info.location) {
+    cleanContent = cleanContent.replace(/Loc(?:ation)?:\s*.+?\n/, '');
+  }
+  if (info.draftOrder && draftOrderMatch) {
+    cleanContent = cleanContent.replace(/Draft Order:?[\s\S]*?(\n\n|And by trade)/, '$1');
+  }
+
+  // Clean up any remaining artifacts
+  cleanContent = cleanContent
+    .replace(/\n\n+/g, '\n\n')
+    .replace(/^\n+/, '')
+    .replace(/\n+$/, '')
+    .trim();
+
+  if (cleanContent) {
+    info.cleanContent = cleanContent;
+  }
 
   return info;
 }
@@ -187,22 +236,27 @@ function migrateGenericSections(sections: any[]): SeasonInfoData {
         date: info.date,
         time: info.time,
         location: info.location,
-        notes: content,
+        notes: info.cleanContent,
+        draftOrder: info.draftOrder,
         region,
       });
     }
     // Regular Season related sections
     else if (title.includes('Regular Season') || title.includes('Game Days')) {
       if (title.includes('Game Days')) {
-        // Try to find or update existing regular season section
+        // Parse game days - handle both commas and "and"
+        let parsedGameDays = content;
+        if (content.includes(' and ')) {
+          parsedGameDays = content.replace(/ and /g, ', ');
+        }
         const existing = regularSeason.find(s => s.title === 'Regular Season');
         if (existing) {
-          existing.gameDays = content;
+          existing.gameDays = parsedGameDays;
         } else {
           regularSeason.push({
             id: generateId(),
             title: 'Regular Season',
-            gameDays: content,
+            gameDays: parsedGameDays,
           });
         }
       } else if (title.includes('Regular Season Games')) {
@@ -221,15 +275,33 @@ function migrateGenericSections(sections: any[]): SeasonInfoData {
           });
         }
       } else {
-        // Main regular season section with dates
+        // Try to extract season start and end from "Friday, April 24 to Sunday, July 5, 2026" format
+        let seasonStart: string | undefined;
+        let seasonEnd: string | undefined;
+        const toIndex = content.indexOf(' to ');
+        if (toIndex > 0 && content.includes(',')) {
+          seasonStart = content.substring(0, toIndex).trim();
+          const afterTo = content.substring(toIndex + 4).trim();
+          const lastComma = afterTo.lastIndexOf(',');
+          if (lastComma > 0) {
+            seasonEnd = afterTo.substring(0, lastComma).trim();
+          }
+        }
+
         const existing = regularSeason.find(s => s.title === 'Regular Season');
         if (existing) {
-          existing.notes = content; // Add subtitle/content as notes
+          existing.seasonStart = existing.seasonStart || seasonStart;
+          existing.seasonEnd = existing.seasonEnd || seasonEnd;
+          if (!existing.notes) {
+            existing.notes = content;
+          }
         } else {
           regularSeason.push({
             id: generateId(),
             title: 'Regular Season',
-            notes: content,
+            seasonStart,
+            seasonEnd,
+            notes: (!seasonStart && !seasonEnd) ? content : undefined,
           });
         }
       }
@@ -744,6 +816,15 @@ function ScenarioEditor({
                 placeholder="e.g., If 3rd/4th place teams"
               />
             </div>
+          </div>
+
+          <div>
+            <Label className="text-xs">Note (optional)</Label>
+            <Input
+              value={scenario.note || ''}
+              onChange={(e) => updateScenario(scenario.id, 'note', e.target.value)}
+              placeholder="e.g., Additional notes about this scenario"
+            />
           </div>
 
           <div className="border-t pt-3">

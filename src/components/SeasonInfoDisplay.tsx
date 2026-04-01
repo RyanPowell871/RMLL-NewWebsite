@@ -118,17 +118,64 @@ interface SeasonInfoDisplayProps {
 // ============================================================================
 
 // Helper to extract date/time/location from content text
-function parseContentInfo(content: string): { date?: string; time?: string; location?: string } {
-  const info: { date?: string; time?: string; location?: string } = {};
+function parseContentInfo(content: string): { date?: string; time?: string; location?: string; draftOrder?: string[]; cleanContent?: string } {
+  const info: { date?: string; time?: string; location?: string; draftOrder?: string[]; cleanContent?: string } = {};
 
+  // Extract date
   const dateMatch = content.match(/(?:Date:\s*)?(.+?)(?:\n|,\s*Time:|$)/);
   if (dateMatch) info.date = dateMatch[1].trim();
 
+  // Extract time
   const timeMatch = content.match(/(?:Time:\s*)?(.+?)(?:\n|,\s*Loc|$)/);
   if (timeMatch) info.time = timeMatch[1].trim();
 
+  // Extract location
   const locMatch = content.match(/(?:Loc(?:ation)?:\s*)?(.+?)(?:\n|,|\n\n|$)/);
   if (locMatch) info.location = locMatch[1].trim();
+
+  // Extract draft order
+  const draftOrderMatch = content.match(/(?:Draft Order:?)([\s\S]*?)(?:\n\n|And by trade|$)/);
+  if (draftOrderMatch) {
+    const orderText = draftOrderMatch[1].trim();
+    // Parse numbered list
+    const orderLines = orderText.split('\n').filter(line => line.trim());
+    const orders: string[] = [];
+    for (const line of orderLines) {
+      const match = line.match(/^\s*\d+\.\s*(.+)$/);
+      if (match) {
+        orders.push(match[1].trim());
+      }
+    }
+    if (orders.length > 0) {
+      info.draftOrder = orders;
+    }
+  }
+
+  // Clean content by removing extracted lines
+  let cleanContent = content;
+  if (info.date) {
+    cleanContent = cleanContent.replace(/Date:\s*.+?\n/, '');
+  }
+  if (info.time) {
+    cleanContent = cleanContent.replace(/Time:\s*.+?\n/, '');
+  }
+  if (info.location) {
+    cleanContent = cleanContent.replace(/Loc(?:ation)?:\s*.+?\n/, '');
+  }
+  if (info.draftOrder && draftOrderMatch) {
+    cleanContent = cleanContent.replace(/Draft Order:?[\s\S]*?(\n\n|And by trade)/, '$1');
+  }
+
+  // Clean up any remaining artifacts
+  cleanContent = cleanContent
+    .replace(/\n\n+/g, '\n\n')
+    .replace(/^\n+/, '')
+    .replace(/\n+$/, '')
+    .trim();
+
+  if (cleanContent) {
+    info.cleanContent = cleanContent;
+  }
 
   return info;
 }
@@ -164,21 +211,27 @@ function migrateGenericSections(sections: any[]): UnifiedSeasonInfoData {
         date: info.date,
         time: info.time,
         location: info.location,
-        notes: content,
+        notes: info.cleanContent,
+        draftOrder: info.draftOrder,
         region,
       });
     }
     // Regular Season related sections
     else if (title.includes('Regular Season') || title.includes('Game Days')) {
       if (title.includes('Game Days')) {
+        // Parse game days - handle both commas and "and"
+        let parsedGameDays = content;
+        if (content.includes(' and ')) {
+          parsedGameDays = content.replace(/ and /g, ', ');
+        }
         const existing = regularSeason.find(s => s.title === 'Regular Season');
         if (existing) {
-          existing.gameDays = content;
+          existing.gameDays = parsedGameDays;
         } else {
           regularSeason.push({
             id: `rs_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
             title: 'Regular Season',
-            gameDays: content,
+            gameDays: parsedGameDays,
           });
         }
       } else if (title.includes('Regular Season Games')) {
@@ -196,14 +249,33 @@ function migrateGenericSections(sections: any[]): UnifiedSeasonInfoData {
           });
         }
       } else {
+        // Try to extract season start and end from "Friday, April 24 to Sunday, July 5, 2026" format
+        let seasonStart: string | undefined;
+        let seasonEnd: string | undefined;
+        const toIndex = content.indexOf(' to ');
+        if (toIndex > 0 && content.includes(',')) {
+          seasonStart = content.substring(0, toIndex).trim();
+          const afterTo = content.substring(toIndex + 4).trim();
+          const lastComma = afterTo.lastIndexOf(',');
+          if (lastComma > 0) {
+            seasonEnd = afterTo.substring(0, lastComma).trim();
+          }
+        }
+
         const existing = regularSeason.find(s => s.title === 'Regular Season');
         if (existing) {
-          existing.notes = content;
+          existing.seasonStart = existing.seasonStart || seasonStart;
+          existing.seasonEnd = existing.seasonEnd || seasonEnd;
+          if (!existing.notes) {
+            existing.notes = content;
+          }
         } else {
           regularSeason.push({
             id: `rs_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
             title: 'Regular Season',
-            notes: content,
+            seasonStart,
+            seasonEnd,
+            notes: (!seasonStart && !seasonEnd) ? content : undefined,
           });
         }
       }
@@ -598,36 +670,8 @@ export function SeasonInfoDisplay({ data }: SeasonInfoDisplayProps) {
     );
   }
 
-  // Check if it's an array of generic sections (title, subtitle, content format)
-  if (Array.isArray(seasonInfo)) {
-    return (
-      <div className="space-y-3">
-        {seasonInfo.map((section: any, idx: number) => (
-          <Card key={idx} className="border border-gray-200 shadow-sm overflow-hidden">
-            <div className={`${
-              idx % 2 === 0
-                ? 'bg-gradient-to-r from-[#013fac] to-[#0F2942]'
-                : 'bg-gradient-to-r from-[#DC2626] to-[#991b1b]'
-            } text-white p-2.5`}>
-              <h3 className="text-sm uppercase tracking-wide font-bold" style={{ fontFamily: 'var(--font-secondary)' }}>
-                {section.title}
-              </h3>
-              {section.subtitle && (
-                <p className="text-xs text-white/80 mt-0.5">{section.subtitle}</p>
-              )}
-            </div>
-            <div className="p-3.5">
-              <div className="text-sm text-gray-700 whitespace-pre-wrap leading-relaxed">
-                {section.content}
-              </div>
-            </div>
-          </Card>
-        ))}
-      </div>
-    );
-  }
-
-  // Migrate legacy data to unified format
+  // Migrate legacy data to unified format (including generic section arrays)
+  // This ensures all divisions display with the same layout
   const unified = migrateToUnified(seasonInfo);
   // Debug: log data for troubleshooting
   console.log('SeasonInfoDisplay - Raw seasonInfo:', seasonInfo);
@@ -646,78 +690,76 @@ export function SeasonInfoDisplay({ data }: SeasonInfoDisplayProps) {
               </h3>
             </div>
           </div>
-          <div className="p-4 space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="p-4">
+            <div className={`grid gap-4 ${unified.drafts.length === 1 ? 'grid-cols-1' : 'grid-cols-1 md:grid-cols-2'}`}>
+              {/* Render draft cards with Draft Order as separate cards */}
               {Array.isArray(unified.drafts) && unified.drafts.map((draft, idx) => (
-                <div
-                  key={draft.id}
-                  className={`bg-gray-50 p-4 rounded-lg border-l-4 ${
-                    idx % 2 === 0 ? 'border-l-[#013fac]' : 'border-l-[#DC2626]'
-                  }`}
-                >
-                  <h4 className="font-bold text-base text-gray-900 mb-1">
-                    {draft.title}
-                  </h4>
-                  {draft.subtitle && (
-                    <p className="text-sm text-gray-600 mb-3">{draft.subtitle}</p>
-                  )}
-                  <div className="space-y-2 text-sm">
-                    {draft.date && (
-                      <div className="flex items-center gap-2 text-gray-700">
-                        <Calendar className="w-4 h-4 text-[#013fac]" />
-                        <span>{draft.date}</span>
+                <>
+                  {/* Main draft card */}
+                  <div
+                    key={`draft-${draft.id}`}
+                    className={`bg-gray-50 p-4 rounded-lg border-l-4 ${
+                      idx % 2 === 0 ? 'border-l-[#013fac]' : 'border-l-[#DC2626]'
+                    }`}
+                  >
+                    <h4 className="font-bold text-base text-gray-900 mb-1">
+                      {draft.title}
+                    </h4>
+                    {draft.subtitle && (
+                      <p className="text-sm text-gray-600 mb-3">{draft.subtitle}</p>
+                    )}
+                    <div className="space-y-2 text-sm">
+                      {draft.date && (
+                        <div className="flex items-center gap-2 text-gray-700">
+                          <Calendar className="w-4 h-4 text-[#013fac]" />
+                          <span>{draft.date}</span>
+                        </div>
+                      )}
+                      {draft.time && (
+                        <div className="flex items-center gap-2 text-gray-700">
+                          <Clock className="w-4 h-4 text-[#013fac]" />
+                          <span>{draft.time}</span>
+                        </div>
+                      )}
+                      {draft.location && (
+                        <div className="flex items-start gap-2 text-gray-700">
+                          <MapPin className="w-4 h-4 text-[#013fac] mt-0.5 flex-shrink-0" />
+                          <span>{draft.location}</span>
+                        </div>
+                      )}
+                    </div>
+                    {draft.notes && (
+                      <p className="text-xs text-gray-600 mt-3 italic border-t border-gray-200 pt-2">
+                        {draft.notes}
+                      </p>
+                    )}
+
+                    {/* Junior A style details */}
+                    {Array.isArray(draft.details) && draft.details.length > 0 && (
+                      <div className="mt-4 pt-3 border-t border-gray-200">
+                        <div className="space-y-1">
+                          {draft.details.map((detail, dIdx) => (
+                            <p key={dIdx} className="text-sm text-gray-700">{detail}</p>
+                          ))}
+                        </div>
                       </div>
                     )}
-                    {draft.time && (
-                      <div className="flex items-center gap-2 text-gray-700">
-                        <Clock className="w-4 h-4 text-[#013fac]" />
-                        <span>{draft.time}</span>
-                      </div>
-                    )}
-                    {draft.location && (
-                      <div className="flex items-start gap-2 text-gray-700">
-                        <MapPin className="w-4 h-4 text-[#013fac] mt-0.5 flex-shrink-0" />
-                        <span>{draft.location}</span>
+
+                    {/* Draft Order embedded in draft card */}
+                    {Array.isArray(draft.draftOrder) && draft.draftOrder.length > 0 && (
+                      <div className="mt-4 pt-3 border-t border-gray-200">
+                        <h5 className="font-bold text-sm text-gray-900 mb-2">Draft Order</h5>
+                        <div className="space-y-1">
+                          {draft.draftOrder.map((order, idx) => (
+                            <p key={idx} className="text-sm text-gray-700">{order}</p>
+                          ))}
+                        </div>
                       </div>
                     )}
                   </div>
-                  {draft.notes && (
-                    <p className="text-xs text-gray-600 mt-3 italic border-t border-gray-200 pt-2">
-                      {draft.notes}
-                    </p>
-                  )}
-
-                  {/* Junior A style details */}
-                  {Array.isArray(draft.details) && draft.details.length > 0 && (
-                    <div className="mt-4 pt-3 border-t border-gray-200">
-                      <div className="space-y-1">
-                        {draft.details.map((detail, dIdx) => (
-                          <p key={dIdx} className="text-sm text-gray-700">{detail}</p>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-                </div>
+                </>
               ))}
             </div>
-
-            {/* Draft Order (Junior A style) */}
-            {unified.drafts.some(d => Array.isArray(d.draftOrder) && d.draftOrder.length > 0) && (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {unified.drafts.map((draft) => (
-                  Array.isArray(draft.draftOrder) && draft.draftOrder.length > 0 && (
-                    <div key={draft.id} className="bg-gray-50 p-4 rounded-lg border-l-4 border-l-green-500">
-                      <h4 className="font-bold text-base text-gray-900 mb-3">{draft.title}</h4>
-                      <div className="space-y-1">
-                        {draft.draftOrder.map((order, idx) => (
-                          <p key={idx} className="text-sm text-gray-700">{order}</p>
-                        ))}
-                      </div>
-                    </div>
-                  )
-                ))}
-              </div>
-            )}
           </div>
         </Card>
       )}
@@ -770,7 +812,7 @@ export function SeasonInfoDisplay({ data }: SeasonInfoDisplayProps) {
                         <div>
                           <p className="text-xs font-bold text-gray-500 uppercase tracking-wide mb-1">Game Days</p>
                           <div className="flex flex-wrap gap-1.5">
-                            {season.gameDays.split(',').map((day, dIdx) => (
+                            {season.gameDays.split(/,| and /).filter(d => d.trim()).map((day, dIdx) => (
                               <span
                                 key={dIdx}
                                 className="px-2 py-1 bg-[#DC2626] text-white text-xs font-bold rounded"
@@ -839,6 +881,11 @@ export function SeasonInfoDisplay({ data }: SeasonInfoDisplayProps) {
                             </div>
                           ))}
                         </div>
+                        {scenario.note && (
+                          <p className="text-xs text-gray-600 italic mt-3 pt-2 border-t border-gray-200">
+                            {scenario.note}
+                          </p>
+                        )}
                       </div>
                     ))}
                   </div>
@@ -849,6 +896,13 @@ export function SeasonInfoDisplay({ data }: SeasonInfoDisplayProps) {
                   <div className="bg-gray-50 p-4 rounded-lg">
                     <h4 className="font-bold text-base text-gray-900 mb-3">Playoff Dates</h4>
                     <p className="text-sm text-gray-700">{playoff.dates}</p>
+                  </div>
+                )}
+
+                {/* Format content - display as formatted text if no scenarios/dates */}
+                {playoff.format && !Array.isArray(playoff.scenarios) && !playoff.dates && (
+                  <div className="bg-gray-50 p-4 rounded-lg whitespace-pre-wrap text-sm text-gray-700">
+                    {playoff.format}
                   </div>
                 )}
 
@@ -998,8 +1052,20 @@ export function SeasonInfoDisplay({ data }: SeasonInfoDisplayProps) {
                             </div>
                           ))}
                         </div>
+                        {scenario.note && (
+                          <p className="text-xs text-gray-600 italic mt-3 pt-2 border-t border-gray-200">
+                            {scenario.note}
+                          </p>
+                        )}
                       </div>
                     ))}
+                  </div>
+                )}
+
+                {/* Format content - display as formatted text if no other content */}
+                {provincial.format && !provincial.dates && !provincial.pools && !provincial.schedule && !provincial.venues && (
+                  <div className="bg-gray-50 p-4 rounded-lg whitespace-pre-wrap text-sm text-gray-700">
+                    {provincial.format}
                   </div>
                 )}
 

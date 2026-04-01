@@ -56,14 +56,6 @@ const TIME_ENTRIES: TimeEntry[] = [
   { phase: 'Phase 3: Core Development', task: 'Teams Listing Page', description: 'Team listing grid with division/subdivision filtering and team cards', hours: 4, status: 'complete', category: 'quoted' },
   { phase: 'Phase 3: Core Development', task: 'Team Detail Pages Development', description: 'Individual team pages with roster, schedule, stats, transactions, team colors, logo integration (Change Request CR-001)', hours: 10, status: 'complete', category: 'change-request' },
   { phase: 'Phase 3: Core Development', task: 'Player Profile System', description: 'Individual player profile pages with career stats and game logs (Change Request CR-002)', hours: 8, status: 'complete', category: 'change-request' },
-  { phase: 'Change Requests', task: 'Super Coaching Clinic Page (CR-003)', description: 'Full page migration from old website including clinic schedule, registration info, instructor profiles (John Kilbride, Jason Crook, Jared Ferris), The Locker registration link integration', hours: 5, status: 'complete', category: 'change-request' },
-  { phase: 'Change Requests', task: 'Intent-to-Play Page Reordering (CR-004)', description: 'Move "Important" and "Transfer Players" boxes to top of page, add RAMP registration link', hours: 1, status: 'complete', category: 'change-request' },
-  { phase: 'Change Requests', task: 'External Organization Links (CR-005)', description: 'Add links to ALA LGBs, Wheatland, GELC, CALL, CDLA, SALA, Provincial MAs, Red Deer Major, Referee Associations, NLL Teams', hours: 1, status: 'complete', category: 'change-request' },
-  { phase: 'Change Requests', task: 'Suspensions Stats Filtering (CR-006)', description: 'Modify stats to show current season fines only (exclude carryovers)', hours: 1.5, status: 'complete', category: 'change-request' },
-  { phase: 'Change Requests', task: 'Bad Standing List Update (CR-007)', description: 'Update Bad Standing page with current player list (23 entries)', hours: 1, status: 'complete', category: 'change-request' },
-  { phase: 'Change Requests', task: 'Facilities Page Updates (CR-008)', description: 'Filter active facilities, reorder columns, remove viewer button, add form link', hours: 2, status: 'complete', category: 'change-request' },
-  { phase: 'Change Requests', task: 'Combines Waiver Link (CR-009)', description: 'Add South Combine waiver link above player limits', hours: 0.5, status: 'complete', category: 'change-request' },
-  { phase: 'Change Requests', task: 'Instagram Footer Link (CR-010)', description: 'Add Instagram icon and link (rocky.mountainlax) to footer', hours: 0.5, status: 'complete', category: 'change-request' },
   { phase: 'Phase 3: Core Development', task: 'Draft System', description: 'Division draft picks display with round-by-round view, season filtering, client-side season filter fix — NOT in original scope', hours: 6, status: 'complete', category: 'additional' },
   { phase: 'Phase 3: Core Development', task: 'Protected Lists System', description: 'Team protected player lists display — NOT in original scope', hours: 4, status: 'complete', category: 'additional' },
   { phase: 'Phase 3: Core Development', task: 'Transactions System', description: 'Player transaction history with filtering, division/team views — NOT in original scope', hours: 5, status: 'complete', category: 'additional' },
@@ -472,10 +464,10 @@ export function ProjectTimesheetPage() {
   // Invoice calculations
   const MAINTENANCE_PRICES: Record<string, number> = { none: 0, basic: 1800, standard: 4200, premium: 7800 };
   const maintenanceCost = MAINTENANCE_PRICES[selectedMaintenance] || 0;
-  const invoiceSubtotal = 18620 + 2700 + 1150 + 700 + maintenanceCost;
+  const invoiceSubtotal = 16970 + 2700 + 1150 + 700 + maintenanceCost;
   const invoiceGst = invoiceSubtotal * 0.05;
   const invoiceTotal = invoiceSubtotal + invoiceGst;
-  const totalPayments = 19031.25; // Updated to include INV-007 only (CR-003 through CR-010 pending - INV-008)
+  const totalPayments = 19031.25; // Updated to remove CR-003 through CR-010 from project
   const balanceOwing = invoiceTotal - totalPayments;
 
   // Counts
@@ -915,65 +907,9 @@ export function ProjectTimesheetPage() {
                   <td className="p-3 border border-gray-200 text-right">$100/hr</td>
                   <td className="p-3 border border-gray-200 text-right font-medium">$1,200</td>
                 </tr>
-                <tr>
-                  <td className="p-3 border border-gray-200 font-medium">CR-003: Super Coaching Clinic Page</td>
-                  <td className="p-3 border border-gray-200 text-xs text-gray-600">Full page migration from old website including clinic schedule, registration info, instructor profiles (John Kilbride, Jason Crook, Jared Ferris with detailed bios), The Locker registration link integration, and all clinic-specific content. Required for April 1 launch.</td>
-                  <td className="p-3 border border-gray-200 text-right">5</td>
-                  <td className="p-3 border border-gray-200 text-right">$100/hr</td>
-                  <td className="p-3 border border-gray-200 text-right font-medium">$500</td>
-                </tr>
-                <tr className="bg-gray-50">
-                  <td className="p-3 border border-gray-200 font-medium">CR-004: Intent-to-Play Page Reordering</td>
-                  <td className="p-3 border border-gray-200 text-xs text-gray-600">Page layout restructuring — move "Important" and "Transfer Players" info boxes to top of page (above "RMLL Divisions" section) to prevent out-of-province players from incorrectly completing Intent-to-Play. Add RAMP registration link integration.</td>
-                  <td className="p-3 border border-gray-200 text-right">1</td>
-                  <td className="p-3 border border-gray-200 text-right">$100/hr</td>
-                  <td className="p-3 border border-gray-200 text-right font-medium">$100</td>
-                </tr>
-                <tr>
-                  <td className="p-3 border border-gray-200 font-medium">CR-005: External Organization Links</td>
-                  <td className="p-3 border border-gray-200 text-xs text-gray-600">Add comprehensive links to lacrosse organization websites: ALA LGBs, Wheatland Association, GELC, CALL, CDLA, SALA; Provincial MAs (BC, Manitoba, Saskatchewan, Ontario); Red Deer Major Lacrosse; Referee Associations; NLL Teams (Calgary Roughnecks, Saskatchewan Rush).</td>
-                  <td className="p-3 border border-gray-200 text-right">1</td>
-                  <td className="p-3 border border-gray-200 text-right">$100/hr</td>
-                  <td className="p-3 border border-gray-200 text-right font-medium">$100</td>
-                </tr>
-                <tr className="bg-gray-50">
-                  <td className="p-3 border border-gray-200 font-medium">CR-006: Suspensions Stats Filtering</td>
-                  <td className="p-3 border border-gray-200 text-xs text-gray-600">Modify Suspensions page statistics to display fines amount for current season only (excluding carryover and Minor LGB carryover suspensions). Stats now show accurate 2026 season data: $300 in fines, zero games suspended, 1 team.</td>
-                  <td className="p-3 border border-gray-200 text-right">1.5</td>
-                  <td className="p-3 border border-gray-200 text-right">$100/hr</td>
-                  <td className="p-3 border border-gray-200 text-right font-medium">$150</td>
-                </tr>
-                <tr>
-                  <td className="p-3 border border-gray-200 font-medium">CR-007: Bad Standing List Update</td>
-                  <td className="p-3 border border-gray-200 text-xs text-gray-600">Update Bad Standing page with current player list (23 entries). Ensure data accuracy for April 1 launch — players whose names have come off the list must not appear incorrectly.</td>
-                  <td className="p-3 border border-gray-200 text-right">1</td>
-                  <td className="p-3 border border-gray-200 text-right">$100/hr</td>
-                  <td className="p-3 border border-gray-200 text-right font-medium">$100</td>
-                </tr>
-                <tr className="bg-gray-50">
-                  <td className="p-3 border border-gray-200 font-medium">CR-008: Facilities Page Updates</td>
-                  <td className="p-3 border border-gray-200 text-xs text-gray-600">Multiple Facilities page enhancements: filter to show only active facilities (remove ~60 inactive entries), reorder columns (phone before city/address), remove "view original document" button, confirm Regulation 6 auto-updates from Regulations page, add Facility Specifications Form link from documents library.</td>
-                  <td className="p-3 border border-gray-200 text-right">2</td>
-                  <td className="p-3 border border-gray-200 text-right">$100/hr</td>
-                  <td className="p-3 border border-gray-200 text-right font-medium">$200</td>
-                </tr>
-                <tr>
-                  <td className="p-3 border border-gray-200 font-medium">CR-009: Combines Waiver Link</td>
-                  <td className="p-3 border border-gray-200 text-xs text-gray-600">Add South Combine waiver link and instructions above player/goalie limits. Waiver required to go on the floor at Saddledome. Link: https://waiver.smartwaiver.com/e/bdNUd5vgHg3XWFhH688DE6/web/</td>
-                  <td className="p-3 border border-gray-200 text-right">0.5</td>
-                  <td className="p-3 border border-gray-200 text-right">$100/hr</td>
-                  <td className="p-3 border border-gray-200 text-right font-medium">$50</td>
-                </tr>
-                <tr className="bg-gray-50">
-                  <td className="p-3 border border-gray-200 font-medium">CR-010: Instagram Footer Link</td>
-                  <td className="p-3 border border-gray-200 text-xs text-gray-600">Add Instagram social media icon and link to footer. Handle: rocky.mountainlax. Includes creating SVG icon component and responsive styling.</td>
-                  <td className="p-3 border border-gray-200 text-right">0.5</td>
-                  <td className="p-3 border border-gray-200 text-right">$100/hr</td>
-                  <td className="p-3 border border-gray-200 text-right font-medium">$50</td>
-                </tr>
                 <tr className="bg-amber-50 font-semibold">
                   <td className="p-3 border border-gray-200" colSpan={4}>Change Requests Subtotal</td>
-                  <td className="p-3 border border-gray-200 text-right text-amber-800">$3,850</td>
+                  <td className="p-3 border border-gray-200 text-right text-amber-800">$2,200</td>
                 </tr>
 
                 {/* Beyond Scope — No Charge */}
