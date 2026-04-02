@@ -113,15 +113,30 @@ function determineApprovalStatus(
     'BondReceivedDate', 'BondReceived'
   );
 
+  // Check for franchise certificate approval timestamp - this is the definitive indicator
+  const approvedTimestamp = resolveStr(data,
+    'FranCertApprovedTimestamp', 'ApprovedTimestamp', 'CertApprovedDate', 'CertificateApprovedDate'
+  ) || resolveStr(teamData,
+    'FranCertApprovedTimestamp', 'ApprovedTimestamp', 'CertApprovedDate', 'CertificateApprovedDate'
+  );
+
+  // If there's an approved timestamp, the franchise is definitely approved
+  if (approvedTimestamp) {
+    console.log('[FranchiseCert] Found approved timestamp:', approvedTimestamp);
+    return { status: 'approved', raw: approvedTimestamp, bondDate };
+  }
+
   // Look for explicit approval/status fields
   const statusField = resolveStr(data,
     'ApprovalStatus', 'Status', 'FranchiseStatus', 'ApprovalStatusCd',
     'StatusCd', 'FranchiseStatusCd', 'CurrentStatus', 'SeasonStatus',
-    'Approved', 'IsApproved', 'ApprovedFlag'
+    'Approved', 'IsApproved', 'ApprovedFlag', 'CertificateStatus', 'CertStatus',
+    'FranchiseApproval', 'FranchiseApproved', 'SeasonApproval', 'FranchiseCertStatus'
   ) || resolveStr(teamData,
     'ApprovalStatus', 'Status', 'TeamStatus', 'ApprovalStatusCd',
     'StatusCd', 'TeamStatusCd', 'CurrentStatus', 'SeasonStatus',
-    'Approved', 'IsApproved', 'ApprovedFlag'
+    'Approved', 'IsApproved', 'ApprovedFlag', 'CertificateStatus', 'CertStatus',
+    'FranchiseApproval', 'FranchiseApproved', 'SeasonApproval', 'FranchiseCertStatus'
   );
 
   // Determine status
@@ -129,11 +144,12 @@ function determineApprovalStatus(
 
   if (statusField) {
     const s = statusField.toLowerCase();
-    if (s === 'approved' || s === 'active' || s === 'a' || s === '1' || s === 'true' || s === 'yes') {
+    console.log('[FranchiseCert] Status field found:', statusField, '- normalized:', s);
+    if (s === 'approved' || s === 'active' || s === 'a' || s === '1' || s === 'true' || s === 'yes' || s === 'certified' || s === 'confirmed') {
       status = 'approved';
-    } else if (s === 'pending' || s === 'p' || s === 'submitted' || s === 'review') {
+    } else if (s === 'pending' || s === 'p' || s === 'submitted' || s === 'review' || s === 'processing') {
       status = 'pending';
-    } else if (s === 'inactive' || s === 'i' || s === '0' || s === 'false' || s === 'no' || s === 'denied' || s === 'rejected') {
+    } else if (s === 'inactive' || s === 'i' || s === '0' || s === 'false' || s === 'no' || s === 'denied' || s === 'rejected' || s === 'suspended') {
       status = 'inactive';
     }
   }
@@ -143,6 +159,8 @@ function determineApprovalStatus(
     const isActive = data.IsActive === true || data.IsActive === 1;
     const lastYear = data.LastYear || 0;
     const currentYear = currentSeason ? parseInt(currentSeason) : new Date().getFullYear();
+
+    console.log('[FranchiseCert] No explicit status, inferring. IsActive:', isActive, 'LastYear:', lastYear, 'CurrentYear:', currentYear, 'HasBond:', !!bondDate);
 
     if (isActive && lastYear >= currentYear) {
       status = bondDate ? 'approved' : 'pending';

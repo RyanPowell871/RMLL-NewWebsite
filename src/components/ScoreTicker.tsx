@@ -50,6 +50,28 @@ const formatGameDate = (dateString: string): string => {
   return `${monthStr} ${day}`;
 };
 
+// Helper function to check if a game is in the current or future game week
+// Current game week is defined as Sunday to Saturday of the current week
+const isCurrentOrFutureGameWeek = (gameDateStr: string): boolean => {
+  const gameDate = new Date(gameDateStr);
+  gameDate.setHours(0, 0, 0, 0);
+
+  const now = new Date();
+  now.setHours(0, 0, 0, 0);
+
+  // Get the start of the current week (Sunday)
+  const currentWeekStart = new Date(now);
+  currentWeekStart.setDate(now.getDate() - now.getDay()); // Sunday of current week
+
+  // Get the start of the next week (next Sunday)
+  const nextWeekStart = new Date(currentWeekStart);
+  nextWeekStart.setDate(currentWeekStart.getDate() + 7);
+
+  // Show games from current week or future weeks
+  // This includes games in the current week even if they're already final
+  return gameDate >= currentWeekStart;
+};
+
 export function ScoreTicker() {
   const [scrollPosition, setScrollPosition] = useState(0);
   const { selectedDivision: favoriteDivision, selectedSubDivision: favoriteSubDivision, divisions, subDivisions } = useDivision();
@@ -151,17 +173,44 @@ export function ScoreTicker() {
 
 
   
-  // Show all season games in the ticker — it's scrollable so no need to aggressively window-filter.
-  // Sort by date ascending so recent/current games appear first, upcoming games scroll to the right.
+  // Filter games for the ticker:
+  // 1. Remove exhibition games that are FINAL and have no scores
+  // 2. Keep regular season games from current or future weeks (display current week games even if final)
+  // 3. Sort by date ascending
   const apiGames = useMemo(() => {
     if (divisionFilteredGames.length === 0) return [];
-    
-    // Sort all games by date ascending
-    const sorted = [...divisionFilteredGames].sort(
+
+    const now = new Date();
+    now.setHours(0, 0, 0, 0);
+
+    const filtered = divisionFilteredGames.filter((game) => {
+      const gameDate = new Date(game.GameDate);
+      gameDate.setHours(0, 0, 0, 0);
+
+      const isExhibition = game.StandingCategoryCode?.toLowerCase() === 'exhb';
+      const isFinal = game.GameStatus === 'Final';
+      const hasScores = game.HomeScore !== undefined && game.HomeScore !== null &&
+                       game.VisitorScore !== undefined && game.VisitorScore !== null;
+      const bothScoresZero = hasScores && game.HomeScore === 0 && game.VisitorScore === 0;
+
+      // Filter out exhibition games that are FINAL and have no scores
+      if (isExhibition && isFinal && (!hasScores || bothScoresZero)) {
+        return false;
+      }
+
+      // For regular season games, only show current or future week games
+      if (!isExhibition) {
+        return isCurrentOrFutureGameWeek(game.GameDate);
+      }
+
+      // Exhibition games with scores (non-zero) or not final can be shown
+      return true;
+    });
+
+    // Sort by date ascending
+    return filtered.sort(
       (a, b) => new Date(a.GameDate).getTime() - new Date(b.GameDate).getTime()
     );
-    
-    return sorted;
   }, [divisionFilteredGames]);
   
   // Auto-scroll to the "current" region on load: find the first game that is today or in the future

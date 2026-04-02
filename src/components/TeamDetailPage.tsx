@@ -888,7 +888,7 @@ export function TeamDetailPage({ teamId, teamName, season, teamLogo, divisionId,
 
   // --- New Enhancements ---
   
-  const [scheduleFilter, setScheduleFilter] = useState<'all' | 'home' | 'away' | 'practices'>('all');
+  const [scheduleFilter, setScheduleFilter] = useState<'all' | 'games' | 'home' | 'away' | 'practices'>('all');
   const [scheduleGameType, setScheduleGameType] = useState('All Game Types');
   const [rosterGrouping, setRosterGrouping] = useState<'list' | 'position'>('position');
   const [exportModalOpen, setExportModalOpen] = useState(false);
@@ -1860,132 +1860,148 @@ export function TeamDetailPage({ teamId, teamName, season, teamLogo, divisionId,
                   </CardContent>
                 </Card>
 
-                {/* Prior Game & Next Game */}
+                {/* Recent Games & Upcoming Games */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {/* Prior Game - Enhanced */}
-                  <Card className="border-2 shadow-lg" style={{ borderColor: `${extractedColors.primary}40` }}>
-                    <CardHeader 
+                  {/* Recent Games - Scrollable */}
+                  <Card className="border-2 shadow-lg" style={{ borderColor: `${extractedColors.primary}40}` }}>
+                    <CardHeader
                       className="border-b-2 rounded-t-lg py-3"
-                      style={{ 
+                      style={{
                         backgroundColor: extractedColors.primary,
                         borderBottomColor: extractedColors.primary
                       }}
                     >
                       <CardTitle className="text-lg font-black text-white flex items-center gap-2">
                         <Clock className="w-4 h-4" />
-                        Last Game
+                        Recent Games
                       </CardTitle>
                     </CardHeader>
-                    <CardContent className="p-5">
+                    <CardContent className="p-3">
                       {(() => {
-                        if (!apiGames.length) return <div className="text-gray-400 italic text-sm">No games played yet</div>;
+                        if (!apiGames.length) return <div className="text-gray-400 italic text-sm text-center py-4">No games played yet</div>;
                         const completedGames = apiGames
                           .filter(g => g.HomeScore !== null && g.VisitorScore !== null)
                           .sort((a, b) => new Date(b.GameDate).getTime() - new Date(a.GameDate).getTime());
-                        if (completedGames.length === 0) return <div className="text-gray-400 italic text-sm">No completed games yet</div>;
-                        
-                        const lastGame = completedGames[0];
-                        const isHome = lastGame.HomeTeamId === currentTeamId;
-                        const teamScore = isHome ? lastGame.HomeScore! : lastGame.VisitorScore!;
-                        const oppScore = isHome ? lastGame.VisitorScore! : lastGame.HomeScore!;
-                        const opponentId = isHome ? lastGame.VisitorTeamId : lastGame.HomeTeamId;
-                        const opponent = getTeamName(opponentId);
-                        const won = teamScore > oppScore;
-                        const tied = teamScore === oppScore;
-                        
+
+                        if (completedGames.length === 0) return <div className="text-gray-400 italic text-sm text-center py-4">No completed games yet</div>;
+
+                        // Show up to 5 recent games with scroll if more
+                        const gamesToShow = completedGames.slice(0, 5);
+                        const showScrollHint = completedGames.length > 5;
+
                         return (
-                          <div className="space-y-3">
-                            <div className="flex items-center justify-between">
-                              <div className="flex items-center gap-3">
-                                <div className={`w-10 h-10 rounded-lg flex items-center justify-center font-black text-white text-sm ${
-                                  won ? 'bg-green-500' : tied ? 'bg-yellow-500' : 'bg-red-500'
-                                }`}>
-                                  {won ? 'W' : tied ? 'T' : 'L'}
+                          <div className={`space-y-2 ${showScrollHint ? 'max-h-[280px] overflow-y-auto pr-1' : ''}`}>
+                            {gamesToShow.map((game, idx) => {
+                              const isHome = game.HomeTeamId === currentTeamId;
+                              const teamScore = isHome ? game.HomeScore! : game.VisitorScore!;
+                              const oppScore = isHome ? game.VisitorScore! : game.HomeScore!;
+                              const opponentId = isHome ? game.VisitorTeamId : game.HomeTeamId;
+                              const opponent = getTeamName(opponentId);
+                              const won = teamScore > oppScore;
+                              const tied = teamScore === oppScore;
+
+                              return (
+                                <div key={`${game.GameId}-${idx}`} className="flex items-center justify-between p-2 rounded hover:bg-gray-50 transition-colors">
+                                  <div className="flex items-center gap-2">
+                                    <div className={`w-8 h-8 rounded flex items-center justify-center font-black text-white text-xs ${
+                                      won ? 'bg-green-500' : tied ? 'bg-yellow-500' : 'bg-red-500'
+                                    }`}>
+                                      {won ? 'W' : tied ? 'T' : 'L'}
+                                    </div>
+                                    <div className="min-w-0">
+                                      <div className="text-xs text-gray-500 font-semibold">{isHome ? 'vs' : '@'}</div>
+                                      <div className="font-bold text-sm text-gray-900 truncate">{opponent}</div>
+                                    </div>
+                                  </div>
+                                  <div className="text-right flex-shrink-0">
+                                    <div className="text-xs text-gray-400 font-semibold mb-0.5">
+                                      {game.GameNumber ? `#${game.GameNumber}` : ''}
+                                    </div>
+                                    <div className="text-lg font-black" style={{ color: won ? '#16a34a' : tied ? '#ca8a04' : '#dc2626' }}>
+                                      {teamScore}-{oppScore}
+                                    </div>
+                                  </div>
                                 </div>
-                                <div>
-                                  <div className="text-sm text-gray-500 font-semibold">{isHome ? 'vs' : '@'}</div>
-                                  <div className="font-bold text-gray-900">{opponent}</div>
-                                </div>
+                              );
+                            })}
+                            {showScrollHint && (
+                              <div className="text-center pt-1">
+                                <span className="text-xs text-gray-400 italic">
+                                  +{completedGames.length - 5} more game{completedGames.length - 5 > 1 ? 's' : ''}
+                                </span>
                               </div>
-                              <div className="text-right">
-                                <div className="text-2xl font-black" style={{ color: won ? '#16a34a' : tied ? '#ca8a04' : '#dc2626' }}>
-                                  {teamScore}-{oppScore}
-                                </div>
-                                <div className="text-xs text-gray-400 font-semibold uppercase">Final</div>
-                              </div>
-                            </div>
-                            <div className="flex items-center gap-2 text-xs text-gray-500 border-t border-gray-100 pt-2">
-                              <CalendarIcon className="w-3 h-3" />
-                              <span>{formatGameDate(lastGame.GameDate)}</span>
-                              <span className="text-gray-300">|</span>
-                              <FacilityMapLink venueName={lastGame.FacilityName} className="text-xs truncate" />
-                            </div>
+                            )}
                           </div>
                         );
                       })()}
                     </CardContent>
                   </Card>
 
-                  {/* Next Game - Enhanced */}
-                  <Card className="border-2 shadow-lg" style={{ borderColor: `${extractedColors.primary}40` }}>
-                    <CardHeader 
+                  {/* Upcoming Games - Scrollable */}
+                  <Card className="border-2 shadow-lg" style={{ borderColor: `${extractedColors.primary}40}` }}>
+                    <CardHeader
                       className="border-b-2 rounded-t-lg py-3"
-                      style={{ 
+                      style={{
                         backgroundColor: extractedColors.primary,
                         borderBottomColor: extractedColors.primary
                       }}
                     >
                       <CardTitle className="text-lg font-black text-white flex items-center gap-2">
                         <CalendarIcon className="w-4 h-4" />
-                        Next Game
+                        Upcoming Games
                       </CardTitle>
                     </CardHeader>
-                    <CardContent className="p-5">
+                    <CardContent className="p-3">
                       {(() => {
                         const now = new Date();
                         const futureGames = apiGames
                           .filter(g => new Date(g.GameDate) > now && g.HomeScore === null)
                           .sort((a, b) => new Date(a.GameDate).getTime() - new Date(b.GameDate).getTime());
-                        
-                        if (futureGames.length === 0) return <div className="text-gray-400 italic text-sm">No upcoming games scheduled</div>;
-                        
-                        const next = futureGames[0];
-                        const isHome = next.HomeTeamId === currentTeamId;
-                        const opponentId = isHome ? next.VisitorTeamId : next.HomeTeamId;
-                        const opponent = getTeamName(opponentId);
-                        const gameDate = parseDateAsLocal(next.GameDate);
-                        const daysAway = Math.ceil((gameDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
-                        
+
+                        if (futureGames.length === 0) return <div className="text-gray-400 italic text-sm text-center py-4">No upcoming games scheduled</div>;
+
+                        // Show up to 5 upcoming games with scroll if more
+                        const gamesToShow = futureGames.slice(0, 5);
+                        const showScrollHint = futureGames.length > 5;
+
                         return (
-                          <div className="space-y-3">
-                            <div className="flex items-center justify-between">
-                              <div className="flex items-center gap-3">
-                                <div className="w-10 h-10 rounded-lg flex items-center justify-center font-black text-white text-xs" style={{ backgroundColor: extractedColors.primary }}>
-                                  {isHome ? 'VS' : '@'}
+                          <div className={`space-y-2 ${showScrollHint ? 'max-h-[280px] overflow-y-auto pr-1' : ''}`}>
+                            {gamesToShow.map((game, idx) => {
+                              const isHome = game.HomeTeamId === currentTeamId;
+                              const opponentId = isHome ? game.VisitorTeamId : game.HomeTeamId;
+                              const opponent = getTeamName(opponentId);
+                              const gameDate = parseDateAsLocal(game.GameDate);
+                              const daysAway = Math.ceil((gameDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+
+                              return (
+                                <div key={`${game.GameId}-${idx}`} className="flex items-center justify-between p-2 rounded hover:bg-gray-50 transition-colors">
+                                  <div className="flex items-center gap-2">
+                                    <div className="w-8 h-8 rounded-lg flex items-center justify-center font-black text-white text-xs" style={{ backgroundColor: extractedColors.primary }}>
+                                      {isHome ? 'VS' : '@'}
+                                    </div>
+                                    <div className="min-w-0">
+                                      <div className="text-xs text-gray-500 font-semibold">{isHome ? 'Home' : 'Away'}</div>
+                                      <div className="font-bold text-sm text-gray-900 truncate">{opponent}</div>
+                                    </div>
+                                  </div>
+                                  <div className="text-right flex-shrink-0">
+                                    <div className="text-xs text-gray-400 font-semibold mb-0.5">
+                                      {game.GameNumber ? `#${game.GameNumber}` : ''}
+                                    </div>
+                                    <div className="text-sm font-black" style={{ color: extractedColors.primary }}>
+                                      {daysAway === 0 ? 'TODAY' : daysAway === 1 ? 'TMW' : `${daysAway}d`}
+                                    </div>
+                                  </div>
                                 </div>
-                                <div>
-                                  <div className="text-sm text-gray-500 font-semibold">{isHome ? 'Home' : 'Away'}</div>
-                                  <div className="font-bold text-gray-900">{opponent}</div>
-                                </div>
+                              );
+                            })}
+                            {showScrollHint && (
+                              <div className="text-center pt-1">
+                                <span className="text-xs text-gray-400 italic">
+                                  +{futureGames.length - 5} more game{futureGames.length - 5 > 1 ? 's' : ''}
+                                </span>
                               </div>
-                              <div className="text-right">
-                                <div className="text-2xl font-black" style={{ color: extractedColors.primary }}>
-                                  {daysAway === 0 ? 'TODAY' : daysAway === 1 ? 'TMW' : `${daysAway}d`}
-                                </div>
-                                <div className="text-xs text-gray-400 font-semibold uppercase">
-                                  {daysAway === 0 ? 'Game Day' : daysAway === 1 ? 'Tomorrow' : 'Days Away'}
-                                </div>
-                              </div>
-                            </div>
-                            <div className="flex items-center gap-2 text-xs text-gray-500 border-t border-gray-100 pt-2">
-                              <CalendarIcon className="w-3 h-3" />
-                              <span>{formatGameDate(next.GameDate)}</span>
-                              <span className="text-gray-300">|</span>
-                              <Clock className="w-3 h-3" />
-                              <span>{parseGameTime(next.StartTime)}</span>
-                              <span className="text-gray-300">|</span>
-                              <FacilityMapLink venueName={next.FacilityName} className="text-xs truncate" />
-                            </div>
+                            )}
                           </div>
                         );
                       })()}
@@ -2336,7 +2352,7 @@ export function TeamDetailPage({ teamId, teamName, season, teamLogo, divisionId,
                     <div className="flex bg-white rounded-lg border border-gray-200 p-1 shadow-sm">
                       <button
                         onClick={() => setScheduleFilter('all')}
-                        className={`px-4 py-1.5 rounded-md text-sm font-bold transition-colors ${
+                        className={`px-3 py-1.5 rounded-md text-xs font-bold transition-colors ${
                           scheduleFilter === 'all'
                             ? 'bg-gray-900 text-white'
                             : 'text-gray-600 hover:bg-gray-100'
@@ -2345,10 +2361,20 @@ export function TeamDetailPage({ teamId, teamName, season, teamLogo, divisionId,
                         All
                       </button>
                       <button
+                        onClick={() => setScheduleFilter('games')}
+                        className={`px-3 py-1.5 rounded-md text-xs font-bold transition-colors ${
+                          scheduleFilter === 'games'
+                            ? 'bg-blue-600 text-white'
+                            : 'text-gray-600 hover:bg-gray-100'
+                        }`}
+                      >
+                        Games
+                      </button>
+                      <button
                         onClick={() => setScheduleFilter('home')}
-                        className={`px-4 py-1.5 rounded-md text-sm font-bold transition-colors ${
-                          scheduleFilter === 'home' 
-                            ? 'bg-gray-900 text-white' 
+                        className={`px-3 py-1.5 rounded-md text-xs font-bold transition-colors ${
+                          scheduleFilter === 'home'
+                            ? 'bg-gray-900 text-white'
                             : 'text-gray-600 hover:bg-gray-100'
                         }`}
                       >
@@ -2356,9 +2382,9 @@ export function TeamDetailPage({ teamId, teamName, season, teamLogo, divisionId,
                       </button>
                       <button
                         onClick={() => setScheduleFilter('away')}
-                        className={`px-4 py-1.5 rounded-md text-sm font-bold transition-colors ${
-                          scheduleFilter === 'away' 
-                            ? 'bg-gray-900 text-white' 
+                        className={`px-3 py-1.5 rounded-md text-xs font-bold transition-colors ${
+                          scheduleFilter === 'away'
+                            ? 'bg-gray-900 text-white'
                             : 'text-gray-600 hover:bg-gray-100'
                         }`}
                       >
@@ -2366,9 +2392,9 @@ export function TeamDetailPage({ teamId, teamName, season, teamLogo, divisionId,
                       </button>
                       <button
                         onClick={() => setScheduleFilter('practices')}
-                        className={`px-4 py-1.5 rounded-md text-sm font-bold transition-colors ${
-                          scheduleFilter === 'practices' 
-                            ? 'bg-green-700 text-white' 
+                        className={`px-3 py-1.5 rounded-md text-xs font-bold transition-colors ${
+                          scheduleFilter === 'practices'
+                            ? 'bg-green-700 text-white'
                             : 'text-gray-600 hover:bg-gray-100'
                         }`}
                       >
@@ -2415,6 +2441,8 @@ export function TeamDetailPage({ teamId, teamName, season, teamLogo, divisionId,
                     <CardTitle className="text-xl font-black text-white">
                       {scheduleFilter === 'all'
                         ? `${currentSeason} Schedule — All${scheduleGameType !== 'All Game Types' ? ` (${scheduleGameType})` : ''}`
+                        : scheduleFilter === 'games'
+                        ? `${currentSeason} Schedule — All Games${scheduleGameType !== 'All Game Types' ? ` (${scheduleGameType})` : ''}`
                         : scheduleFilter === 'practices'
                         ? `${currentSeason} Practices`
                         : `${currentSeason} ${scheduleFilter === 'home' ? 'Home' : 'Away'} Games${scheduleGameType !== 'All Game Types' ? ` — ${scheduleGameType}` : ''}`
@@ -2422,7 +2450,118 @@ export function TeamDetailPage({ teamId, teamName, season, teamLogo, divisionId,
                     </CardTitle>
                   </CardHeader>
                   <CardContent className="p-0">
-                    {scheduleFilter === 'all' ? (
+                    {scheduleFilter === 'games' ? (
+                      /* ── Games Only View (no practices) ── */
+                      (() => {
+                        // Filter games by game type
+                        const filteredGames = apiGames.filter(game => {
+                          if (scheduleGameType !== 'All Game Types') {
+                            const gameTypeName = mapStandingCategoryCodeToName(game.StandingCategoryCode || null);
+                            if (gameTypeName === 'All Games') return false;
+                            const normalizedGameType = gameTypeName.toLowerCase().trim();
+                            const normalizedSelectedType = scheduleGameType.toLowerCase().trim();
+                            if (normalizedGameType !== normalizedSelectedType &&
+                                !normalizedGameType.includes(normalizedSelectedType) &&
+                                !normalizedSelectedType.includes(normalizedGameType)) {
+                              return false;
+                            }
+                          }
+                          return true;
+                        });
+
+                        // Sort games by date
+                        const sortedGames = [...filteredGames].sort((a, b) => {
+                          const dateA = new Date(a.GameDate).getTime();
+                          const dateB = new Date(b.GameDate).getTime();
+                          if (dateA !== dateB) return dateA - dateB;
+                          return (a.StartTime || '').localeCompare(b.StartTime || '');
+                        });
+
+                        return sortedGames.length > 0 ? (
+                          <div className="overflow-x-auto">
+                            <table className="w-full">
+                              <thead>
+                                <tr style={{ backgroundColor: extractedColors.secondary }}>
+                                  <th className="text-center py-2.5 px-3 font-bold text-white">#</th>
+                                  <th className="text-left py-2.5 px-3 font-bold text-white">Date</th>
+                                  <th className="text-left py-2.5 px-3 font-bold text-white">Type</th>
+                                  <th className="text-left py-2.5 px-3 font-bold text-white">Opponent</th>
+                                  <th className="text-left py-2.5 px-3 font-bold text-white hidden md:table-cell">Location</th>
+                                  <th className="text-center py-2.5 px-3 font-bold text-white">Time</th>
+                                  <th className="text-center py-2.5 px-3 font-bold text-white">Result</th>
+                                </tr>
+                              </thead>
+                              <tbody>
+                                {sortedGames.map((game, i) => {
+                                  const isHomeTeam = game.HomeTeamId === currentTeamId;
+                                  const opponentId = isHomeTeam ? game.VisitorTeamId : game.HomeTeamId;
+                                  const opponent = getTeamName(opponentId);
+                                  const isExhibitionGame = game.StandingCategoryCode?.toLowerCase() === 'exhb';
+                                  const result = (game.HomeScore !== null && !isExhibitionGame) ?
+                                    (isHomeTeam ? `${game.HomeScore}-${game.VisitorScore}` : `${game.VisitorScore}-${game.HomeScore}`) :
+                                    '-';
+
+                                  return (
+                                    <Fragment key={i}>
+                                      <tr
+                                        className={`${(isTeamScheduleInProgress && game.SchedulingComments?.trim()) || game.GameComments?.trim() ? '' : 'border-b border-gray-200'} hover:bg-gray-50 cursor-pointer ${isExhibitionGame ? 'bg-amber-50/50' : ''}`}
+                                        onClick={() => handleGameClick(game)}
+                                      >
+                                        <td className="py-2 px-3 text-center text-sm text-gray-500 font-mono">{game.GameNumber || '-'}</td>
+                                        <td className="py-2 px-3 font-semibold">{formatGameDate(game.GameDate)}</td>
+                                        <td className="py-2 px-3">
+                                          <div className="flex items-center gap-2">
+                                            <Badge variant={isHomeTeam ? 'default' : 'outline'} className="text-xs">
+                                              {isHomeTeam ? 'vs' : '@'}
+                                            </Badge>
+                                            <span className="font-bold">{opponent}</span>
+                                            {isExhibitionGame && (
+                                              <Badge className="bg-amber-600 text-white text-[10px] px-1.5 py-0">Exhibition</Badge>
+                                            )}
+                                            {game.HomeTeamDivisionId && game.VisitorTeamDivisionId && game.HomeTeamDivisionId !== game.VisitorTeamDivisionId && (
+                                              <Badge className="bg-purple-100 text-purple-700 border border-purple-200 text-[10px] px-1.5 py-0">Crossover</Badge>
+                                            )}
+                                          </div>
+                                        </td>
+                                        <td className="py-2 px-3 hidden md:table-cell">
+                                          <FacilityMapLink venueName={game.FacilityName} className="text-sm" />
+                                        </td>
+                                        <td className="py-2 px-3 text-center text-sm">{parseGameTime(game.StartTime)}</td>
+                                        <td className="py-2 px-3 text-center font-black" style={{ color: extractedColors.primary }}>{result}</td>
+                                      </tr>
+                                      {((isTeamScheduleInProgress && game.SchedulingComments?.trim()) || game.GameComments?.trim()) && (
+                                        <tr className="border-b border-gray-200">
+                                          <td colSpan={7} className="py-1 px-3 pb-2">
+                                            <div className="flex flex-col gap-0.5">
+                                              {isTeamScheduleInProgress && game.SchedulingComments?.trim() && (
+                                                <div className="flex items-center gap-1.5">
+                                                  <MessageSquare className="w-3 h-3 text-amber-600 flex-shrink-0" />
+                                                  <span className="text-xs font-semibold text-amber-700 italic">{game.SchedulingComments}</span>
+                                                </div>
+                                              )}
+                                              {game.GameComments?.trim() && (
+                                                <div className="flex items-center gap-1.5">
+                                                  <MessageSquare className="w-3 h-3 text-blue-500 flex-shrink-0" />
+                                                  <span className="text-xs font-semibold text-blue-600 italic">{game.GameComments}</span>
+                                                </div>
+                                              )}
+                                            </div>
+                                          </td>
+                                        </tr>
+                                      )}
+                                    </Fragment>
+                                  );
+                                })}
+                              </tbody>
+                            </table>
+                          </div>
+                        ) : (
+                          <div className="text-center py-12 text-gray-500 italic">
+                            No games scheduled yet for {currentSeason}.
+                          </div>
+                        );
+                      })()
+                    ) : scheduleFilter === 'all' ? (
                       /* ── Combined Games + Practices View ── */
                       (() => {
                         // Filter games by game type before combining
@@ -2441,26 +2580,6 @@ export function TeamDetailPage({ teamId, teamName, season, teamLogo, divisionId,
                             }
                           }
                           return true;
-                        });
-
-                        // Combine games and practices into a single sorted array
-                        const combinedSchedule = [
-                          ...filteredGames.map(g => ({
-                            type: 'game' as const,
-                            id: g.GameId,
-                            date: g.GameDate,
-                            time: g.StartTime || '',
-                            displayTime: parseGameTime(g.StartTime || ''),
-                            homeTeam: g.HomeTeamId === currentTeamId ? getTeamName(g.HomeTeamId) : getTeamName(g.HomeTeamId),
-                            awayTeam: g.VisitorTeamId === currentTeamId ? getTeamName(g.VisitorTeamId) : getTeamName(g.VisitorTeamId),
-                            venue: g.FacilityName,
-                            isHome: g.HomeTeamId === currentTeamId,
-                            result: g.HomeScore !== null ? (g.HomeTeamId === currentTeamId ? g.HomeScore - g.VisitorTeam : g.VisitorTeam - g.HomeScore) : null,
-                            gameNumber: g.GameNumber,
-                            standingCategoryCode: g.StandingCategoryCode,
-                            schedulingComments: g.SchedulingComments,
-                            gameComments: g.GameComments,
-                            homeTeamDivisionId: g.HomeTeamDivisionId,
                             visitorTeamDivisionId: g.VisitorTeamDivisionId,
                           })),
                           ...apiPractices.map(p => ({
@@ -2664,7 +2783,7 @@ export function TeamDetailPage({ teamId, teamName, season, teamLogo, divisionId,
                                     return false;
                                   }
                                 }
-                                if (scheduleFilter === 'all') return true;
+                                if (scheduleFilter === 'all' || scheduleFilter === 'games') return true;
                                 const isHome = game.HomeTeamId === currentTeamId;
                                 return scheduleFilter === 'home' ? isHome : !isHome;
                               }),
@@ -3620,9 +3739,9 @@ export function TeamDetailPage({ teamId, teamName, season, teamLogo, divisionId,
               {/* Protected List Tab */}
               <TabsContent value="protected-list" className="mt-0">
                 <Card className="border-2 shadow-lg" style={{ borderColor: `${extractedColors.primary}40` }}>
-                  <CardHeader 
+                  <CardHeader
                     className="border-b-2 rounded-t-lg"
-                    style={{ 
+                    style={{
                       backgroundColor: extractedColors.primary,
                       borderBottomColor: extractedColors.primary
                     }}
@@ -3640,6 +3759,26 @@ export function TeamDetailPage({ teamId, teamName, season, teamLogo, divisionId,
                         )}
                       </div>
                     </CardTitle>
+                    {teamProtectedList.length > 0 && (() => {
+                      // Compute the most recent revised date from player dates
+                      let latestDateRaw = '';
+                      for (const player of teamProtectedList) {
+                        if (player.dateRaw && player.dateRaw > latestDateRaw) {
+                          latestDateRaw = player.dateRaw;
+                        }
+                      }
+                      if (!latestDateRaw) return null;
+                      try {
+                        const revisedDate = new Date(latestDateRaw).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
+                        return (
+                          <div className="text-xs text-white/70 font-medium mt-1">
+                            Revised: {revisedDate}
+                          </div>
+                        );
+                      } catch {
+                        return null;
+                      }
+                    })()}
                   </CardHeader>
                   <CardContent className="p-0">
                     {protectedListLoading ? (

@@ -56,7 +56,8 @@ export function ChampionshipsEditor({ value, onChange, divisionName }: Champions
       const parsed = JSON.parse(newJson);
       setData(parsed);
       setJsonError(null);
-      onChange(newJson);
+      // Only call onChange with valid, formatted JSON
+      onChange(JSON.stringify(parsed, null, 2));
     } catch (err) {
       setJsonError('Invalid JSON format');
     }

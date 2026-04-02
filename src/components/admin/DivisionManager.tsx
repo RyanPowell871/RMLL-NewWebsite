@@ -611,6 +611,31 @@ export function DivisionManager() {
     setSuccess(false);
 
     try {
+      // Validate JSON fields before saving
+      if (awards && awards.trim()) {
+        try {
+          JSON.parse(awards);
+        } catch (e) {
+          throw new Error('Awards contains invalid JSON. Please fix the errors in JSON Editor mode before saving.');
+        }
+      }
+
+      if (championships && championships.trim()) {
+        try {
+          JSON.parse(championships);
+        } catch (e) {
+          throw new Error('Championships contains invalid JSON. Please fix the errors in JSON Editor mode before saving.');
+        }
+      }
+
+      if (seasonInfo && seasonInfo.trim()) {
+        try {
+          JSON.parse(seasonInfo);
+        } catch (e) {
+          throw new Error('Season Info contains invalid JSON. Please fix the errors in JSON Editor mode before saving.');
+        }
+      }
+
       const data: DivisionData = {
         divisionDescription,
         divisionInfo: {
