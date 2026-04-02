@@ -569,6 +569,15 @@ export function DirectCodeEditor() {
     }));
 
     try {
+      // Enhance the prompt with explicit instructions for creating NEW elements
+      const enhancedPrompt = `IMPORTANT INSTRUCTION: When the user asks to "add" a component, section, card, or item:
+- ALWAYS create a NEW component/section/card/item at the appropriate location
+- DO NOT modify or replace existing components/sections/cards/items
+- For arrays of items (like ValueCard, ChampionshipList, etc.), add the new item to the existing array
+- Preserve all existing content unless explicitly told to replace
+
+User's request: ${state.aiPrompt}`;
+
       const response = await fetch(`${EDGE_FUNCTION_BASE_URL}/code-editor/ai/apply-changes`, {
         method: 'POST',
         headers: {
@@ -578,7 +587,7 @@ export function DirectCodeEditor() {
         body: JSON.stringify({
           filePath: state.selectedFile,
           currentContent: state.fileContent,
-          prompt: state.aiPrompt,
+          prompt: enhancedPrompt,
         }),
       });
 
