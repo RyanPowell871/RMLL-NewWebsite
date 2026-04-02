@@ -1,13 +1,9 @@
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../ui/card';
 import { Button } from '../ui/button';
-import { Input } from '../ui/input';
-import { Label } from '../ui/label';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '../ui/tabs';
-import { Alert, AlertDescription } from '../ui/alert';
 import { Badge } from '../ui/badge';
 import { Plus, Trash2, AlertCircle, Code, Eye, ChevronUp, ChevronDown, Edit2, Check, X } from 'lucide-react';
-import { Textarea } from '../ui/textarea';
+import { TextareaWithLinkInserter } from './TextareaWithLinkInserter';
 
 interface AwardsEditorProps {
   value: string;
@@ -24,14 +20,43 @@ interface AwardSection {
   order: number;
 }
 
+interface AwardData {
+  title?: string;
+  description?: string;
+  recipients?: Array<{
+    year?: string;
+    player?: string;
+    team?: string;
+    stats?: string;
+    points?: number;
+    games?: number;
+    note?: string;
+  }>;
+}
+
+interface AwardsDisplayData {
+  __metadata?: Record<string, AwardSection>;
+  [key: string]: AwardData;
+}
+
 const DEFAULT_SECTIONS: AwardSection[] = [
   { id: 'pointLeaders', title: 'Point Leaders Award', collapsible: true, order: 0 },
   { id: 'allStarTeams', title: 'All-Star Teams', collapsible: true, order: 1 },
+  { id: 'rookieOfTheYear', title: 'Rookie of the Year', collapsible: true, order: 2 },
+  { id: 'mvp', title: 'Most Valuable Player', collapsible: true, order: 3 },
+  { id: 'defensivePlayer', title: 'Defensive Player of the Year', collapsible: true, order: 4 },
+  { id: 'coachOfTheYear', title: 'Coach of the Year', collapsible: true, order: 5 },
 ];
+
+const DEFAULT_AWARD_DATA: AwardData = {
+  title: '',
+  description: '',
+  recipients: [],
+};
 
 export function AwardsEditor({ value, onChange, divisionName }: AwardsEditorProps) {
   const [mode, setMode] = useState<'visual' | 'json'>('visual');
-  const [data, setData] = useState<any>({});
+  const [data, setData] = useState<AwardsDisplayData>({});
   const [jsonError, setJsonError] = useState<string | null>(null);
   const [jsonText, setJsonText] = useState(value || '{}');
   const [sections, setSections] = useState<AwardSection[]>([]);
@@ -41,7 +66,7 @@ export function AwardsEditor({ value, onChange, divisionName }: AwardsEditorProp
   useEffect(() => {
     try {
       if (value && typeof value === 'string' && value.trim()) {
-        const parsed = JSON.parse(value);
+        const parsed = JSON.parse(value) as AwardsDisplayData;
         setData(parsed);
         setJsonText(JSON.stringify(parsed, null, 2));
         setJsonError(null);
@@ -84,46 +109,59 @@ export function AwardsEditor({ value, onChange, divisionName }: AwardsEditorProp
     }
   };
 
-  const handleDataChange = (newData: any) => {
+  const handleDataChange = (newData: AwardsDisplayData) => {
     setData(newData);
     const jsonString = JSON.stringify(newData, null, 2);
     setJsonText(jsonString);
     onChange(jsonString);
   };
 
+  // Helper to safely update nested data
+  const updateNestedData = (sectionKey: string, fieldPath: string[], value: any) => {
+    const newData = JSON.parse(JSON.stringify(data));
+    if (!newData[sectionKey]) {
+      newData[sectionKey] = { ...DEFAULT_AWARD_DATA };
+    }
+    let current = newData[sectionKey];
+    for (let i = 0; i < fieldPath.length - 1; i++) {
+      if (!current[fieldPath[i]]) current[fieldPath[i]] = {};
+      current = current[fieldPath[i]];
+    }
+    current[fieldPath[fieldPath.length - 1]] = value;
+    handleDataChange(newData);
+  };
+
   const getDefaultTitle = (key: string): string => {
     switch (key) {
-      case 'north': return 'North Conference';
-      case 'south': return 'South Conference';
       case 'pointLeaders': return 'Point Leaders Award';
       case 'allStarTeams': return 'All-Star Teams';
       case 'rookieOfTheYear': return 'Rookie of the Year';
       case 'mvp': return 'Most Valuable Player';
       case 'defensivePlayer': return 'Defensive Player of the Year';
       case 'coachOfTheYear': return 'Coach of the Year';
+      case 'north': return 'North Conference';
+      case 'south': return 'South Conference';
       default: return key.charAt(0).toUpperCase() + key.slice(1);
     }
   };
 
-  const updateSectionsMetadata = (newSections: AwardSection[]) => {
-    setSections(newSections);
+  const updateSectionMetadata = (sectionIdx: number, updates: Partial<AwardSection>) => {
+    const newSections = [...sections];
+    newSections[sectionIdx] = { ...newSections[sectionIdx], ...updates };
 
     // Update metadata in data
-    const metadata: Record<string, any> = {};
-    newSections.forEach(section => {
-      metadata[section.id] = {
-        title: section.title,
-        heading: section.heading,
-        collapsible: section.collapsible,
-        collapsed: section.collapsed,
-        order: section.order,
-      };
-    });
+    const section = newSections[sectionIdx];
+    const metadata = { ...data.__metadata };
+    metadata[section.id] = {
+      title: section.title,
+      heading: section.heading,
+      collapsible: section.collapsible,
+      collapsed: section.collapsed,
+      order: section.order,
+    };
 
-    handleDataChange({
-      ...data,
-      __metadata: metadata,
-    });
+    handleDataChange({ ...data, __metadata: metadata });
+    setSections(newSections);
   };
 
   const moveSection = (idx: number, direction: 'up' | 'down') => {
@@ -140,19 +178,28 @@ export function AwardsEditor({ value, onChange, divisionName }: AwardsEditorProp
     // Re-sort by order
     newSections.sort((a, b) => a.order - b.order);
 
-    updateSectionsMetadata(newSections);
+    // Update all section metadata
+    const metadata = { ...data.__metadata };
+    newSections.forEach((section) => {
+      metadata[section.id] = {
+        title: section.title,
+        heading: section.heading,
+        collapsible: section.collapsible,
+        collapsed: section.collapsed,
+        order: section.order,
+      };
+    });
+
+    handleDataChange({ ...data, __metadata: metadata });
+    setSections(newSections);
   };
 
   const toggleCollapsible = (idx: number) => {
-    const newSections = [...sections];
-    newSections[idx].collapsible = !newSections[idx].collapsible;
-    updateSectionsMetadata(newSections);
+    updateSectionMetadata(idx, { collapsible: !sections[idx].collapsible });
   };
 
   const toggleCollapsed = (idx: number) => {
-    const newSections = [...sections];
-    newSections[idx].collapsed = !newSections[idx].collapsed;
-    updateSectionsMetadata(newSections);
+    updateSectionMetadata(idx, { collapsed: !sections[idx].collapsed });
   };
 
   const startEditHeading = (idx: number) => {
@@ -160,42 +207,54 @@ export function AwardsEditor({ value, onChange, divisionName }: AwardsEditorProp
   };
 
   const saveHeading = (idx: number, value: string) => {
-    const newSections = [...sections];
-    newSections[idx].heading = value || undefined;
-    updateSectionsMetadata(newSections);
+    updateSectionMetadata(idx, { heading: value || undefined });
     setEditingHeading(null);
   };
 
-  // Helper to safely update nested data
-  const updateNestedData = (path: string[], value: any) => {
-    const newData = JSON.parse(JSON.stringify(data));
-    let current = newData;
-    for (let i = 0; i < path.length - 1; i++) {
-      if (!current[path[i]]) current[path[i]] = {};
-      current = current[path[i]];
-    }
-    current[path[path.length - 1]] = value;
-    handleDataChange(newData);
+  // Add recipient
+  const addRecipient = (sectionKey: string) => {
+    const recipients = data[sectionKey]?.recipients || [];
+    updateNestedData(sectionKey, ['recipients'], [
+      { year: '', player: '', team: '', stats: '', points: 0, games: 0, note: '' },
+      ...recipients,
+    ]);
   };
 
-  // Get the actual data keys (excluding __metadata)
-  const dataKeys = Object.keys(data).filter(key => key !== '__metadata');
-
-  // Helper to get tab label
-  const getTabLabel = (key: string): string => {
-    const section = sections.find(s => s.id === key);
-    return section?.title || getDefaultTitle(key);
+  // Remove recipient
+  const removeRecipient = (sectionKey: string, idx: number) => {
+    const recipients = [...(data[sectionKey]?.recipients || [])];
+    recipients.splice(idx, 1);
+    updateNestedData(sectionKey, ['recipients'], recipients);
   };
 
-  // Helper to get tab description
-  const getTabDescription = (key: string): string => {
-    switch (key) {
-      case 'north': return 'Awards and honors for the North Conference';
-      case 'south': return 'Awards and honors for the South Conference';
-      case 'pointLeaders': return 'Regular season point leaders award';
-      case 'allStarTeams': return 'All-Star team selections';
-      default: return `Awards information`;
-    }
+  // Move recipient
+  const moveRecipient = (sectionKey: string, idx: number, direction: 'up' | 'down') => {
+    const recipients = [...(data[sectionKey]?.recipients || [])];
+    const targetIdx = direction === 'up' ? idx - 1 : idx + 1;
+
+    if (targetIdx < 0 || targetIdx >= recipients.length) return;
+
+    const temp = recipients[idx];
+    recipients[idx] = recipients[targetIdx];
+    recipients[targetIdx] = temp;
+
+    updateNestedData(sectionKey, ['recipients'], recipients);
+  };
+
+  // Update recipient field
+  const updateRecipient = (sectionKey: string, idx: number, field: string, value: any) => {
+    const recipients = [...(data[sectionKey]?.recipients || [])];
+    recipients[idx] = { ...recipients[idx], [field]: value };
+    updateNestedData(sectionKey, ['recipients'], recipients);
+  };
+
+  const getSectionData = (sectionKey: string): AwardData => {
+    return data[sectionKey] || { ...DEFAULT_AWARD_DATA };
+  };
+
+  const getSectionTitle = (sectionKey: string): string => {
+    const section = sections.find(s => s.id === sectionKey);
+    return section?.title || getDefaultTitle(sectionKey);
   };
 
   if (mode === 'json') {
@@ -218,17 +277,20 @@ export function AwardsEditor({ value, onChange, divisionName }: AwardsEditorProp
         </div>
 
         {jsonError && (
-          <Alert variant="destructive">
-            <AlertCircle className="h-4 w-4" />
-            <AlertDescription>{jsonError}</AlertDescription>
-          </Alert>
+          <div className="bg-red-50 border border-red-200 text-red-700 p-4 rounded-lg">
+            <div className="flex items-center gap-2">
+              <AlertCircle className="w-4 h-4" />
+              <span className="font-medium">Invalid JSON</span>
+            </div>
+            <p className="text-sm mt-1">{jsonError}</p>
+          </div>
         )}
 
-        <Textarea
+        <textarea
           value={jsonText}
           onChange={(e) => handleJsonChange(e.target.value)}
           rows={25}
-          className="font-mono text-sm"
+          className="font-mono text-sm w-full border rounded-lg p-4"
           placeholder="Enter JSON data..."
         />
 
@@ -236,21 +298,30 @@ export function AwardsEditor({ value, onChange, divisionName }: AwardsEditorProp
           <p><strong>Expected structure:</strong></p>
           <pre className="bg-gray-50 p-2 rounded border overflow-x-auto">
 {`{
-  "__metadata": { "north": { "title": "...", "heading": "...", "collapsible": true, "collapsed": false, "order": 0 } },
-  "north": {
-    "conferenceName": "Jim Andrews Conference",
-    "pointLeaders": { "title": "...", "recipients": [...] }
+  "__metadata": {
+    "pointLeaders": { "title": "...", "heading": "...", "collapsible": true, "collapsed": false, "order": 0 }
   },
-  "south": { ... }
+  "pointLeaders": {
+    "title": "Point Leaders Award",
+    "description": "Description of the award...",
+    "recipients": [
+      {
+        "year": "2025",
+        "player": "#17 John Doe",
+        "team": "Team Name",
+        "stats": "46 goals; 54 assists",
+        "points": 100,
+        "games": 16,
+        "note": "North Central Division"
+      }
+    ]
+  }
 }`}
           </pre>
         </div>
       </div>
     );
   }
-
-  // Visual Editor
-  const defaultTab = sections.length > 0 ? sections[0].id : (dataKeys[0] || '');
 
   return (
     <div className="space-y-4">
@@ -265,344 +336,274 @@ export function AwardsEditor({ value, onChange, divisionName }: AwardsEditorProp
         </Button>
       </div>
 
-      {dataKeys.length === 0 && (
-        <Alert>
-          <AlertCircle className="h-4 w-4" />
-          <AlertDescription>
-            No awards data found. Use the JSON Editor to add data, or it will be created automatically when you save.
-          </AlertDescription>
-        </Alert>
+      {sections.length === 0 && (
+        <div className="bg-amber-50 border border-amber-200 text-amber-800 p-4 rounded-lg">
+          <div className="flex items-center gap-2">
+            <AlertCircle className="w-4 h-4" />
+            <span className="font-medium">No awards data found</span>
+          </div>
+          <p className="text-sm mt-1">Use the JSON Editor to add award data, or it will be created automatically when you save.</p>
+        </div>
       )}
 
-      {dataKeys.length > 0 && (
-        <Tabs defaultValue={defaultTab} className="w-full">
-          <TabsList className="grid w-full" style={{ gridTemplateColumns: `repeat(${dataKeys.length}, 1fr)` }}>
-            {dataKeys.map(key => (
-              <TabsTrigger key={key} value={key}>
-                {getTabLabel(key)}
-              </TabsTrigger>
-            ))}
-          </TabsList>
+      {sections.map((section, sectionIdx) => {
+        const sectionData = getSectionData(section.id);
+        const isCollapsed = section.collapsed ?? false;
+        const recipients = sectionData.recipients || [];
 
-          {dataKeys.map(key => (
-            <TabsContent key={key} value={key} className="space-y-4">
-              <Card>
-                <CardHeader>
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <CardTitle>{getTabLabel(key)}</CardTitle>
-                      <CardDescription>{getTabDescription(key)}</CardDescription>
-                    </div>
+        return (
+          <Card key={section.id} className="overflow-hidden">
+            {/* Section Header */}
+            <div className="flex items-center justify-between px-4 py-3 bg-gray-50 border-b">
+              <div className="flex items-center gap-2 flex-1">
+                {editingHeading === section.id ? (
+                  <div className="flex items-center gap-1">
+                    <input
+                      value={section.heading || ''}
+                      onChange={(e) => {}}
+                      placeholder="Custom heading (optional)"
+                      className="h-7 w-64 border rounded px-2 text-sm"
+                    />
+                    <Button
+                      onClick={() => saveHeading(sectionIdx, '')}
+                      size="sm"
+                      variant="ghost"
+                      className="h-7 w-7 p-0"
+                    >
+                      <Check className="w-3 h-3 text-green-600" />
+                    </Button>
+                    <Button
+                      onClick={() => setEditingHeading(null)}
+                      size="sm"
+                      variant="ghost"
+                      className="h-7 w-7 p-0"
+                    >
+                      <X className="w-3 h-3 text-red-600" />
+                    </Button>
                   </div>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  {/* Conference Name for north/south */}
-                  {(key === 'north' || key === 'south') && (
-                    <div className="space-y-2">
-                      <Label>Conference Name</Label>
-                      <Input
-                        value={data[key]?.conferenceName || ''}
-                        onChange={(e) => updateNestedData([key, 'conferenceName'], e.target.value)}
-                        placeholder={key === 'north' ? "e.g., Jim Andrews Conference" : "e.g., Cindy Garant Conference"}
-                      />
-                    </div>
+                ) : (
+                  <span className="text-sm font-semibold">
+                    {section.heading || section.title}
+                  </span>
+                )}
+              </div>
+              <div className="flex items-center gap-1">
+                {section.heading !== undefined && !editingHeading && (
+                  <Button
+                    onClick={() => startEditHeading(sectionIdx)}
+                    size="sm"
+                    variant="ghost"
+                    className="h-7 w-7 p-0"
+                    title="Edit heading"
+                  >
+                    <Edit2 className="w-3 h-3 text-gray-500" />
+                  </Button>
+                )}
+                <Button
+                  onClick={() => toggleCollapsible(sectionIdx)}
+                  size="sm"
+                  variant="ghost"
+                  className={`h-7 w-7 p-0 ${section.collapsible ? 'text-blue-600' : 'text-gray-400'}`}
+                  title={section.collapsible ? 'Collapsible enabled' : 'Collapsible disabled'}
+                >
+                  <AlertCircle className="w-3 h-3" />
+                </Button>
+                {section.collapsible && (
+                  <Button
+                    onClick={() => toggleCollapsed(sectionIdx)}
+                    size="sm"
+                    variant="ghost"
+                    className="h-7 w-7 p-0"
+                    title={isCollapsed ? 'Expand' : 'Collapse'}
+                  >
+                    {isCollapsed ? <ChevronDown className="w-4 h-4" /> : <ChevronUp className="w-4 h-4" />}
+                  </Button>
+                )}
+                {sectionIdx > 0 && (
+                  <Button
+                    onClick={() => moveSection(sectionIdx, 'up')}
+                    size="sm"
+                    variant="ghost"
+                    className="h-7 w-7 p-0"
+                    title="Move section up"
+                  >
+                    <ChevronUp className="w-3 h-3" />
+                  </Button>
+                )}
+                {sectionIdx < sections.length - 1 && (
+                  <Button
+                    onClick={() => moveSection(sectionIdx, 'down')}
+                    size="sm"
+                    variant="ghost"
+                    className="h-7 w-7 p-0"
+                    title="Move section down"
+                  >
+                    <ChevronDown className="w-3 h-3" />
+                  </Button>
+                )}
+              </div>
+            </div>
+
+            {/* Section Content */}
+            {!isCollapsed && (
+              <div className="p-4 space-y-4">
+                {/* Award Title */}
+                <TextareaWithLinkInserter
+                  id={`${section.id}-title`}
+                  label="Award Title"
+                  value={sectionData.title || ''}
+                  onChange={(value) => updateNestedData(section.id, ['title'], value)}
+                  rows={1}
+                  placeholder={`e.g., ${getDefaultTitle(section.id)}`}
+                />
+
+                {/* Description */}
+                <TextareaWithLinkInserter
+                  id={`${section.id}-description`}
+                  label="Description"
+                  value={sectionData.description || ''}
+                  onChange={(value) => updateNestedData(section.id, ['description'], value)}
+                  rows={2}
+                  placeholder="Description of the award and its significance..."
+                />
+
+                {/* Recipients */}
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <label className="text-sm font-medium">Recipients</label>
+                    <Button
+                      onClick={() => addRecipient(section.id)}
+                      size="sm"
+                    >
+                      <Plus className="w-4 h-4 mr-2" />
+                      Add Recipient
+                    </Button>
+                  </div>
+
+                  {recipients.length === 0 && (
+                    <p className="text-sm text-gray-500 italic">No recipients added yet.</p>
                   )}
 
-                  {/* Dynamic sections based on data structure */}
-                  {Object.entries(data[key] || {}).filter(([subKey]) =>
-                    subKey !== 'conferenceName' && typeof data[key][subKey] === 'object'
-                  ).map(([subKey, subValue]: [string, any]) => {
-                    const sectionIdx = sections.findIndex(s => s.id === `${key}.${subKey}`);
-                    const section = sectionIdx >= 0 ? sections[sectionIdx] : null;
-                    const isCollapsed = section?.collapsed ?? false;
-
-                    // Get section title from metadata or default
-                    const sectionTitle = subKey.charAt(0).toUpperCase() + subKey.slice(1).replace(/([A-Z])/g, ' $1').trim();
-
-                    // Check if this is pointLeaders with recipients
-                    if (subKey === 'pointLeaders' && subValue?.recipients) {
-                      return (
-                        <div key={subKey} className="border rounded-lg overflow-hidden">
-                          {/* Section Header with controls */}
-                          <div className="flex items-center justify-between px-4 py-3 bg-gray-50 border-b">
-                            <div className="flex items-center gap-2">
-                              {editingHeading === `${key}.${subKey}` ? (
-                                <div className="flex items-center gap-1">
-                                  <Input
-                                    value={section?.heading || ''}
-                                    onChange={(e) => {}}
-                                    placeholder="Custom heading (optional)"
-                                    className="h-7 w-48"
-                                  />
-                                  <Button
-                                    onClick={() => saveHeading(sectionIdx, '')}
-                                    size="sm"
-                                    variant="ghost"
-                                    className="h-7 w-7 p-0"
-                                  >
-                                    <Check className="w-3 h-3 text-green-600" />
-                                  </Button>
-                                  <Button
-                                    onClick={() => setEditingHeading(null)}
-                                    size="sm"
-                                    variant="ghost"
-                                    className="h-7 w-7 p-0"
-                                  >
-                                    <X className="w-3 h-3 text-red-600" />
-                                  </Button>
-                                </div>
-                              ) : (
-                                <span className="text-sm font-semibold">
-                                  {section?.heading || sectionTitle}
-                                </span>
-                              )}
-                            </div>
-                            <div className="flex items-center gap-1">
-                              <Button
-                                onClick={() => startEditHeading(sectionIdx)}
-                                size="sm"
-                                variant="ghost"
-                                className="h-7 w-7 p-0"
-                                title="Edit heading"
-                              >
-                                <Edit2 className="w-3 h-3 text-gray-500" />
-                              </Button>
-                              <Button
-                                onClick={() => toggleCollapsible(sectionIdx)}
-                                size="sm"
-                                variant="ghost"
-                                className={`h-7 w-7 p-0 ${section?.collapsible ? 'text-blue-600' : 'text-gray-400'}`}
-                                title={section?.collapsible ? 'Collapsible enabled' : 'Collapsible disabled'}
-                              >
-                                <AlertCircle className="w-3 h-3" />
-                              </Button>
-                              {section?.collapsible && (
-                                <Button
-                                  onClick={() => toggleCollapsed(sectionIdx)}
-                                  size="sm"
-                                  variant="ghost"
-                                  className="h-7 w-7 p-0"
-                                  title={isCollapsed ? 'Expand' : 'Collapse'}
-                                >
-                                  {isCollapsed ? <ChevronDown className="w-4 h-4" /> : <ChevronUp className="w-4 h-4" />}
-                                </Button>
-                              )}
-                            </div>
-                          </div>
-
-                          {/* Section Content */}
-                          {!isCollapsed && (
-                            <div className="p-4 space-y-4">
-                              <div className="space-y-2">
-                                <Label>Award Title</Label>
-                                <Input
-                                  value={data[key]?.pointLeaders?.title || ''}
-                                  onChange={(e) => updateNestedData([key, 'pointLeaders', 'title'], e.target.value)}
-                                  placeholder="e.g., Dave Nyhuis Award – Regular Season Point Leader"
-                                />
-                              </div>
-
-                              <div className="space-y-4">
-                                <div className="flex items-center justify-between">
-                                  <Label className="text-sm font-medium">Recipients</Label>
-                                  <Button
-                                    onClick={() => {
-                                      const recipients = data[key]?.pointLeaders?.recipients || [];
-                                      updateNestedData([key, 'pointLeaders', 'recipients'], [
-                                        { year: '', player: '', team: '', stats: '', points: 0, games: 0 },
-                                        ...recipients
-                                      ]);
-                                    }}
-                                    size="sm"
-                                  >
-                                    <Plus className="w-4 h-4 mr-2" />
-                                    Add Recipient
-                                  </Button>
-                                </div>
-
-                                {(data[key]?.pointLeaders?.recipients || []).length === 0 && (
-                                  <p className="text-sm text-gray-500 italic">No recipients added yet.</p>
-                                )}
-
-                                {(data[key]?.pointLeaders?.recipients || []).map((recipient: any, idx: number) => (
-                                  <Card key={idx} className="bg-gray-50">
-                                    <CardContent className="pt-6 space-y-3">
-                                      <div className="flex items-center justify-between">
-                                        <Badge>Recipient {idx + 1}</Badge>
-                                        <div className="flex items-center gap-1">
-                                          {idx > 0 && (
-                                            <Button
-                                              onClick={() => {
-                                                const recipients = [...(data[key]?.pointLeaders?.recipients || [])];
-                                                const temp = recipients[idx];
-                                                recipients[idx] = recipients[idx - 1];
-                                                recipients[idx - 1] = temp;
-                                                updateNestedData([key, 'pointLeaders', 'recipients'], recipients);
-                                              }}
-                                              variant="ghost"
-                                              size="sm"
-                                              className="h-7 w-7 p-0"
-                                              title="Move up"
-                                            >
-                                              <ChevronUp className="w-3 h-3" />
-                                            </Button>
-                                          )}
-                                          {idx < (data[key]?.pointLeaders?.recipients || []).length - 1 && (
-                                            <Button
-                                              onClick={() => {
-                                                const recipients = [...(data[key]?.pointLeaders?.recipients || [])];
-                                                const temp = recipients[idx];
-                                                recipients[idx] = recipients[idx + 1];
-                                                recipients[idx + 1] = temp;
-                                                updateNestedData([key, 'pointLeaders', 'recipients'], recipients);
-                                              }}
-                                              variant="ghost"
-                                              size="sm"
-                                              className="h-7 w-7 p-0"
-                                              title="Move down"
-                                            >
-                                              <ChevronDown className="w-3 h-3" />
-                                            </Button>
-                                          )}
-                                          <Button
-                                            onClick={() => {
-                                              const recipients = [...(data[key]?.pointLeaders?.recipients || [])];
-                                              recipients.splice(idx, 1);
-                                              updateNestedData([key, 'pointLeaders', 'recipients'], recipients);
-                                            }}
-                                            variant="ghost"
-                                            size="sm"
-                                          >
-                                            <Trash2 className="w-4 h-4 text-red-600" />
-                                          </Button>
-                                        </div>
-                                      </div>
-
-                                      <div className="grid grid-cols-2 gap-3">
-                                        <div className="space-y-1">
-                                          <Label className="text-xs">Year</Label>
-                                          <Input
-                                            value={recipient.year || ''}
-                                            onChange={(e) => {
-                                              const recipients = [...(data[key]?.pointLeaders?.recipients || [])];
-                                              recipients[idx] = { ...recipients[idx], year: e.target.value };
-                                              updateNestedData([key, 'pointLeaders', 'recipients'], recipients);
-                                            }}
-                                            placeholder="2025"
-                                          />
-                                        </div>
-                                        <div className="space-y-1">
-                                          <Label className="text-xs">Player (with #)</Label>
-                                          <Input
-                                            value={recipient.player || ''}
-                                            onChange={(e) => {
-                                              const recipients = [...(data[key]?.pointLeaders?.recipients || [])];
-                                              recipients[idx] = { ...recipients[idx], player: e.target.value };
-                                              updateNestedData([key, 'pointLeaders', 'recipients'], recipients);
-                                            }}
-                                            placeholder="#17 John Doe"
-                                          />
-                                        </div>
-                                      </div>
-
-                                      <div className="space-y-1">
-                                        <Label className="text-xs">Team</Label>
-                                        <Input
-                                          value={recipient.team || ''}
-                                          onChange={(e) => {
-                                            const recipients = [...(data[key]?.pointLeaders?.recipients || [])];
-                                            recipients[idx] = { ...recipients[idx], team: e.target.value };
-                                            updateNestedData([key, 'pointLeaders', 'recipients'], recipients);
-                                          }}
-                                          placeholder="Team name"
-                                        />
-                                      </div>
-
-                                      <div className="space-y-1">
-                                        <Label className="text-xs">Stats</Label>
-                                        <Input
-                                          value={recipient.stats || ''}
-                                          onChange={(e) => {
-                                            const recipients = [...(data[key]?.pointLeaders?.recipients || [])];
-                                            recipients[idx] = { ...recipients[idx], stats: e.target.value };
-                                            updateNestedData([key, 'pointLeaders', 'recipients'], recipients);
-                                          }}
-                                          placeholder="46 goals; 54 assists"
-                                        />
-                                      </div>
-
-                                      <div className="grid grid-cols-2 gap-3">
-                                        <div className="space-y-1">
-                                          <Label className="text-xs">Points</Label>
-                                          <Input
-                                            type="number"
-                                            value={recipient.points || ''}
-                                            onChange={(e) => {
-                                              const recipients = [...(data[key]?.pointLeaders?.recipients || [])];
-                                              recipients[idx] = { ...recipients[idx], points: parseInt(e.target.value) || 0 };
-                                              updateNestedData([key, 'pointLeaders', 'recipients'], recipients);
-                                            }}
-                                            placeholder="100"
-                                          />
-                                        </div>
-                                        <div className="space-y-1">
-                                          <Label className="text-xs">Games</Label>
-                                          <Input
-                                            type="number"
-                                            value={recipient.games || ''}
-                                            onChange={(e) => {
-                                              const recipients = [...(data[key]?.pointLeaders?.recipients || [])];
-                                              recipients[idx] = { ...recipients[idx], games: parseInt(e.target.value) || 0 };
-                                              updateNestedData([key, 'pointLeaders', 'recipients'], recipients);
-                                            }}
-                                            placeholder="16"
-                                          />
-                                        </div>
-                                      </div>
-
-                                      <div className="space-y-1">
-                                        <Label className="text-xs">Note (optional)</Label>
-                                        <Input
-                                          value={recipient.note || ''}
-                                          onChange={(e) => {
-                                            const recipients = [...(data[key]?.pointLeaders?.recipients || [])];
-                                            recipients[idx] = { ...recipients[idx], note: e.target.value };
-                                            updateNestedData([key, 'pointLeaders', 'recipients'], recipients);
-                                          }}
-                                          placeholder="e.g., North Central Division"
-                                        />
-                                      </div>
-                                    </CardContent>
-                                  </Card>
-                                ))}
-                              </div>
-                            </div>
+                  {recipients.map((recipient, idx) => (
+                    <div key={idx} className="bg-gray-50 border rounded-lg p-4 space-y-3">
+                      <div className="flex items-center justify-between">
+                        <Badge>Recipient {idx + 1}</Badge>
+                        <div className="flex items-center gap-1">
+                          {idx > 0 && (
+                            <Button
+                              onClick={() => moveRecipient(section.id, idx, 'up')}
+                              size="sm"
+                              variant="ghost"
+                              className="h-7 w-7 p-0"
+                              title="Move up"
+                            >
+                              <ChevronUp className="w-3 h-3" />
+                            </Button>
                           )}
-                        </div>
-                      );
-                    }
-
-                    // Default section rendering for other award types
-                    return (
-                      <div key={subKey} className="border rounded-lg p-4">
-                        <div className="flex items-center justify-between mb-3">
-                          <Label className="text-base font-semibold">{sectionTitle}</Label>
-                          <Alert>
-                            <AlertCircle className="h-4 w-4" />
-                            <AlertDescription>
-                              Use the JSON Editor to edit this section's content.
-                            </AlertDescription>
-                          </Alert>
+                          {idx < recipients.length - 1 && (
+                            <Button
+                              onClick={() => moveRecipient(section.id, idx, 'down')}
+                              size="sm"
+                              variant="ghost"
+                              className="h-7 w-7 p-0"
+                              title="Move down"
+                            >
+                              <ChevronDown className="w-3 h-3" />
+                            </Button>
+                          )}
+                          <Button
+                            onClick={() => removeRecipient(section.id, idx)}
+                            size="sm"
+                            variant="ghost"
+                            className="h-7 w-7 p-0 text-red-600"
+                            title="Remove"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </Button>
                         </div>
                       </div>
-                    );
-                  })}
-                </CardContent>
-              </Card>
-            </TabsContent>
-          ))}
-        </Tabs>
-      )}
+
+                      <div className="grid grid-cols-2 gap-3">
+                        <div className="space-y-1">
+                          <label className="text-xs">Year</label>
+                          <input
+                            value={recipient.year || ''}
+                            onChange={(e) => updateRecipient(section.id, idx, 'year', e.target.value)}
+                            placeholder="2025"
+                            className="w-full border rounded px-2 py-1.5 text-sm"
+                          />
+                        </div>
+                        <div className="space-y-1">
+                          <label className="text-xs">Player (with #)</label>
+                          <input
+                            value={recipient.player || ''}
+                            onChange={(e) => updateRecipient(section.id, idx, 'player', e.target.value)}
+                            placeholder="#17 John Doe"
+                            className="w-full border rounded px-2 py-1.5 text-sm"
+                          />
+                        </div>
+                      </div>
+
+                      <div className="space-y-1">
+                        <label className="text-xs">Team</label>
+                        <input
+                          value={recipient.team || ''}
+                          onChange={(e) => updateRecipient(section.id, idx, 'team', e.target.value)}
+                          placeholder="Team name"
+                          className="w-full border rounded px-2 py-1.5 text-sm"
+                        />
+                      </div>
+
+                      <div className="space-y-1">
+                        <label className="text-xs">Stats</label>
+                        <input
+                          value={recipient.stats || ''}
+                          onChange={(e) => updateRecipient(section.id, idx, 'stats', e.target.value)}
+                          placeholder="46 goals; 54 assists"
+                          className="w-full border rounded px-2 py-1.5 text-sm"
+                        />
+                      </div>
+
+                      <div className="grid grid-cols-2 gap-3">
+                        <div className="space-y-1">
+                          <label className="text-xs">Points</label>
+                          <input
+                            type="number"
+                            value={recipient.points || ''}
+                            onChange={(e) => updateRecipient(section.id, idx, 'points', e.target.value ? parseInt(e.target.value) || 0 : 0)}
+                            placeholder="100"
+                            className="w-full border rounded px-2 py-1.5 text-sm"
+                          />
+                        </div>
+                        <div className="space-y-1">
+                          <label className="text-xs">Games</label>
+                          <input
+                            type="number"
+                            value={recipient.games || ''}
+                            onChange={(e) => updateRecipient(section.id, idx, 'games', e.target.value ? parseInt(e.target.value) || 0 : 0)}
+                            placeholder="16"
+                            className="w-full border rounded px-2 py-1.5 text-sm"
+                          />
+                        </div>
+                      </div>
+
+                      <div className="space-y-1">
+                        <label className="text-xs">Note (optional)</label>
+                        <input
+                          value={recipient.note || ''}
+                          onChange={(e) => updateRecipient(section.id, idx, 'note', e.target.value)}
+                          placeholder="e.g., North Central Division"
+                          className="w-full border rounded px-2 py-1.5 text-sm"
+                        />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </Card>
+        );
+      })}
     </div>
   );
 }

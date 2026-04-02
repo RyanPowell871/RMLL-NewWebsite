@@ -8,6 +8,7 @@ import { Alert, AlertDescription } from '../ui/alert';
 import { Badge } from '../ui/badge';
 import { Plus, Trash2, AlertCircle, Code, Eye, ChevronUp, ChevronDown, Edit2, Check, X } from 'lucide-react';
 import { Textarea } from '../ui/textarea';
+import { TextareaWithLinkInserter } from './TextareaWithLinkInserter';
 
 interface ChampionshipsEditorProps {
   value: string;
@@ -230,6 +231,7 @@ export function ChampionshipsEditor({ value, onChange, divisionName }: Champions
             const metadata = data.__metadata?.[key] || {};
             const isCollapsed = metadata.collapsed ?? false;
             const isCollapsible = metadata.collapsible ?? true;
+            const sectionData = data[key] || {};
 
             return (
               <TabsContent key={key} value={key} className="space-y-4">
@@ -242,10 +244,18 @@ export function ChampionshipsEditor({ value, onChange, divisionName }: Champions
                             <div className="flex items-center gap-2">
                               <Input
                                 value={metadata.heading || ''}
-                                onChange={(e) => {}}
+                                onChange={(e) => updateMetadata(key, 'heading', e.target.value)}
                                 placeholder="Custom heading (optional)"
                                 className="h-8 w-64"
                               />
+                              <Button
+                                onClick={() => setEditingHeading(null)}
+                                size="sm"
+                                variant="ghost"
+                                className="h-8 w-8 p-0"
+                              >
+                                <Check className="w-4 h-4 text-green-600" />
+                              </Button>
                               <Button
                                 onClick={() => {
                                   updateMetadata(key, 'heading', '');
@@ -255,20 +265,12 @@ export function ChampionshipsEditor({ value, onChange, divisionName }: Champions
                                 variant="ghost"
                                 className="h-8 w-8 p-0"
                               >
-                                <Check className="w-4 h-4 text-green-600" />
-                              </Button>
-                              <Button
-                                onClick={() => setEditingHeading(null)}
-                                size="sm"
-                                variant="ghost"
-                                className="h-8 w-8 p-0"
-                              >
                                 <X className="w-4 h-4 text-red-600" />
                               </Button>
                             </div>
                           ) : (
                             <>
-                              <CardTitle>{getTabLabel(key)} Championship</CardTitle>
+                              <CardTitle>{metadata.heading || `${getTabLabel(key)} Championship`}</CardTitle>
                               <CardDescription>{getTabDescription(key)}</CardDescription>
                             </>
                           )}
@@ -308,44 +310,42 @@ export function ChampionshipsEditor({ value, onChange, divisionName }: Champions
                     </CardHeader>
                     {!isCollapsed && (
                       <CardContent className="space-y-4">
-                        <div className="space-y-2">
-                          <Label>Title</Label>
-                          <Input
-                            value={data[key]?.title || ''}
-                            onChange={(e) => updateNestedData([key, 'title'], e.target.value)}
-                            placeholder={`${getTabLabel(key)} Championships`}
-                          />
-                        </div>
+                        <TextareaWithLinkInserter
+                          id={`${key}-title`}
+                          label="Title"
+                          value={sectionData.title || ''}
+                          onChange={(value) => updateNestedData([key, 'title'], value)}
+                          rows={1}
+                          placeholder={`${getTabLabel(key)} Championships`}
+                        />
 
-                        <div className="space-y-2">
-                          <Label>Description</Label>
-                          <Textarea
-                            value={data[key]?.description || ''}
-                            onChange={(e) => updateNestedData([key, 'description'], e.target.value)}
-                            placeholder="Optional description..."
-                            rows={2}
-                          />
-                        </div>
+                        <TextareaWithLinkInserter
+                          id={`${key}-description`}
+                          label="Description"
+                          value={sectionData.description || ''}
+                          onChange={(value) => updateNestedData([key, 'description'], value)}
+                          rows={3}
+                          placeholder="Optional description..."
+                        />
 
-                        <div className="border-t pt-4 space-y-2">
+                        <div className="border-t pt-4 space-y-3">
                           <Label className="text-base font-semibold">Trophy Information</Label>
                           <div className="space-y-2">
                             <Label>Trophy Name</Label>
                             <Input
-                              value={data[key]?.trophy?.name || ''}
+                              value={sectionData.trophy?.name || ''}
                               onChange={(e) => updateNestedData([key, 'trophy', 'name'], e.target.value)}
                               placeholder="e.g., Carol Patterson Trophy"
                             />
                           </div>
-                          <div className="space-y-2">
-                            <Label>Trophy Description</Label>
-                            <Textarea
-                              value={data[key]?.trophy?.description || ''}
-                              onChange={(e) => updateNestedData([key, 'trophy', 'description'], e.target.value)}
-                              placeholder="Trophy history and significance..."
-                              rows={4}
-                            />
-                          </div>
+                          <TextareaWithLinkInserter
+                            id={`${key}-trophy-description`}
+                            label="Trophy Description"
+                            value={sectionData.trophy?.description || ''}
+                            onChange={(value) => updateNestedData([key, 'trophy', 'description'], value)}
+                            rows={4}
+                            placeholder="Trophy history and significance..."
+                          />
                         </div>
 
                         <div className="border-t pt-4 space-y-4">
@@ -366,11 +366,11 @@ export function ChampionshipsEditor({ value, onChange, divisionName }: Champions
                             </Button>
                           </div>
 
-                          {(data[key]?.results || []).length === 0 && (
+                          {(sectionData.results || []).length === 0 && (
                             <p className="text-sm text-gray-500 italic">No results added yet.</p>
                           )}
 
-                          {(data[key]?.results || []).map((result: any, idx: number) => (
+                          {(sectionData.results || []).map((result: any, idx: number) => (
                             <Card key={idx} className="bg-gray-50">
                               <CardContent className="pt-6 space-y-3">
                                 <div className="flex items-center justify-between">
@@ -387,7 +387,7 @@ export function ChampionshipsEditor({ value, onChange, divisionName }: Champions
                                         <ChevronUp className="w-3 h-3" />
                                       </Button>
                                     )}
-                                    {idx < (data[key]?.results || []).length - 1 && (
+                                    {idx < (sectionData.results || []).length - 1 && (
                                       <Button
                                         onClick={() => moveResult(key, idx, 'down')}
                                         variant="ghost"
@@ -495,10 +495,18 @@ export function ChampionshipsEditor({ value, onChange, divisionName }: Champions
                             <div className="flex items-center gap-2">
                               <Input
                                 value={metadata.heading || ''}
-                                onChange={(e) => {}}
+                                onChange={(e) => updateMetadata(key, 'heading', e.target.value)}
                                 placeholder="Custom heading (optional)"
                                 className="h-8 w-64"
                               />
+                              <Button
+                                onClick={() => setEditingHeading(null)}
+                                size="sm"
+                                variant="ghost"
+                                className="h-8 w-8 p-0"
+                              >
+                                <Check className="w-4 h-4 text-green-600" />
+                              </Button>
                               <Button
                                 onClick={() => {
                                   updateMetadata(key, 'heading', '');
@@ -508,20 +516,12 @@ export function ChampionshipsEditor({ value, onChange, divisionName }: Champions
                                 variant="ghost"
                                 className="h-8 w-8 p-0"
                               >
-                                <Check className="w-4 h-4 text-green-600" />
-                              </Button>
-                              <Button
-                                onClick={() => setEditingHeading(null)}
-                                size="sm"
-                                variant="ghost"
-                                className="h-8 w-8 p-0"
-                              >
                                 <X className="w-4 h-4 text-red-600" />
                               </Button>
                             </div>
                           ) : (
                             <>
-                              <CardTitle>{getTabLabel(key)} Champions</CardTitle>
+                              <CardTitle>{metadata.heading || `${getTabLabel(key)} Champions`}</CardTitle>
                               <CardDescription>{getTabDescription(key)}</CardDescription>
                             </>
                           )}
@@ -564,7 +564,7 @@ export function ChampionshipsEditor({ value, onChange, divisionName }: Champions
                         <div className="space-y-2">
                           <Label>Conference Name</Label>
                           <Input
-                            value={data[key]?.conferenceName || ''}
+                            value={sectionData.conferenceName || ''}
                             onChange={(e) => updateNestedData([key, 'conferenceName'], e.target.value)}
                             placeholder={key === 'north' ? "e.g., Jim Andrews Conference" : "e.g., Cindy Garant Conference"}
                           />
@@ -588,12 +588,12 @@ export function ChampionshipsEditor({ value, onChange, divisionName }: Champions
                             </Button>
                           </div>
 
-                          {(data[key]?.champions || []).length === 0 && (
+                          {(sectionData.champions || []).length === 0 && (
                             <p className="text-sm text-gray-500 italic">No champions added yet.</p>
                           )}
 
                           <div className="grid gap-2">
-                            {(data[key]?.champions || []).map((champion: any, idx: number) => (
+                            {(sectionData.champions || []).map((champion: any, idx: number) => (
                               <div key={idx} className="flex items-center gap-2 p-2 bg-gray-50 rounded">
                                 {idx > 0 && (
                                   <Button
@@ -606,7 +606,7 @@ export function ChampionshipsEditor({ value, onChange, divisionName }: Champions
                                     <ChevronUp className="w-3 h-3" />
                                   </Button>
                                 )}
-                                {idx < (data[key]?.champions || []).length - 1 && (
+                                {idx < (sectionData.champions || []).length - 1 && (
                                   <Button
                                     onClick={() => moveChampion(key, idx, 'down')}
                                     variant="ghost"
