@@ -47,7 +47,7 @@ import {
   CommitDiff,
   type Commit,
 } from './CommitHistory';
-import { DiffViewer } from './DiffViewer';
+import { DiffViewer, CompactDiffViewer } from './DiffViewer';
 import { LinkInserter, type LinkInsertOptions } from './LinkInserter';
 import {
   Dialog,
@@ -969,49 +969,59 @@ export function DirectCodeEditor() {
 
       {/* AI Result Dialog - Diff Viewer */}
       <Dialog open={state.aiResultOpen} onOpenChange={(open) => !open && handleRejectAIChanges()}>
-        <DialogContent className="sm:max-w-[90vw] max-h-[90vh] p-0 overflow-hidden">
-          <div className="flex flex-col h-[85vh]">
-            <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800">
-              <div>
-                <DialogTitle className="flex items-center gap-2 text-lg">
-                  <Sparkles className="w-5 h-5 text-purple-600" />
-                  Review AI Changes
-                </DialogTitle>
-                <DialogDescription className="mt-1">
-                  Review the changes below. Accept to apply them to the editor, or reject to cancel.
-                </DialogDescription>
-              </div>
+        <DialogContent className="sm:max-w-[90vw] max-h-[90vh] p-0 overflow-hidden flex flex-col">
+          {/* Header */}
+          <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 shrink-0">
+            <div>
+              <DialogTitle className="flex items-center gap-2 text-lg mb-1">
+                <Sparkles className="w-5 h-5 text-purple-600" />
+                Review AI Changes
+              </DialogTitle>
+              <DialogDescription>
+                Review the changes below. Accept to apply them to the editor, or reject to cancel.
+              </DialogDescription>
             </div>
-            <div className="flex-1 overflow-hidden">
-              <DiffViewer
-                oldContent={state.aiOriginalContent}
-                newContent={state.aiNewContent}
-                fileName={state.aiFileName}
-              />
+            <button
+              onClick={handleRejectAIChanges}
+              className="rounded-sm opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none"
+            >
+              <X className="h-4 w-4" />
+              <span className="sr-only">Close</span>
+            </button>
+          </div>
+
+          {/* Diff content */}
+          <div className="flex-1 overflow-hidden min-h-0">
+            <CompactDiffViewer
+              oldContent={state.aiOriginalContent}
+              newContent={state.aiNewContent}
+              fileName={state.aiFileName}
+            />
+          </div>
+
+          {/* Footer with accept/reject buttons */}
+          <div className="flex items-center justify-between px-6 py-4 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 shrink-0">
+            <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
+              <Badge variant="outline" className="text-xs">
+                {state.aiFileName}
+              </Badge>
             </div>
-            <div className="flex items-center justify-between px-6 py-4 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800">
-              <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
-                <Badge variant="outline" className="text-xs">
-                  {state.aiFileName}
-                </Badge>
-              </div>
-              <div className="flex items-center gap-3">
-                <Button
-                  variant="outline"
-                  onClick={handleRejectAIChanges}
-                  className="border-red-300 text-red-700 hover:bg-red-50 hover:text-red-800"
-                >
-                  <XCircle className="w-4 h-4 mr-2" />
-                  Reject
-                </Button>
-                <Button
-                  onClick={handleAcceptAIChanges}
-                  className="bg-green-600 hover:bg-green-700"
-                >
-                  <CheckCheck className="w-4 h-4 mr-2" />
-                  Accept Changes
-                </Button>
-              </div>
+            <div className="flex items-center gap-3">
+              <Button
+                variant="outline"
+                onClick={handleRejectAIChanges}
+                className="border-red-300 text-red-700 hover:bg-red-50 hover:text-red-800"
+              >
+                <XCircle className="w-4 h-4 mr-2" />
+                Reject
+              </Button>
+              <Button
+                onClick={handleAcceptAIChanges}
+                className="bg-green-600 hover:bg-green-700"
+              >
+                <CheckCheck className="w-4 h-4 mr-2" />
+                Accept Changes
+              </Button>
             </div>
           </div>
         </DialogContent>
