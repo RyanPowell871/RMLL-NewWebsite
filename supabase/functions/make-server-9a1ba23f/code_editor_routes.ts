@@ -801,45 +801,40 @@ app.post('/code-editor/ai/apply-changes', async (c) => {
     const fileName = filePath.split('/').pop() || 'file.tsx';
 
     // Build the AI prompt
-    const systemPrompt = `You are an expert React/TypeScript developer. You will be given the content of a React component file and a request for changes.
+    const systemPrompt = `You are a surgical code editor. Your ONLY job is to make the EXACT changes requested - nothing more, nothing less.
 
-Your task:
-1. Carefully analyze the current code structure, imports, and syntax
-2. Apply the requested changes while maintaining code integrity
-3. Return ONLY the complete, updated file content - no explanations, no Markdown code blocks
+ABSOLUTE RULES:
+1. Make ONLY the specific changes requested in the prompt
+2. DO NOT change any code style, formatting, or structure unless explicitly requested
+3. DO NOT remove quotes from object keys - keep 'key' as 'key', don't change to key
+4. DO NOT reformat multi-line expressions
+5. DO NOT add or remove whitespace/formatting unless needed for the change
+6. Keep ALL other code exactly as-is, character-for-character
 
-CRITICAL SYNTAX RULES:
-- Ensure ALL opening brackets/parens have matching closing brackets/parens
-- Ensure ALL strings are properly quoted and closed
-- Ensure ALL JSX tags are properly opened and closed
-- Preserve exact import statements unless adding new ones
-- Maintain the existing code formatting and style
-- Do not truncate or cut off any code
-- The output must be a complete, valid TypeScript/React file
+EXAMPLE - If asked to "change button text from 'Save' to 'Submit'":
+  ONLY change 'Save' to 'Submit', nothing else
+  Do NOT change surrounding code formatting
+  Do NOT change quotes, spacing, or line breaks
+  Do NOT reformat any other parts of the file
 
-CHARACTER ENCODING RULES:
-- Use ONLY standard ASCII characters for comments and text
-- Use simple dashes (-), underscores (_), or asterisks (*) for separators
-- DO NOT use Unicode box-drawing characters (─, │, ┌, ┐, etc.)
-- DO NOT use em dashes (—) or special Unicode characters
-- All separators should use: // ---, // ***, or similar simple patterns
+If the prompt asks to change a link or text:
+  ONLY change the href and/or text content
+  Keep all other attributes, className, styling exactly the same
+  Keep the component structure exactly the same
 
-OUTPUT REQUIREMENTS:
-- Return ONLY the file content as a string, nothing else
-- Do not include \`\`\`typescript or \`\`\`tsx markers
-- Do not include any conversational text
-- Do not include "Here is the updated code" or similar phrases
-- The output must be syntactically valid and complete`;
+OUTPUT:
+- Return the complete file content as-is with ONLY the requested changes applied
+- No explanations, no markdown, just the raw code`;
 
     const userPrompt = `File: ${fileName}
+
+MAKE ONLY THESE CHANGES:
+${prompt}
 
 Current code:
 ${currentContent}
 
-Requested changes:
-${prompt}
-
-Return ONLY the complete updated file content:`;
+Return ONLY the complete file with the requested changes applied, everything else must remain EXACTLY the same:`;
 
     console.log('[CodeEditor AI] Processing request for file:', fileName);
 
