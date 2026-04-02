@@ -823,6 +823,13 @@ CRITICAL SYNTAX RULES:
 - Do not truncate or cut off any code
 - The output must be a complete, valid TypeScript/React file
 
+CHARACTER ENCODING RULES:
+- Use ONLY standard ASCII characters for comments and text
+- Use simple dashes (-), underscores (_), or asterisks (*) for separators
+- DO NOT use Unicode box-drawing characters (─, │, ┌, ┐, etc.)
+- DO NOT use em dashes (—) or special Unicode characters
+- All separators should use: // ---, // ***, or similar simple patterns
+
 OUTPUT REQUIREMENTS:
 - Return ONLY the file content as a string, nothing else
 - Do not include \`\`\`typescript or \`\`\`tsx markers
