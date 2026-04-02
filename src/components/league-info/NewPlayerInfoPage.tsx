@@ -723,7 +723,7 @@ export function NewPlayerInfoPage() {
             Lacrosse, the RMLL Junior Divisions, drafts, player rights, etc., please feel free to contact:
           </p>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            {data.CONTACTS.map((c) => (
+            {CONTACTS.map((c) => (
               <div key={c.email} className="bg-white border border-gray-200 rounded-lg p-3">
                 <p className="text-xs text-gray-500 font-semibold uppercase">{c.role}</p>
                 <p className="text-sm font-bold text-gray-900">{c.name}</p>
