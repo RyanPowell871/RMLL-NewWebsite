@@ -183,31 +183,23 @@ export function LinkInserter({ open, onOpenChange, onInsert, trigger }: LinkInse
     <>
       {trigger}
       <Dialog open={open} onOpenChange={handleClose}>
-        <DialogContent className="w-[95vw] md:w-[800px] max-w-none max-h-[90vh] flex flex-col">
+        <DialogContent className="!max-w-[95vw] !md:!max-w-[800px] w-[95vw] md:w-[800px] max-h-[90vh] flex flex-col p-0">
         <DialogHeader>
           <DialogTitle>Insert Link</DialogTitle>
         </DialogHeader>
         <Tabs defaultValue="documents" className="flex-1 overflow-hidden flex flex-col">
           <TabsList className="grid w-full grid-cols-4 h-auto">
-            <TabsTrigger value="documents" className="whitespace-nowrap text-xs md:text-sm py-2.5 px-2">
-              <FileText className="w-4 h-4 mr-1 md:mr-2" />
-              <span className="hidden sm:inline">Documents</span>
-              <span className="sm:hidden">Docs</span>
+            <TabsTrigger value="documents" className="text-xs py-3 px-1">
+              Documents
             </TabsTrigger>
-            <TabsTrigger value="pages" className="whitespace-nowrap text-xs md:text-sm py-2.5 px-2">
-              <MenuIcon className="w-4 h-4 mr-1 md:mr-2" />
-              <span className="hidden sm:inline">Pages</span>
-              <span className="sm:hidden">Pages</span>
+            <TabsTrigger value="pages" className="text-xs py-3 px-1">
+              Pages
             </TabsTrigger>
-            <TabsTrigger value="league-info" className="whitespace-nowrap text-xs md:text-sm py-2.5 px-2">
-              <Book className="w-4 h-4 mr-1 md:mr-2" />
-              <span className="hidden sm:inline">League Info</span>
-              <span className="sm:hidden">Info</span>
+            <TabsTrigger value="league-info" className="text-xs py-3 px-1">
+              League Info
             </TabsTrigger>
-            <TabsTrigger value="custom" className="whitespace-nowrap text-xs md:text-sm py-2.5 px-2">
-              <ExternalLink className="w-4 h-4 mr-1 md:mr-2" />
-              <span className="hidden sm:inline">Custom URL</span>
-              <span className="sm:hidden">Custom</span>
+            <TabsTrigger value="custom" className="text-xs py-3 px-1">
+              Custom URL
             </TabsTrigger>
           </TabsList>
 
@@ -240,7 +232,7 @@ export function LinkInserter({ open, onOpenChange, onInsert, trigger }: LinkInse
                 ))}
               </div>
             </div>
-            <ScrollArea className="flex-1 border rounded-lg mt-3">
+            <ScrollArea className="flex-1 border rounded-lg mt-3 max-h-[400px]">
               <div className="p-2 space-y-1">
                 {filteredDocuments.length === 0 ? (
                   <div className="text-center py-8 text-gray-500">
@@ -304,7 +296,7 @@ export function LinkInserter({ open, onOpenChange, onInsert, trigger }: LinkInse
                 />
               </div>
             </div>
-            <ScrollArea className="flex-1 border rounded-lg mt-3">
+            <ScrollArea className="flex-1 border rounded-lg mt-3 max-h-[400px]">
               <div className="p-2 space-y-1">
                 {filteredSitePages.length === 0 ? (
                   <div className="text-center py-8 text-gray-500">
@@ -364,7 +356,7 @@ export function LinkInserter({ open, onOpenChange, onInsert, trigger }: LinkInse
                 />
               </div>
             </div>
-            <ScrollArea className="flex-1 border rounded-lg mt-3">
+            <ScrollArea className="flex-1 border rounded-lg mt-3 max-h-[400px]">
               <div className="p-2">
                 {(() => {
                   const categories = [...new Set(filteredLeagueInfoPages.map(p => p.category))];
