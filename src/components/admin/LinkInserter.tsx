@@ -183,284 +183,289 @@ export function LinkInserter({ open, onOpenChange, onInsert, trigger }: LinkInse
     <>
       {trigger}
       <Dialog open={open} onOpenChange={handleClose}>
-        <DialogContent className="!max-w-[95vw] !md:!max-w-[800px] w-[95vw] md:w-[800px] max-h-[90vh] flex flex-col p-0">
-        <DialogHeader>
+        <DialogContent className="!max-w-[95vw] !md:!max-w-[800px] w-[95vw] md:w-[800px] max-h-[90vh] flex flex-col p-6 gap-0 overflow-hidden">
+        <DialogHeader className="px-0 pb-4">
           <DialogTitle>Insert Link</DialogTitle>
         </DialogHeader>
-        <Tabs defaultValue="documents" className="flex-1 overflow-hidden flex flex-col">
-          <TabsList className="grid w-full grid-cols-4 h-auto">
-            <TabsTrigger value="documents" className="text-xs py-3 px-1">
+
+        {/* Tab navigation */}
+        <Tabs defaultValue="documents" className="flex-1 overflow-hidden flex flex-col min-h-0">
+          <TabsList className="grid w-full grid-cols-4 h-auto mb-4">
+            <TabsTrigger value="documents" className="text-xs py-2.5 px-2">
               Documents
             </TabsTrigger>
-            <TabsTrigger value="pages" className="text-xs py-3 px-1">
+            <TabsTrigger value="pages" className="text-xs py-2.5 px-2">
               Pages
             </TabsTrigger>
-            <TabsTrigger value="league-info" className="text-xs py-3 px-1">
+            <TabsTrigger value="league-info" className="text-xs py-2.5 px-2">
               League Info
             </TabsTrigger>
-            <TabsTrigger value="custom" className="text-xs py-3 px-1">
+            <TabsTrigger value="custom" className="text-xs py-2.5 px-2">
               Custom URL
             </TabsTrigger>
           </TabsList>
 
-          {/* Documents Tab */}
-          <TabsContent value="documents" className="flex-1 overflow-hidden flex flex-col mt-4">
-            <div className="space-y-3 flex-shrink-0">
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-                <Input
-                  placeholder="Search documents..."
-                  value={docSearch}
-                  onChange={(e) => setDocSearch(e.target.value)}
-                  className="pl-9"
-                />
-              </div>
-              <div className="flex gap-2 flex-wrap">
-                {categories.map((cat) => (
-                  <button
-                    key={cat}
-                    type="button"
-                    onClick={() => setDocCategory(cat)}
-                    className={`px-3 py-1.5 text-xs font-semibold rounded-full transition-colors ${
-                      docCategory === cat
-                        ? 'bg-[#013fac] text-white'
-                        : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                    }`}
-                  >
-                    {cat}
-                  </button>
-                ))}
-              </div>
-            </div>
-            <ScrollArea className="flex-1 border rounded-lg mt-3 max-h-[400px]">
-              <div className="p-2 space-y-1">
-                {filteredDocuments.length === 0 ? (
-                  <div className="text-center py-8 text-gray-500">
-                    No documents found
-                  </div>
-                ) : (
-                  filteredDocuments.map((doc) => (
+          {/* Tab content area - scrollable */}
+          <div className="flex-1 overflow-hidden flex flex-col min-h-0">
+            {/* Documents Tab */}
+            <TabsContent value="documents" className="flex-1 overflow-hidden flex flex-col m-0 h-full">
+              <div className="space-y-3 flex-shrink-0 pb-3">
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                  <Input
+                    placeholder="Search documents..."
+                    value={docSearch}
+                    onChange={(e) => setDocSearch(e.target.value)}
+                    className="pl-9"
+                  />
+                </div>
+                <div className="flex gap-2 flex-wrap">
+                  {categories.map((cat) => (
                     <button
-                      key={doc.id}
+                      key={cat}
                       type="button"
-                      onClick={() => selectDocument(doc)}
-                      className={`w-full text-left p-3 rounded-lg transition-colors border group ${
-                        selectedItem?.url === `/league-info#documents?doc=${doc.id}`
-                          ? 'bg-[#013fac] text-white border-[#013fac]'
-                          : 'hover:bg-gray-100 border-transparent hover:border-gray-200'
+                      onClick={() => setDocCategory(cat)}
+                      className={`px-3 py-1.5 text-xs font-semibold rounded-full transition-colors ${
+                        docCategory === cat
+                          ? 'bg-[#013fac] text-white'
+                          : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                       }`}
                     >
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-3">
-                          <div className={`p-2 rounded group-hover:transition-colors ${
-                            selectedItem?.url === `/league-info#documents?doc=${doc.id}`
-                              ? 'bg-blue-800'
-                              : 'bg-red-50 group-hover:bg-red-100'
-                          }`}>
-                            <FileText className="w-4 h-4 text-red-600" />
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <div className="font-semibold text-sm truncate">
-                              {doc.title}
-                            </div>
-                            <div className={`text-xs flex items-center gap-2 ${
+                      {cat}
+                    </button>
+                  ))}
+                </div>
+              </div>
+              <ScrollArea className="flex-1 border rounded-lg">
+                <div className="p-3 space-y-1">
+                  {filteredDocuments.length === 0 ? (
+                    <div className="text-center py-8 text-gray-500">
+                      No documents found
+                    </div>
+                  ) : (
+                    filteredDocuments.map((doc) => (
+                      <button
+                        key={doc.id}
+                        type="button"
+                        onClick={() => selectDocument(doc)}
+                        className={`w-full text-left p-3 rounded-lg transition-colors border group ${
+                          selectedItem?.url === `/league-info#documents?doc=${doc.id}`
+                            ? 'bg-[#013fac] text-white border-[#013fac]'
+                            : 'hover:bg-gray-100 border-transparent hover:border-gray-200'
+                        }`}
+                      >
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-3">
+                            <div className={`p-2 rounded group-hover:transition-colors ${
                               selectedItem?.url === `/league-info#documents?doc=${doc.id}`
-                                ? 'text-blue-200'
-                                : 'text-gray-500'
+                                ? 'bg-blue-800'
+                                : 'bg-red-50 group-hover:bg-red-100'
                             }`}>
-                              <span>{doc.category}</span>
-                              <span>•</span>
-                              <span>{doc.year}</span>
+                              <FileText className="w-4 h-4 text-red-600" />
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <div className="font-semibold text-sm truncate">
+                                {doc.title}
+                              </div>
+                              <div className={`text-xs flex items-center gap-2 ${
+                                selectedItem?.url === `/league-info#documents?doc=${doc.id}`
+                                  ? 'text-blue-200'
+                                  : 'text-gray-500'
+                              }`}>
+                                <span>{doc.category}</span>
+                                <span>•</span>
+                                <span>{doc.year}</span>
+                              </div>
                             </div>
                           </div>
+                          <ExternalLink className="w-4 h-4" />
                         </div>
-                        <ExternalLink className="w-4 h-4" />
-                      </div>
-                    </button>
-                  ))
-                )}
-              </div>
-            </ScrollArea>
-          </TabsContent>
+                      </button>
+                    ))
+                  )}
+                </div>
+              </ScrollArea>
+            </TabsContent>
 
-          {/* Site Pages Tab */}
-          <TabsContent value="pages" className="flex-1 overflow-hidden flex flex-col mt-4">
-            <div className="space-y-3 flex-shrink-0">
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-                <Input
-                  placeholder="Search pages..."
-                  value={pageSearch}
-                  onChange={(e) => setPageSearch(e.target.value)}
-                  className="pl-9"
-                />
+            {/* Site Pages Tab */}
+            <TabsContent value="pages" className="flex-1 overflow-hidden flex flex-col m-0 h-full">
+              <div className="space-y-3 flex-shrink-0 pb-3">
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                  <Input
+                    placeholder="Search pages..."
+                    value={pageSearch}
+                    onChange={(e) => setPageSearch(e.target.value)}
+                    className="pl-9"
+                  />
+                </div>
               </div>
-            </div>
-            <ScrollArea className="flex-1 border rounded-lg mt-3 max-h-[400px]">
-              <div className="p-2 space-y-1">
-                {filteredSitePages.length === 0 ? (
-                  <div className="text-center py-8 text-gray-500">
-                    No pages found
-                  </div>
-                ) : (
-                  filteredSitePages.map((page) => (
-                    <button
-                      key={page.id}
-                      type="button"
-                      onClick={() => selectPage(page)}
-                      className={`w-full text-left p-3 rounded-lg transition-colors border group ${
-                        selectedItem?.url === page.url
-                          ? 'bg-[#013fac] text-white border-[#013fac]'
-                          : 'hover:bg-gray-100 border-transparent hover:border-gray-200'
-                      }`}
-                    >
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-3">
-                          <div className={`p-2 rounded group-hover:transition-colors ${
-                            selectedItem?.url === page.url
-                              ? 'bg-blue-800'
-                              : 'bg-blue-50 group-hover:bg-blue-100'
-                          }`}>
-                            <MenuIcon className="w-4 h-4 text-blue-600" />
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <div className="font-semibold text-sm text-gray-900 truncate">
-                              {page.title}
-                            </div>
-                            <div className={`text-xs ${
-                              selectedItem?.url === page.url ? 'text-blue-200' : 'text-gray-500'
-                            }`}>
-                              {page.category}
-                            </div>
-                          </div>
-                        </div>
-                        <ExternalLink className="w-4 h-4" />
-                      </div>
-                    </button>
-                  ))
-                )}
-              </div>
-            </ScrollArea>
-          </TabsContent>
-
-          {/* League Info Tab */}
-          <TabsContent value="league-info" className="flex-1 overflow-hidden flex flex-col mt-4">
-            <div className="space-y-3 flex-shrink-0">
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-                <Input
-                  placeholder="Search league info pages..."
-                  value={leagueInfoSearch}
-                  onChange={(e) => setLeagueInfoSearch(e.target.value)}
-                  className="pl-9"
-                />
-              </div>
-            </div>
-            <ScrollArea className="flex-1 border rounded-lg mt-3 max-h-[400px]">
-              <div className="p-2">
-                {(() => {
-                  const categories = [...new Set(filteredLeagueInfoPages.map(p => p.category))];
-                  return filteredLeagueInfoPages.length === 0 ? (
+              <ScrollArea className="flex-1 border rounded-lg">
+                <div className="p-3 space-y-1">
+                  {filteredSitePages.length === 0 ? (
                     <div className="text-center py-8 text-gray-500">
                       No pages found
                     </div>
                   ) : (
-                    categories.map((category) => (
-                      <div key={category} className="mb-3">
-                        <div className="flex items-center gap-2 px-2 py-1 text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">
-                          {getCategoryIcon(category)}
-                          {category}
+                    filteredSitePages.map((page) => (
+                      <button
+                        key={page.id}
+                        type="button"
+                        onClick={() => selectPage(page)}
+                        className={`w-full text-left p-3 rounded-lg transition-colors border group ${
+                          selectedItem?.url === page.url
+                            ? 'bg-[#013fac] text-white border-[#013fac]'
+                            : 'hover:bg-gray-100 border-transparent hover:border-gray-200'
+                        }`}
+                      >
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-3">
+                            <div className={`p-2 rounded group-hover:transition-colors ${
+                              selectedItem?.url === page.url
+                                ? 'bg-blue-800'
+                                : 'bg-blue-50 group-hover:bg-blue-100'
+                            }`}>
+                              <MenuIcon className="w-4 h-4 text-blue-600" />
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <div className="font-semibold text-sm text-gray-900 truncate">
+                                {page.title}
+                              </div>
+                              <div className={`text-xs ${
+                                selectedItem?.url === page.url ? 'text-blue-200' : 'text-gray-500'
+                              }`}>
+                                {page.category}
+                              </div>
+                            </div>
+                          </div>
+                          <ExternalLink className="w-4 h-4" />
                         </div>
-                        <div className="space-y-1">
-                          {filteredLeagueInfoPages
-                            .filter(p => p.category === category)
-                            .map((page) => (
-                              <button
-                                key={page.id}
-                                type="button"
-                                onClick={() => selectPage(page)}
-                                className={`w-full text-left p-2 rounded-lg transition-colors border group ${
-                                  selectedItem?.url === page.url
-                                    ? 'bg-[#013fac] text-white border-[#013fac]'
-                                    : 'hover:bg-gray-100 border-transparent hover:border-gray-200'
-                                }`}
-                              >
-                                <div className="flex items-center justify-between">
-                                  <div className="flex items-center gap-2">
-                                    <div className={`p-1.5 rounded group-hover:transition-colors ${
-                                      selectedItem?.url === page.url
-                                        ? 'bg-blue-800'
-                                        : 'bg-purple-50 group-hover:bg-purple-100'
-                                    }`}>
-                                      <Book className="w-3 h-3 text-purple-600" />
-                                    </div>
-                                    <div className="flex-1 min-w-0">
-                                      <div className="font-semibold text-sm text-gray-900 truncate">
-                                        {page.title}
-                                      </div>
-                                      <div className={`text-xs truncate ${
-                                        selectedItem?.url === page.url ? 'text-blue-200' : 'text-gray-500'
-                                      }`}>
-                                        {page.url}
-                                      </div>
-                                    </div>
-                                  </div>
-                                  <ExternalLink className="w-4 h-4" />
-                                </div>
-                              </button>
-                            ))}
-                        </div>
-                      </div>
+                      </button>
                     ))
-                  );
-                })()}
-              </div>
-            </ScrollArea>
-          </TabsContent>
+                  )}
+                </div>
+              </ScrollArea>
+            </TabsContent>
 
-          {/* Custom URL Tab */}
-          <TabsContent value="custom" className="mt-4 flex-1">
-            <div className="space-y-4">
-              <div>
-                <label className="text-sm font-medium">URL</label>
-                <Input
-                  placeholder="https://example.com"
-                  value={customUrl}
-                  onChange={(e) => {
-                    setCustomUrl(e.target.value);
-                    if (e.target.value && !selectedItem) {
-                      setSelectedItem({ url: e.target.value });
-                    }
-                  }}
-                  className="mt-1"
-                />
+            {/* League Info Tab */}
+            <TabsContent value="league-info" className="flex-1 overflow-hidden flex flex-col m-0 h-full">
+              <div className="space-y-3 flex-shrink-0 pb-3">
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                  <Input
+                    placeholder="Search league info pages..."
+                    value={leagueInfoSearch}
+                    onChange={(e) => setLeagueInfoSearch(e.target.value)}
+                    className="pl-9"
+                  />
+                </div>
               </div>
-              <div>
-                <label className="text-sm font-medium">Link Text (optional)</label>
-                <Input
-                  placeholder="Click here"
-                  value={customText}
-                  onChange={(e) => setCustomText(e.target.value)}
-                  className="mt-1"
-                />
+              <ScrollArea className="flex-1 border rounded-lg">
+                <div className="p-3">
+                  {(() => {
+                    const categories = [...new Set(filteredLeagueInfoPages.map(p => p.category))];
+                    return filteredLeagueInfoPages.length === 0 ? (
+                      <div className="text-center py-8 text-gray-500">
+                        No pages found
+                      </div>
+                    ) : (
+                      categories.map((category) => (
+                        <div key={category} className="mb-3">
+                          <div className="flex items-center gap-2 px-2 py-1 text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">
+                            {getCategoryIcon(category)}
+                            {category}
+                          </div>
+                          <div className="space-y-1">
+                            {filteredLeagueInfoPages
+                              .filter(p => p.category === category)
+                              .map((page) => (
+                                <button
+                                  key={page.id}
+                                  type="button"
+                                  onClick={() => selectPage(page)}
+                                  className={`w-full text-left p-2 rounded-lg transition-colors border group ${
+                                    selectedItem?.url === page.url
+                                      ? 'bg-[#013fac] text-white border-[#013fac]'
+                                      : 'hover:bg-gray-100 border-transparent hover:border-gray-200'
+                                  }`}
+                                >
+                                  <div className="flex items-center justify-between">
+                                    <div className="flex items-center gap-2">
+                                      <div className={`p-1.5 rounded group-hover:transition-colors ${
+                                        selectedItem?.url === page.url
+                                          ? 'bg-blue-800'
+                                          : 'bg-purple-50 group-hover:bg-purple-100'
+                                      }`}>
+                                        <Book className="w-3 h-3 text-purple-600" />
+                                      </div>
+                                      <div className="flex-1 min-w-0">
+                                        <div className="font-semibold text-sm text-gray-900 truncate">
+                                          {page.title}
+                                        </div>
+                                        <div className={`text-xs truncate ${
+                                          selectedItem?.url === page.url ? 'text-blue-200' : 'text-gray-500'
+                                        }`}>
+                                          {page.url}
+                                        </div>
+                                      </div>
+                                    </div>
+                                    <ExternalLink className="w-4 h-4" />
+                                  </div>
+                                </button>
+                              ))}
+                          </div>
+                        </div>
+                      ))
+                    );
+                  })()}
+                </div>
+              </ScrollArea>
+            </TabsContent>
+
+            {/* Custom URL Tab */}
+            <TabsContent value="custom" className="flex-1 overflow-auto m-0 h-full">
+              <div className="space-y-4">
+                <div>
+                  <label className="text-sm font-medium">URL</label>
+                  <Input
+                    placeholder="https://example.com"
+                    value={customUrl}
+                    onChange={(e) => {
+                      setCustomUrl(e.target.value);
+                      if (e.target.value && !selectedItem) {
+                        setSelectedItem({ url: e.target.value });
+                      }
+                    }}
+                    className="mt-1"
+                  />
+                </div>
+                <div>
+                  <label className="text-sm font-medium">Link Text (optional)</label>
+                  <Input
+                    placeholder="Click here"
+                    value={customText}
+                    onChange={(e) => setCustomText(e.target.value)}
+                    className="mt-1"
+                  />
+                </div>
+                <div className="flex items-center space-x-2">
+                  <Checkbox
+                    id="newTabCustom"
+                    checked={newTab}
+                    onCheckedChange={(checked) => setNewTab(checked as boolean)}
+                  />
+                  <label htmlFor="newTabCustom" className="text-sm">
+                    Open in new tab
+                  </label>
+                </div>
               </div>
-              <div className="flex items-center space-x-2">
-                <Checkbox
-                  id="newTab"
-                  checked={newTab}
-                  onCheckedChange={(checked) => setNewTab(checked as boolean)}
-                />
-                <label htmlFor="newTab" className="text-sm">
-                  Open in new tab
-                </label>
-              </div>
-            </div>
-          </TabsContent>
+            </TabsContent>
+          </div>
         </Tabs>
 
-        {/* Footer with custom options */}
+        {/* Footer with selected item options */}
         {selectedItem && (
-          <div className="border-t pt-4 mt-4 space-y-3">
+          <div className="border-t pt-4 space-y-3 flex-shrink-0 mt-4">
             <div>
               <label className="text-sm font-medium">Link Text</label>
               <Input
@@ -481,7 +486,7 @@ export function LinkInserter({ open, onOpenChange, onInsert, trigger }: LinkInse
                   Open in new tab
                 </label>
               </div>
-              <div className="text-xs text-gray-500">
+              <div className="text-xs text-gray-500 truncate max-w-[200px]" title={selectedItem.url}>
                 {selectedItem.url}
               </div>
             </div>
