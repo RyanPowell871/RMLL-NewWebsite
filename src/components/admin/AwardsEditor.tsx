@@ -1,9 +1,13 @@
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../ui/card';
 import { Button } from '../ui/button';
+import { Input } from '../ui/input';
+import { Label } from '../ui/label';
 import { Badge } from '../ui/badge';
 import { Plus, Trash2, AlertCircle, Code, Eye, ChevronUp, ChevronDown, Edit2, Check, X } from 'lucide-react';
+import { Textarea } from '../ui/textarea';
 import { TextareaWithLinkInserter } from './TextareaWithLinkInserter';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '../ui/tabs';
 
 interface AwardsEditorProps {
   value: string;
@@ -12,83 +16,62 @@ interface AwardsEditorProps {
 }
 
 interface AwardSection {
-  id: string;
-  title: string;
-  heading?: string;
-  collapsible: boolean;
-  collapsed?: boolean;
-  order: number;
+  key: string;
+  label: string;
+  description: string;
+  type: 'pointLeaders' | 'divisionAwards' | 'tournaments' | 'conference';
+  path: string[]; // Path to the data (e.g., ['pointLeaders'] or ['division', 'north'])
 }
 
-interface AwardData {
-  title?: string;
+// Data structure types
+interface PointLeader {
+  year: string;
+  player: string;
+  team: string;
+  stats: string;
+  points?: number;
+  games?: number;
+  conference?: string;
+  note?: string;
+}
+
+interface DivisionAward {
+  name: string;
   description?: string;
   recipients?: Array<{
-    year?: string;
-    player?: string;
-    team?: string;
-    stats?: string;
-    points?: number;
-    games?: number;
-    note?: string;
+    year: string;
+    player: string;
+    team: string;
+    conference?: string;
   }>;
 }
 
-interface AwardsDisplayData {
-  __metadata?: Record<string, AwardSection>;
-  [key: string]: AwardData;
+interface TournamentEvent {
+  year: string;
+  name: string;
+  trophy: string;
+  result: string;
 }
-
-const DEFAULT_SECTIONS: AwardSection[] = [
-  { id: 'pointLeaders', title: 'Point Leaders Award', collapsible: true, order: 0 },
-  { id: 'allStarTeams', title: 'All-Star Teams', collapsible: true, order: 1 },
-  { id: 'rookieOfTheYear', title: 'Rookie of the Year', collapsible: true, order: 2 },
-  { id: 'mvp', title: 'Most Valuable Player', collapsible: true, order: 3 },
-  { id: 'defensivePlayer', title: 'Defensive Player of the Year', collapsible: true, order: 4 },
-  { id: 'coachOfTheYear', title: 'Coach of the Year', collapsible: true, order: 5 },
-];
-
-const DEFAULT_AWARD_DATA: AwardData = {
-  title: '',
-  description: '',
-  recipients: [],
-};
 
 export function AwardsEditor({ value, onChange, divisionName }: AwardsEditorProps) {
   const [mode, setMode] = useState<'visual' | 'json'>('visual');
-  const [data, setData] = useState<AwardsDisplayData>({});
+  const [data, setData] = useState<any>({});
   const [jsonError, setJsonError] = useState<string | null>(null);
   const [jsonText, setJsonText] = useState(value || '{}');
-  const [sections, setSections] = useState<AwardSection[]>([]);
   const [editingHeading, setEditingHeading] = useState<string | null>(null);
+  const [activeTab, setActiveTab] = useState<string>('main');
 
   // Parse JSON on mount and when value changes from outside
   useEffect(() => {
     try {
       if (value && typeof value === 'string' && value.trim()) {
-        const parsed = JSON.parse(value) as AwardsDisplayData;
+        const parsed = JSON.parse(value);
         setData(parsed);
         setJsonText(JSON.stringify(parsed, null, 2));
         setJsonError(null);
-
-        // Extract or initialize sections metadata
-        const dataKeys = Object.keys(parsed).filter(key => key !== '__metadata' && typeof parsed[key] === 'object');
-        const metadata = parsed.__metadata || {};
-
-        const newSections: AwardSection[] = dataKeys.map((key, idx) => ({
-          id: key,
-          title: metadata[key]?.title || getDefaultTitle(key),
-          heading: metadata[key]?.heading,
-          collapsible: metadata[key]?.collapsible ?? true,
-          collapsed: metadata[key]?.collapsed ?? false,
-          order: metadata[key]?.order ?? idx,
-        })).sort((a, b) => a.order - b.order);
-
-        setSections(newSections.length > 0 ? newSections : DEFAULT_SECTIONS);
       } else {
         setData({});
         setJsonText('{}');
-        setSections(DEFAULT_SECTIONS);
       }
     } catch (err) {
       console.error('Error parsing awards JSON:', err);
@@ -109,7 +92,7 @@ export function AwardsEditor({ value, onChange, divisionName }: AwardsEditorProp
     }
   };
 
-  const handleDataChange = (newData: AwardsDisplayData) => {
+  const handleDataChange = (newData: any) => {
     setData(newData);
     const jsonString = JSON.stringify(newData, null, 2);
     setJsonText(jsonString);
@@ -117,144 +100,196 @@ export function AwardsEditor({ value, onChange, divisionName }: AwardsEditorProp
   };
 
   // Helper to safely update nested data
-  const updateNestedData = (sectionKey: string, fieldPath: string[], value: any) => {
+  const updateNestedData = (path: string[], value: any) => {
     const newData = JSON.parse(JSON.stringify(data));
-    if (!newData[sectionKey]) {
-      newData[sectionKey] = { ...DEFAULT_AWARD_DATA };
+    let current = newData;
+    for (let i = 0; i < path.length - 1; i++) {
+      if (!current[path[i]]) current[path[i]] = {};
+      current = current[path[i]];
     }
-    let current = newData[sectionKey];
-    for (let i = 0; i < fieldPath.length - 1; i++) {
-      if (!current[fieldPath[i]]) current[fieldPath[i]] = {};
-      current = current[fieldPath[i]];
-    }
-    current[fieldPath[fieldPath.length - 1]] = value;
+    current[path[path.length - 1]] = value;
     handleDataChange(newData);
   };
 
-  const getDefaultTitle = (key: string): string => {
-    switch (key) {
-      case 'pointLeaders': return 'Point Leaders Award';
-      case 'allStarTeams': return 'All-Star Teams';
-      case 'rookieOfTheYear': return 'Rookie of the Year';
-      case 'mvp': return 'Most Valuable Player';
-      case 'defensivePlayer': return 'Defensive Player of the Year';
-      case 'coachOfTheYear': return 'Coach of the Year';
-      case 'north': return 'North Conference';
-      case 'south': return 'South Conference';
-      default: return key.charAt(0).toUpperCase() + key.slice(1);
+  // Get value from nested path
+  const getNestedValue = (path: string[]) => {
+    let current = data;
+    for (const key of path) {
+      if (!current) return undefined;
+      current = current[key];
     }
+    return current;
   };
 
-  const updateSectionMetadata = (sectionIdx: number, updates: Partial<AwardSection>) => {
-    const newSections = [...sections];
-    newSections[sectionIdx] = { ...newSections[sectionIdx], ...updates };
+  // Determine available sections based on data structure
+  const getSections = (): AwardSection[] => {
+    const sections: AwardSection[] = [];
 
-    // Update metadata in data
-    const section = newSections[sectionIdx];
-    const metadata = { ...data.__metadata };
-    metadata[section.id] = {
-      title: section.title,
-      heading: section.heading,
-      collapsible: section.collapsible,
-      collapsed: section.collapsed,
-      order: section.order,
-    };
+    // Check for conference-based structure (Tier II)
+    if (data.north || data.south) {
+      setActiveTab(data.north ? 'north' : 'south');
+      if (data.north) {
+        sections.push({
+          key: 'north',
+          label: 'North Conference',
+          description: 'North conference awards and point leaders',
+          type: 'conference',
+          path: ['north']
+        });
+      }
+      if (data.south) {
+        sections.push({
+          key: 'south',
+          label: 'South Conference',
+          description: 'South conference awards and point leaders',
+          type: 'conference',
+          path: ['south']
+        });
+      }
+      return sections;
+    }
 
-    handleDataChange({ ...data, __metadata: metadata });
-    setSections(newSections);
+    // Standard structure - point leaders
+    if (data.pointLeaders) {
+      sections.push({
+        key: 'pointLeaders',
+        label: 'Point Leaders',
+        description: 'Division point leaders by year',
+        type: 'pointLeaders',
+        path: ['pointLeaders']
+      });
+    }
+
+    // Division awards (array format)
+    if (data.divisionAwards?.awards || data.divisionAwards?.categories) {
+      sections.push({
+        key: 'divisionAwards',
+        label: 'Division Awards',
+        description: 'Annual division awards',
+        type: 'divisionAwards',
+        path: ['divisionAwards']
+      });
+    }
+
+    // Tournaments
+    if (data.tournaments?.events) {
+      sections.push({
+        key: 'tournaments',
+        label: 'Tournaments',
+        description: 'Tournament results and events',
+        type: 'tournaments',
+        path: ['tournaments']
+      });
+    }
+
+    return sections;
   };
 
-  const moveSection = (idx: number, direction: 'up' | 'down') => {
-    const newSections = [...sections];
+  const sections = getSections();
+
+  // Reorder items
+  const moveItem = (path: string[], itemKey: string, idx: number, direction: 'up' | 'down') => {
+    const items = [...(getNestedValue([...path, itemKey]) || [])];
     const targetIdx = direction === 'up' ? idx - 1 : idx + 1;
 
-    if (targetIdx < 0 || targetIdx >= newSections.length) return;
+    if (targetIdx < 0 || targetIdx >= items.length) return;
 
-    // Swap order values
-    const tempOrder = newSections[idx].order;
-    newSections[idx].order = newSections[targetIdx].order;
-    newSections[targetIdx].order = tempOrder;
+    const temp = items[idx];
+    items[idx] = items[targetIdx];
+    items[targetIdx] = temp;
 
-    // Re-sort by order
-    newSections.sort((a, b) => a.order - b.order);
-
-    // Update all section metadata
-    const metadata = { ...data.__metadata };
-    newSections.forEach((section) => {
-      metadata[section.id] = {
-        title: section.title,
-        heading: section.heading,
-        collapsible: section.collapsible,
-        collapsed: section.collapsed,
-        order: section.order,
-      };
-    });
-
-    handleDataChange({ ...data, __metadata: metadata });
-    setSections(newSections);
+    updateNestedData([...path, itemKey], items);
   };
 
-  const toggleCollapsible = (idx: number) => {
-    updateSectionMetadata(idx, { collapsible: !sections[idx].collapsible });
+  // Remove item
+  const removeItem = (path: string[], itemKey: string, idx: number) => {
+    const items = [...(getNestedValue([...path, itemKey]) || [])];
+    items.splice(idx, 1);
+    updateNestedData([...path, itemKey], items);
   };
 
-  const toggleCollapsed = (idx: number) => {
-    updateSectionMetadata(idx, { collapsed: !sections[idx].collapsed });
-  };
-
-  const startEditHeading = (idx: number) => {
-    setEditingHeading(sections[idx].id);
-  };
-
-  const saveHeading = (idx: number, value: string) => {
-    updateSectionMetadata(idx, { heading: value || undefined });
-    setEditingHeading(null);
-  };
-
-  // Add recipient
-  const addRecipient = (sectionKey: string) => {
-    const recipients = data[sectionKey]?.recipients || [];
-    updateNestedData(sectionKey, ['recipients'], [
-      { year: '', player: '', team: '', stats: '', points: 0, games: 0, note: '' },
-      ...recipients,
+  // Add point leader
+  const addPointLeader = (path: string[]) => {
+    const recipients = getNestedValue([...path, 'recipients']) || [];
+    updateNestedData([...path, 'recipients'], [
+      { year: '', player: '', team: '', stats: '', points: 0, games: 0, conference: '' },
+      ...recipients
     ]);
   };
 
-  // Remove recipient
-  const removeRecipient = (sectionKey: string, idx: number) => {
-    const recipients = [...(data[sectionKey]?.recipients || [])];
-    recipients.splice(idx, 1);
-    updateNestedData(sectionKey, ['recipients'], recipients);
-  };
-
-  // Move recipient
-  const moveRecipient = (sectionKey: string, idx: number, direction: 'up' | 'down') => {
-    const recipients = [...(data[sectionKey]?.recipients || [])];
-    const targetIdx = direction === 'up' ? idx - 1 : idx + 1;
-
-    if (targetIdx < 0 || targetIdx >= recipients.length) return;
-
-    const temp = recipients[idx];
-    recipients[idx] = recipients[targetIdx];
-    recipients[targetIdx] = temp;
-
-    updateNestedData(sectionKey, ['recipients'], recipients);
-  };
-
-  // Update recipient field
-  const updateRecipient = (sectionKey: string, idx: number, field: string, value: any) => {
-    const recipients = [...(data[sectionKey]?.recipients || [])];
+  // Update point leader field
+  const updatePointLeader = (path: string[], idx: number, field: string, value: any) => {
+    const recipients = [...(getNestedValue([...path, 'recipients']) || [])];
     recipients[idx] = { ...recipients[idx], [field]: value };
-    updateNestedData(sectionKey, ['recipients'], recipients);
+    updateNestedData([...path, 'recipients'], recipients);
   };
 
-  const getSectionData = (sectionKey: string): AwardData => {
-    return data[sectionKey] || { ...DEFAULT_AWARD_DATA };
+  // Add division award
+  const addDivisionAward = (path: string[]) => {
+    const awards = getNestedValue([...path, 'awards']) || [];
+    updateNestedData([...path, 'awards'], [
+      { name: '', recipients: [] },
+      ...awards
+    ]);
   };
 
-  const getSectionTitle = (sectionKey: string): string => {
-    const section = sections.find(s => s.id === sectionKey);
-    return section?.title || getDefaultTitle(sectionKey);
+  // Add recipient to division award
+  const addDivisionAwardRecipient = (path: string[], awardIdx: number) => {
+    const awards = [...(getNestedValue(path) || [])];
+    const recipients = awards[awardIdx]?.recipients || [];
+    awards[awardIdx] = {
+      ...awards[awardIdx],
+      recipients: [{ year: '', player: '', team: '', conference: '' }, ...recipients]
+    };
+    updateNestedData(path, awards);
+  };
+
+  // Update division award
+  const updateDivisionAward = (path: string[], awardIdx: number, field: string, value: any) => {
+    const awards = [...(getNestedValue(path) || [])];
+    awards[awardIdx] = { ...awards[awardIdx], [field]: value };
+    updateNestedData(path, awards);
+  };
+
+  // Update division award recipient
+  const updateDivisionAwardRecipient = (path: string[], awardIdx: number, recipientIdx: number, field: string, value: any) => {
+    const awards = [...(getNestedValue(path) || [])];
+    const recipients = [...(awards[awardIdx]?.recipients || [])];
+    recipients[recipientIdx] = { ...recipients[recipientIdx], [field]: value };
+    awards[awardIdx] = { ...awards[awardIdx], recipients };
+    updateNestedData(path, awards);
+  };
+
+  // Remove division award
+  const removeDivisionAward = (path: string[], awardIdx: number) => {
+    const awards = [...(getNestedValue(path) || [])];
+    awards.splice(awardIdx, 1);
+    updateNestedData(path, awards);
+  };
+
+  // Remove division award recipient
+  const removeDivisionAwardRecipient = (path: string[], awardIdx: number, recipientIdx: number) => {
+    const awards = [...(getNestedData(path) || [])];
+    const recipients = [...(awards[awardIdx]?.recipients || [])];
+    recipients.splice(recipientIdx, 1);
+    awards[awardIdx] = { ...awards[awardIdx], recipients };
+    updateNestedData(path, awards);
+  };
+
+  // Add tournament event
+  const addTournamentEvent = (path: string[]) => {
+    const events = getNestedValue([...path, 'events']) || [];
+    updateNestedData([...path, 'events'], [
+      { year: '', name: '', trophy: '', result: '' },
+      ...events
+    ]);
+  };
+
+  // Update tournament event
+  const updateTournamentEvent = (path: string[], idx: number, field: string, value: any) => {
+    const events = [...(getNestedValue([...path, 'events']) || [])];
+    events[idx] = { ...events[idx], [field]: value };
+    updateNestedData([...path, 'events'], events);
   };
 
   if (mode === 'json') {
@@ -277,48 +312,19 @@ export function AwardsEditor({ value, onChange, divisionName }: AwardsEditorProp
         </div>
 
         {jsonError && (
-          <div className="bg-red-50 border border-red-200 text-red-700 p-4 rounded-lg">
-            <div className="flex items-center gap-2">
-              <AlertCircle className="w-4 h-4" />
-              <span className="font-medium">Invalid JSON</span>
-            </div>
-            <p className="text-sm mt-1">{jsonError}</p>
-          </div>
+          <Alert variant="destructive">
+            <AlertCircle className="h-4 w-4" />
+            <AlertDescription>{jsonError}</AlertDescription>
+          </Alert>
         )}
 
-        <textarea
+        <Textarea
           value={jsonText}
           onChange={(e) => handleJsonChange(e.target.value)}
           rows={25}
-          className="font-mono text-sm w-full border rounded-lg p-4"
+          className="font-mono text-sm"
           placeholder="Enter JSON data..."
         />
-
-        <div className="text-xs text-gray-500 space-y-1">
-          <p><strong>Expected structure:</strong></p>
-          <pre className="bg-gray-50 p-2 rounded border overflow-x-auto">
-{`{
-  "__metadata": {
-    "pointLeaders": { "title": "...", "heading": "...", "collapsible": true, "collapsed": false, "order": 0 }
-  },
-  "pointLeaders": {
-    "title": "Point Leaders Award",
-    "description": "Description of the award...",
-    "recipients": [
-      {
-        "year": "2025",
-        "player": "#17 John Doe",
-        "team": "Team Name",
-        "stats": "46 goals; 54 assists",
-        "points": 100,
-        "games": 16,
-        "note": "North Central Division"
-      }
-    ]
-  }
-}`}
-          </pre>
-        </div>
       </div>
     );
   }
@@ -337,273 +343,480 @@ export function AwardsEditor({ value, onChange, divisionName }: AwardsEditorProp
       </div>
 
       {sections.length === 0 && (
-        <div className="bg-amber-50 border border-amber-200 text-amber-800 p-4 rounded-lg">
-          <div className="flex items-center gap-2">
-            <AlertCircle className="w-4 h-4" />
-            <span className="font-medium">No awards data found</span>
-          </div>
-          <p className="text-sm mt-1">Use the JSON Editor to add award data, or it will be created automatically when you save.</p>
-        </div>
+        <Alert>
+          <AlertCircle className="h-4 w-4" />
+          <AlertDescription>
+            No awards data found. Use the JSON Editor to add award data.
+          </AlertDescription>
+        </Alert>
       )}
 
-      {sections.map((section, sectionIdx) => {
-        const sectionData = getSectionData(section.id);
-        const isCollapsed = section.collapsed ?? false;
-        const recipients = sectionData.recipients || [];
+      {sections.length > 0 && (
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+          <TabsList className="grid w-full" style={{ gridTemplateColumns: `repeat(${sections.length}, 1fr)` }}>
+            {sections.map(section => (
+              <TabsTrigger key={section.key} value={section.key}>
+                {section.label}
+              </TabsTrigger>
+            ))}
+          </TabsList>
 
-        return (
-          <Card key={section.id} className="overflow-hidden">
-            {/* Section Header */}
-            <div className="flex items-center justify-between px-4 py-3 bg-gray-50 border-b">
-              <div className="flex items-center gap-2 flex-1">
-                {editingHeading === section.id ? (
-                  <div className="flex items-center gap-1">
-                    <input
-                      value={section.heading || ''}
-                      onChange={(e) => {}}
-                      placeholder="Custom heading (optional)"
-                      className="h-7 w-64 border rounded px-2 text-sm"
-                    />
-                    <Button
-                      onClick={() => saveHeading(sectionIdx, '')}
-                      size="sm"
-                      variant="ghost"
-                      className="h-7 w-7 p-0"
-                    >
-                      <Check className="w-3 h-3 text-green-600" />
-                    </Button>
-                    <Button
-                      onClick={() => setEditingHeading(null)}
-                      size="sm"
-                      variant="ghost"
-                      className="h-7 w-7 p-0"
-                    >
-                      <X className="w-3 h-3 text-red-600" />
-                    </Button>
-                  </div>
-                ) : (
-                  <span className="text-sm font-semibold">
-                    {section.heading || section.title}
-                  </span>
-                )}
-              </div>
-              <div className="flex items-center gap-1">
-                {section.heading !== undefined && !editingHeading && (
-                  <Button
-                    onClick={() => startEditHeading(sectionIdx)}
-                    size="sm"
-                    variant="ghost"
-                    className="h-7 w-7 p-0"
-                    title="Edit heading"
-                  >
-                    <Edit2 className="w-3 h-3 text-gray-500" />
-                  </Button>
-                )}
-                <Button
-                  onClick={() => toggleCollapsible(sectionIdx)}
-                  size="sm"
-                  variant="ghost"
-                  className={`h-7 w-7 p-0 ${section.collapsible ? 'text-blue-600' : 'text-gray-400'}`}
-                  title={section.collapsible ? 'Collapsible enabled' : 'Collapsible disabled'}
-                >
-                  <AlertCircle className="w-3 h-3" />
-                </Button>
-                {section.collapsible && (
-                  <Button
-                    onClick={() => toggleCollapsed(sectionIdx)}
-                    size="sm"
-                    variant="ghost"
-                    className="h-7 w-7 p-0"
-                    title={isCollapsed ? 'Expand' : 'Collapse'}
-                  >
-                    {isCollapsed ? <ChevronDown className="w-4 h-4" /> : <ChevronUp className="w-4 h-4" />}
-                  </Button>
-                )}
-                {sectionIdx > 0 && (
-                  <Button
-                    onClick={() => moveSection(sectionIdx, 'up')}
-                    size="sm"
-                    variant="ghost"
-                    className="h-7 w-7 p-0"
-                    title="Move section up"
-                  >
-                    <ChevronUp className="w-3 h-3" />
-                  </Button>
-                )}
-                {sectionIdx < sections.length - 1 && (
-                  <Button
-                    onClick={() => moveSection(sectionIdx, 'down')}
-                    size="sm"
-                    variant="ghost"
-                    className="h-7 w-7 p-0"
-                    title="Move section down"
-                  >
-                    <ChevronDown className="w-3 h-3" />
-                  </Button>
-                )}
-              </div>
-            </div>
+          {sections.map(section => {
+            const sectionData = getNestedValue(section.path) || {};
 
-            {/* Section Content */}
-            {!isCollapsed && (
-              <div className="p-4 space-y-4">
-                {/* Award Title */}
-                <TextareaWithLinkInserter
-                  id={`${section.id}-title`}
-                  label="Award Title"
-                  value={sectionData.title || ''}
-                  onChange={(value) => updateNestedData(section.id, ['title'], value)}
-                  rows={1}
-                  placeholder={`e.g., ${getDefaultTitle(section.id)}`}
-                />
-
-                {/* Description */}
-                <TextareaWithLinkInserter
-                  id={`${section.id}-description`}
-                  label="Description"
-                  value={sectionData.description || ''}
-                  onChange={(value) => updateNestedData(section.id, ['description'], value)}
-                  rows={2}
-                  placeholder="Description of the award and its significance..."
-                />
-
-                {/* Recipients */}
-                <div className="space-y-3">
-                  <div className="flex items-center justify-between">
-                    <label className="text-sm font-medium">Recipients</label>
-                    <Button
-                      onClick={() => addRecipient(section.id)}
-                      size="sm"
-                    >
-                      <Plus className="w-4 h-4 mr-2" />
-                      Add Recipient
-                    </Button>
-                  </div>
-
-                  {recipients.length === 0 && (
-                    <p className="text-sm text-gray-500 italic">No recipients added yet.</p>
-                  )}
-
-                  {recipients.map((recipient, idx) => (
-                    <div key={idx} className="bg-gray-50 border rounded-lg p-4 space-y-3">
-                      <div className="flex items-center justify-between">
-                        <Badge>Recipient {idx + 1}</Badge>
-                        <div className="flex items-center gap-1">
-                          {idx > 0 && (
-                            <Button
-                              onClick={() => moveRecipient(section.id, idx, 'up')}
-                              size="sm"
-                              variant="ghost"
-                              className="h-7 w-7 p-0"
-                              title="Move up"
-                            >
-                              <ChevronUp className="w-3 h-3" />
-                            </Button>
-                          )}
-                          {idx < recipients.length - 1 && (
-                            <Button
-                              onClick={() => moveRecipient(section.id, idx, 'down')}
-                              size="sm"
-                              variant="ghost"
-                              className="h-7 w-7 p-0"
-                              title="Move down"
-                            >
-                              <ChevronDown className="w-3 h-3" />
-                            </Button>
-                          )}
-                          <Button
-                            onClick={() => removeRecipient(section.id, idx)}
-                            size="sm"
-                            variant="ghost"
-                            className="h-7 w-7 p-0 text-red-600"
-                            title="Remove"
-                          >
-                            <Trash2 className="w-4 h-4" />
+            return (
+              <TabsContent key={section.key} value={section.key} className="space-y-4">
+                {/* Point Leaders Section */}
+                {section.type === 'pointLeaders' && (
+                  <>
+                    <Card>
+                      <CardHeader>
+                        <div className="flex items-center justify-between">
+                          <div>
+                            {editingHeading === section.key ? (
+                              <div className="flex items-center gap-2">
+                                <Input
+                                  value={sectionData.title || ''}
+                                  onChange={(e) => updateNestedData([...section.path, 'title'], e.target.value)}
+                                  placeholder="Custom heading"
+                                  className="h-8 w-64"
+                                />
+                                <Button onClick={() => setEditingHeading(null)} size="sm" variant="ghost" className="h-8 w-8 p-0">
+                                  <Check className="w-4 h-4 text-green-600" />
+                                </Button>
+                              </div>
+                            ) : (
+                              <>
+                                <CardTitle>{sectionData.title || 'Point Leaders'}</CardTitle>
+                                <CardDescription>{sectionData.description}</CardDescription>
+                              </>
+                            )}
+                          </div>
+                          <Button onClick={() => setEditingHeading(section.key)} size="sm" variant="ghost" className="h-8 w-8 p-0">
+                            <Edit2 className="w-4 h-4 text-gray-500" />
                           </Button>
                         </div>
-                      </div>
-
-                      <div className="grid grid-cols-2 gap-3">
-                        <div className="space-y-1">
-                          <label className="text-xs">Year</label>
-                          <input
-                            value={recipient.year || ''}
-                            onChange={(e) => updateRecipient(section.id, idx, 'year', e.target.value)}
-                            placeholder="2025"
-                            className="w-full border rounded px-2 py-1.5 text-sm"
-                          />
-                        </div>
-                        <div className="space-y-1">
-                          <label className="text-xs">Player (with #)</label>
-                          <input
-                            value={recipient.player || ''}
-                            onChange={(e) => updateRecipient(section.id, idx, 'player', e.target.value)}
-                            placeholder="#17 John Doe"
-                            className="w-full border rounded px-2 py-1.5 text-sm"
-                          />
-                        </div>
-                      </div>
-
-                      <div className="space-y-1">
-                        <label className="text-xs">Team</label>
-                        <input
-                          value={recipient.team || ''}
-                          onChange={(e) => updateRecipient(section.id, idx, 'team', e.target.value)}
-                          placeholder="Team name"
-                          className="w-full border rounded px-2 py-1.5 text-sm"
+                      </CardHeader>
+                      <CardContent>
+                        <TextareaWithLinkInserter
+                          id={`${section.key}-description`}
+                          label="Description"
+                          value={sectionData.description || ''}
+                          onChange={(value) => updateNestedData([...section.path, 'description'], value)}
+                          rows={2}
+                          placeholder="Description of the point leader award..."
                         />
-                      </div>
+                        {sectionData.note && (
+                          <div className="mt-2 p-2 bg-yellow-50 border border-yellow-200 rounded text-xs text-yellow-800">
+                            {sectionData.note}
+                          </div>
+                        )}
+                      </CardContent>
+                    </Card>
 
-                      <div className="space-y-1">
-                        <label className="text-xs">Stats</label>
-                        <input
-                          value={recipient.stats || ''}
-                          onChange={(e) => updateRecipient(section.id, idx, 'stats', e.target.value)}
-                          placeholder="46 goals; 54 assists"
-                          className="w-full border rounded px-2 py-1.5 text-sm"
-                        />
-                      </div>
-
-                      <div className="grid grid-cols-2 gap-3">
-                        <div className="space-y-1">
-                          <label className="text-xs">Points</label>
-                          <input
-                            type="number"
-                            value={recipient.points || ''}
-                            onChange={(e) => updateRecipient(section.id, idx, 'points', e.target.value ? parseInt(e.target.value) || 0 : 0)}
-                            placeholder="100"
-                            className="w-full border rounded px-2 py-1.5 text-sm"
-                          />
+                    <Card>
+                      <CardHeader>
+                        <div className="flex items-center justify-between">
+                          <Label className="text-base font-semibold">Point Leaders</Label>
+                          <Button onClick={() => addPointLeader(section.path)} size="sm">
+                            <Plus className="w-4 h-4 mr-2" />
+                            Add Point Leader
+                          </Button>
                         </div>
-                        <div className="space-y-1">
-                          <label className="text-xs">Games</label>
-                          <input
-                            type="number"
-                            value={recipient.games || ''}
-                            onChange={(e) => updateRecipient(section.id, idx, 'games', e.target.value ? parseInt(e.target.value) || 0 : 0)}
-                            placeholder="16"
-                            className="w-full border rounded px-2 py-1.5 text-sm"
-                          />
+                      </CardHeader>
+                      <CardContent className="space-y-3">
+                        {(sectionData.recipients || []).length === 0 && (
+                          <p className="text-sm text-gray-500 italic">No point leaders added yet.</p>
+                        )}
+                        {(sectionData.recipients || []).map((recipient: PointLeader, idx: number) => (
+                          <div key={idx} className="bg-gray-50 border rounded-lg p-4 space-y-3">
+                            <div className="flex items-center justify-between">
+                              <Badge>{recipient.year || 'New Entry'}</Badge>
+                              <div className="flex items-center gap-1">
+                                {idx > 0 && (
+                                  <Button onClick={() => moveItem(section.path, 'recipients', idx, 'up')} variant="ghost" size="sm" className="h-7 w-7 p-0">
+                                    <ChevronUp className="w-3 h-3" />
+                                  </Button>
+                                )}
+                                {idx < (sectionData.recipients || []).length - 1 && (
+                                  <Button onClick={() => moveItem(section.path, 'recipients', idx, 'down')} variant="ghost" size="sm" className="h-7 w-7 p-0">
+                                    <ChevronDown className="w-3 h-3" />
+                                  </Button>
+                                )}
+                                <Button onClick={() => removeItem(section.path, 'recipients', idx)} variant="ghost" size="sm">
+                                  <Trash2 className="w-4 h-4 text-red-600" />
+                                </Button>
+                              </div>
+                            </div>
+                            <div className="grid grid-cols-2 gap-3">
+                              <div>
+                                <Label className="text-xs">Year</Label>
+                                <Input value={recipient.year || ''} onChange={(e) => updatePointLeader(section.path, idx, 'year', e.target.value)} placeholder="2025" />
+                              </div>
+                              <div>
+                                <Label className="text-xs">Conference (optional)</Label>
+                                <Input value={recipient.conference || ''} onChange={(e) => updatePointLeader(section.path, idx, 'conference', e.target.value)} placeholder="North" />
+                              </div>
+                            </div>
+                            <div>
+                              <Label className="text-xs">Player</Label>
+                              <Input value={recipient.player || ''} onChange={(e) => updatePointLeader(section.path, idx, 'player', e.target.value)} placeholder="#17 John Doe" />
+                            </div>
+                            <div>
+                              <Label className="text-xs">Team</Label>
+                              <Input value={recipient.team || ''} onChange={(e) => updatePointLeader(section.path, idx, 'team', e.target.value)} placeholder="Team Name" />
+                            </div>
+                            <div>
+                              <Label className="text-xs">Stats</Label>
+                              <Input value={recipient.stats || ''} onChange={(e) => updatePointLeader(section.path, idx, 'stats', e.target.value)} placeholder="46 goals; 54 assists" />
+                            </div>
+                            <div className="grid grid-cols-2 gap-3">
+                              <div>
+                                <Label className="text-xs">Points</Label>
+                                <Input type="number" value={recipient.points || ''} onChange={(e) => updatePointLeader(section.path, idx, 'points', e.target.value ? parseInt(e.target.value) || 0 : 0)} placeholder="100" />
+                              </div>
+                              <div>
+                                <Label className="text-xs">Games</Label>
+                                <Input type="number" value={recipient.games || ''} onChange={(e) => updatePointLeader(section.path, idx, 'games', e.target.value ? parseInt(e.target.value) || 0 : 0)} placeholder="16" />
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                      </CardContent>
+                    </Card>
+                  </>
+                )}
+
+                {/* Division Awards Section */}
+                {section.type === 'divisionAwards' && (
+                  <>
+                    <Card>
+                      <CardHeader>
+                        <div className="flex items-center justify-between">
+                          <div>
+                            {editingHeading === section.key ? (
+                              <div className="flex items-center gap-2">
+                                <Input
+                                  value={sectionData.title || ''}
+                                  onChange={(e) => updateNestedData([...section.path, 'title'], e.target.value)}
+                                  placeholder="Custom heading"
+                                  className="h-8 w-64"
+                                />
+                                <Button onClick={() => setEditingHeading(null)} size="sm" variant="ghost" className="h-8 w-8 p-0">
+                                  <Check className="w-4 h-4 text-green-600" />
+                                </Button>
+                              </div>
+                            ) : (
+                              <>
+                                <CardTitle>{sectionData.title || 'Division Awards'}</CardTitle>
+                                <CardDescription>{sectionData.description}</CardDescription>
+                              </>
+                            )}
+                          </div>
+                          <Button onClick={() => setEditingHeading(section.key)} size="sm" variant="ghost" className="h-8 w-8 p-0">
+                            <Edit2 className="w-4 h-4 text-gray-500" />
+                          </Button>
                         </div>
+                      </CardHeader>
+                      <CardContent>
+                        <TextareaWithLinkInserter
+                          id={`${section.key}-description`}
+                          label="Description"
+                          value={sectionData.description || ''}
+                          onChange={(value) => updateNestedData([...section.path, 'description'], value)}
+                          rows={2}
+                          placeholder="Description of division awards..."
+                        />
+                      </CardContent>
+                    </Card>
+
+                    <div className="space-y-4">
+                      <div className="flex items-center justify-between">
+                        <Label className="text-base font-semibold">Award Categories</Label>
+                        <Button onClick={() => addDivisionAward(section.path)} size="sm">
+                          <Plus className="w-4 h-4 mr-2" />
+                          Add Award
+                        </Button>
                       </div>
 
-                      <div className="space-y-1">
-                        <label className="text-xs">Note (optional)</label>
-                        <input
-                          value={recipient.note || ''}
-                          onChange={(e) => updateRecipient(section.id, idx, 'note', e.target.value)}
-                          placeholder="e.g., North Central Division"
-                          className="w-full border rounded px-2 py-1.5 text-sm"
-                        />
-                      </div>
+                      {(sectionData.awards || sectionData.categories || []).length === 0 && (
+                        <p className="text-sm text-gray-500 italic">No awards added yet.</p>
+                      )}
+
+                      {(sectionData.awards || sectionData.categories || []).map((award: DivisionAward, awardIdx: number) => (
+                        <Card key={awardIdx} className="border-l-4 border-l-[#013fac]">
+                          <CardHeader className="py-3">
+                            <div className="flex items-center justify-between">
+                              <Input
+                                value={award.name || ''}
+                                onChange={(e) => updateDivisionAward([...section.path, 'awards'], awardIdx, 'name', e.target.value)}
+                                placeholder="Award Name (e.g., Offensive Player of the Year)"
+                                className="font-semibold"
+                              />
+                              <Button onClick={() => removeDivisionAward([...section.path, 'awards'], awardIdx)} variant="ghost" size="sm">
+                                <Trash2 className="w-4 h-4 text-red-600" />
+                              </Button>
+                            </div>
+                          </CardHeader>
+                          <CardContent className="space-y-3">
+                            <TextareaWithLinkInserter
+                              id={`${section.key}-${awardIdx}-desc`}
+                              label="Award Description (optional)"
+                              value={award.description || ''}
+                              onChange={(value) => updateDivisionAward([...section.path, 'awards'], awardIdx, 'description', value)}
+                              rows={1}
+                              placeholder="Description of this award..."
+                            />
+
+                            <div>
+                              <div className="flex items-center justify-between mb-2">
+                                <Label className="text-sm font-medium">Recipients</Label>
+                                <Button onClick={() => addDivisionAwardRecipient([...section.path, 'awards'], awardIdx)} size="sm" variant="outline">
+                                  <Plus className="w-3 h-3 mr-1" />
+                                  Add
+                                </Button>
+                              </div>
+                              {(award.recipients || []).length === 0 && (
+                                <p className="text-xs text-gray-500 italic">No recipients added yet.</p>
+                              )}
+                              <div className="space-y-2">
+                                {(award.recipients || []).map((recipient: any, recipientIdx: number) => (
+                                  <div key={recipientIdx} className="flex items-center gap-2 bg-gray-50 rounded p-2">
+                                    <Input
+                                      value={recipient.year || ''}
+                                      onChange={(e) => updateDivisionAwardRecipient([...section.path, 'awards'], awardIdx, recipientIdx, 'year', e.target.value)}
+                                      placeholder="Year"
+                                      className="w-20 text-xs"
+                                    />
+                                    <Input
+                                      value={recipient.player || ''}
+                                      onChange={(e) => updateDivisionAwardRecipient([...section.path, 'awards'], awardIdx, recipientIdx, 'player', e.target.value)}
+                                      placeholder="Player"
+                                      className="flex-1 text-xs"
+                                    />
+                                    <Input
+                                      value={recipient.team || ''}
+                                      onChange={(e) => updateDivisionAwardRecipient([...section.path, 'awards'], awardIdx, recipientIdx, 'team', e.target.value)}
+                                      placeholder="Team"
+                                      className="flex-1 text-xs"
+                                    />
+                                    <Input
+                                      value={recipient.conference || ''}
+                                      onChange={(e) => updateDivisionAwardRecipient([...section.path, 'awards'], awardIdx, recipientIdx, 'conference', e.target.value)}
+                                      placeholder="Conference"
+                                      className="w-20 text-xs"
+                                    />
+                                    <Button onClick={() => removeDivisionAwardRecipient([...section.path, 'awards'], awardIdx, recipientIdx)} variant="ghost" size="sm" className="h-7 w-7 p-0">
+                                      <X className="w-3 h-3 text-red-600" />
+                                    </Button>
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          </CardContent>
+                        </Card>
+                      ))}
                     </div>
-                  ))}
-                </div>
-              </div>
-            )}
-          </Card>
-        );
-      })}
+                  </>
+                )}
+
+                {/* Tournaments Section */}
+                {section.type === 'tournaments' && (
+                  <>
+                    <Card>
+                      <CardHeader>
+                        <div className="flex items-center justify-between">
+                          <div>
+                            {editingHeading === section.key ? (
+                              <div className="flex items-center gap-2">
+                                <Input
+                                  value={sectionData.title || ''}
+                                  onChange={(e) => updateNestedData([...section.path, 'title'], e.target.value)}
+                                  placeholder="Custom heading"
+                                  className="h-8 w-64"
+                                />
+                                <Button onClick={() => setEditingHeading(null)} size="sm" variant="ghost" className="h-8 w-8 p-0">
+                                  <Check className="w-4 h-4 text-green-600" />
+                                </Button>
+                              </div>
+                            ) : (
+                              <>
+                                <CardTitle>{sectionData.title || 'Tournaments'}</CardTitle>
+                                <CardDescription>{sectionData.description}</CardDescription>
+                              </>
+                            )}
+                          </div>
+                          <Button onClick={() => setEditingHeading(section.key)} size="sm" variant="ghost" className="h-8 w-8 p-0">
+                            <Edit2 className="w-4 h-4 text-gray-500" />
+                          </Button>
+                        </div>
+                      </CardHeader>
+                      <CardContent>
+                        <TextareaWithLinkInserter
+                          id={`${section.key}-description`}
+                          label="Description"
+                          value={sectionData.description || ''}
+                          onChange={(value) => updateNestedData([...section.path, 'description'], value)}
+                          rows={2}
+                          placeholder="Tournament description..."
+                        />
+                      </CardContent>
+                    </Card>
+
+                    <Card>
+                      <CardHeader>
+                        <div className="flex items-center justify-between">
+                          <Label className="text-base font-semibold">Tournament Events</Label>
+                          <Button onClick={() => addTournamentEvent(section.path)} size="sm">
+                            <Plus className="w-4 h-4 mr-2" />
+                            Add Event
+                          </Button>
+                        </div>
+                      </CardHeader>
+                      <CardContent className="space-y-3">
+                        {(sectionData.events || []).length === 0 && (
+                          <p className="text-sm text-gray-500 italic">No tournament events added yet.</p>
+                        )}
+                        {(sectionData.events || []).map((event: TournamentEvent, idx: number) => (
+                          <div key={idx} className="bg-gray-50 border rounded-lg p-4 space-y-3">
+                            <div className="flex items-center justify-between">
+                              <Badge>{event.year || 'New Event'}</Badge>
+                              <div className="flex items-center gap-1">
+                                {idx > 0 && (
+                                  <Button onClick={() => moveItem(section.path, 'events', idx, 'up')} variant="ghost" size="sm" className="h-7 w-7 p-0">
+                                    <ChevronUp className="w-3 h-3" />
+                                  </Button>
+                                )}
+                                {idx < (sectionData.events || []).length - 1 && (
+                                  <Button onClick={() => moveItem(section.path, 'events', idx, 'down')} variant="ghost" size="sm" className="h-7 w-7 p-0">
+                                    <ChevronDown className="w-3 h-3" />
+                                  </Button>
+                                )}
+                                <Button onClick={() => removeItem(section.path, 'events', idx)} variant="ghost" size="sm">
+                                  <Trash2 className="w-4 h-4 text-red-600" />
+                                </Button>
+                              </div>
+                            </div>
+                            <div>
+                              <Label className="text-xs">Year</Label>
+                              <Input value={event.year || ''} onChange={(e) => updateTournamentEvent(section.path, idx, 'year', e.target.value)} placeholder="2025" />
+                            </div>
+                            <div>
+                              <Label className="text-xs">Tournament Name</Label>
+                              <Input value={event.name || ''} onChange={(e) => updateTournamentEvent(section.path, idx, 'name', e.target.value)} placeholder="West Coast Senior C Lacrosse Tournament" />
+                            </div>
+                            <div>
+                              <Label className="text-xs">Trophy</Label>
+                              <Input value={event.trophy || ''} onChange={(e) => updateTournamentEvent(section.path, idx, 'trophy', e.target.value)} placeholder="Treasure Cove Cup" />
+                            </div>
+                            <div>
+                              <Label className="text-xs">Result</Label>
+                              <Input value={event.result || ''} onChange={(e) => updateTournamentEvent(section.path, idx, 'result', e.target.value)} placeholder="Red Deer Silverbacks – Silver Medal" />
+                            </div>
+                          </div>
+                        ))}
+                      </CardContent>
+                    </Card>
+                  </>
+                )}
+
+                {/* Conference Section (Tier II style) */}
+                {section.type === 'conference' && (
+                  <div className="space-y-4">
+                    {/* Point Leaders */}
+                    {sectionData.pointLeaders && (
+                      <>
+                        <Card>
+                          <CardHeader>
+                            <CardTitle>{sectionData.pointLeaders.title || 'Point Leaders'}</CardTitle>
+                            <CardDescription>{sectionData.pointLeaders.description}</CardDescription>
+                          </CardHeader>
+                          <CardContent>
+                            <div className="flex items-center justify-between mb-3">
+                              <Label className="text-base font-semibold">Point Leaders</Label>
+                              <Button onClick={() => addPointLeader(section.path)} size="sm">
+                                <Plus className="w-4 h-4 mr-2" />
+                                Add Point Leader
+                              </Button>
+                            </div>
+                            <div className="space-y-2">
+                              {(sectionData.pointLeaders.recipients || []).map((recipient: PointLeader, idx: number) => (
+                                <div key={idx} className="flex items-center gap-2 bg-gray-50 rounded p-2">
+                                  <Input value={recipient.year || ''} onChange={(e) => updatePointLeader(section.path, idx, 'year', e.target.value)} placeholder="Year" className="w-16 text-xs" />
+                                  <Input value={recipient.player || ''} onChange={(e) => updatePointLeader(section.path, idx, 'player', e.target.value)} placeholder="Player" className="flex-1 text-xs" />
+                                  <Input value={recipient.team || ''} onChange={(e) => updatePointLeader(section.path, idx, 'team', e.target.value)} placeholder="Team" className="flex-1 text-xs" />
+                                  <Input value={recipient.stats || ''} onChange={(e) => updatePointLeader(section.path, idx, 'stats', e.target.value)} placeholder="Stats" className="flex-1 text-xs" />
+                                  <Button onClick={() => removeItem(section.path, 'recipients', idx)} variant="ghost" size="sm" className="h-7 w-7 p-0">
+                                    <X className="w-3 h-3 text-red-600" />
+                                  </Button>
+                                </div>
+                              ))}
+                            </div>
+                          </CardContent>
+                        </Card>
+                      </>
+                    )}
+
+                    {/* Division Awards */}
+                    {sectionData.divisionAwards?.awards && (
+                      <>
+                        <Card>
+                          <CardHeader>
+                            <CardTitle>{sectionData.divisionAwards.title || 'Division Awards'}</CardTitle>
+                            <CardDescription>{sectionData.divisionAwards.description}</CardDescription>
+                          </CardHeader>
+                          <CardContent>
+                            <div className="space-y-3">
+                              {(sectionData.divisionAwards.awards || []).map((award: DivisionAward, awardIdx: number) => (
+                                <div key={awardIdx} className="border rounded p-3 space-y-2">
+                                  <Input
+                                    value={award.name || ''}
+                                    onChange={(e) => updateDivisionAward([...section.path, 'divisionAwards', 'awards'], awardIdx, 'name', e.target.value)}
+                                    placeholder="Award Name"
+                                    className="font-medium"
+                                  />
+                                  <div className="space-y-1">
+                                    <Label className="text-xs">Recipients</Label>
+                                    {(award.recipients || []).map((recipient: any, recipientIdx: number) => (
+                                      <div key={recipientIdx} className="flex items-center gap-2">
+                                        <Input
+                                          value={recipient.year || ''}
+                                          onChange={(e) => updateDivisionAwardRecipient([...section.path, 'divisionAwards', 'awards'], awardIdx, recipientIdx, 'year', e.target.value)}
+                                          placeholder="Year"
+                                          className="w-16 text-xs"
+                                        />
+                                        <Input
+                                          value={recipient.player || ''}
+                                          onChange={(e) => updateDivisionAwardRecipient([...section.path, 'divisionAwards', 'awards'], awardIdx, recipientIdx, 'player', e.target.value)}
+                                          placeholder="Player"
+                                          className="flex-1 text-xs"
+                                        />
+                                        <Input
+                                          value={recipient.team || ''}
+                                          onChange={(e) => updateDivisionAwardRecipient([...section.path, 'divisionAwards', 'awards'], awardIdx, recipientIdx, 'team', e.target.value)}
+                                          placeholder="Team"
+                                          className="flex-1 text-xs"
+                                        />
+                                        <Button onClick={() => removeDivisionAwardRecipient([...section.path, 'divisionAwards', 'awards'], awardIdx, recipientIdx)} variant="ghost" size="sm" className="h-6 w-6 p-0">
+                                          <X className="w-3 h-3 text-red-600" />
+                                        </Button>
+                                      </div>
+                                    ))}
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          </CardContent>
+                        </Card>
+                      </>
+                    )}
+                  </div>
+                )}
+              </TabsContent>
+            );
+          })}
+        </Tabs>
+      )}
     </div>
   );
 }
