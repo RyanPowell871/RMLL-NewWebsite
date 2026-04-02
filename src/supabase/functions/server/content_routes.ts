@@ -645,16 +645,27 @@ RMLL Junior B Tier II is where development meets opportunity—and where the nex
       }
     }
 
-    // Inject defaults for Senior B - ALWAYS force inject from hardcoded data files
-    // (these files contain the authoritative historical data)
+    // Inject defaults for Senior B - only if data doesn't exist or is empty
+    // (these files contain the authoritative historical data, but user edits should persist)
     if (decodedName === 'Senior B') {
       if (!data) {
         data = {};
       }
 
-      console.log(`[Division] Senior B - Force injecting awards and championships from hardcoded data files`);
-      data.awards = JSON.stringify(seniorBAwardsData);
-      data.championships = JSON.stringify(seniorBChampionshipsData);
+      // Only inject hardcoded data if there's no existing user data
+      if (!hasRealContent(data.awards)) {
+        console.log(`[Division] Senior B - Injecting default awards from hardcoded data files`);
+        data.awards = JSON.stringify(seniorBAwardsData);
+      } else {
+        console.log(`[Division] Senior B - Using existing awards data from KV`);
+      }
+
+      if (!hasRealContent(data.championships)) {
+        console.log(`[Division] Senior B - Injecting default championships from hardcoded data files`);
+        data.championships = JSON.stringify(seniorBChampionshipsData);
+      } else {
+        console.log(`[Division] Senior B - Using existing championships data from KV`);
+      }
 
       // Inject default description if not set via CMS
       if (!data.divisionDescription) {

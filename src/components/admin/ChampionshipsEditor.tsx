@@ -6,7 +6,7 @@ import { Label } from '../ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../ui/tabs';
 import { Alert, AlertDescription } from '../ui/alert';
 import { Badge } from '../ui/badge';
-import { Plus, Trash2, AlertCircle, Code, Eye, ChevronUp, ChevronDown, Edit2, Check, X } from 'lucide-react';
+import { Plus, Trash2, AlertCircle, Code, Eye, ChevronUp, ChevronDown, Edit2, Check, X, PlusCircle, Database, AlertTriangle } from 'lucide-react';
 import { Textarea } from '../ui/textarea';
 import { TextareaWithLinkInserter } from './TextareaWithLinkInserter';
 
@@ -24,12 +24,62 @@ interface TabConfig {
   path: string[]; // Path to the data (e.g., ['provincial'] or ['division', 'north'])
 }
 
+// Default templates for championships data
+const PROVINCIAL_TEMPLATE = {
+  provincial: {
+    title: 'ALA Provincial Championships',
+    description: 'Provincial championship history and results',
+    trophy: {
+      name: '',
+      description: ''
+    },
+    results: []
+  }
+};
+
+const NATIONAL_TEMPLATE = {
+  national: {
+    title: 'National Championships',
+    description: 'National championship history and results',
+    trophy: {
+      name: '',
+      description: ''
+    },
+    results: []
+  }
+};
+
+const CONFERENCE_TEMPLATE = {
+  north: {
+    conferenceName: 'North Conference',
+    champions: []
+  },
+  south: {
+    conferenceName: 'South Conference',
+    champions: []
+  }
+};
+
+const DIVISION_TEMPLATE = {
+  division: {
+    north: {
+      title: 'North Division Champions',
+      results: []
+    },
+    south: {
+      title: 'South Division Champions',
+      results: []
+    }
+  }
+};
+
 export function ChampionshipsEditor({ value, onChange, divisionName }: ChampionshipsEditorProps) {
   const [mode, setMode] = useState<'visual' | 'json'>('visual');
   const [data, setData] = useState<any>({});
   const [jsonError, setJsonError] = useState<string | null>(null);
   const [jsonText, setJsonText] = useState(value || '{}');
   const [editingHeading, setEditingHeading] = useState<string | null>(null);
+  const [activeTab, setActiveTab] = useState<string>('main');
 
   // Parse JSON on mount and when value changes from outside
   useEffect(() => {
@@ -96,8 +146,6 @@ export function ChampionshipsEditor({ value, onChange, divisionName }: Champions
   const getTabs = (): TabConfig[] => {
     const tabs: TabConfig[] = [];
 
-    console.log('[ChampionshipsEditor] Data for', divisionName, ':', Object.keys(data));
-
     // Check for provincial/national (Tier II style)
     if (data.provincial) {
       tabs.push({
@@ -162,7 +210,13 @@ export function ChampionshipsEditor({ value, onChange, divisionName }: Champions
   };
 
   const tabs = getTabs();
-  const defaultTab = tabs.length > 0 ? tabs[0].key : 'provincial';
+
+  // Set active tab when tabs change
+  useEffect(() => {
+    if (tabs.length > 0 && !activeTab.startsWith('tab-')) {
+      setActiveTab(`tab-${tabs[0].key}`);
+    }
+  }, [tabs.length]);
 
   // Reorder results/champions
   const moveItem = (path: string[], itemPath: string, idx: number, direction: 'up' | 'down') => {
@@ -178,6 +232,11 @@ export function ChampionshipsEditor({ value, onChange, divisionName }: Champions
     updateNestedData([...path, itemPath], items);
   };
 
+  // Create template data
+  const createTemplate = (template: any) => {
+    handleDataChange(template);
+  };
+
   if (mode === 'json') {
     return (
       <div className="space-y-4">
@@ -190,6 +249,7 @@ export function ChampionshipsEditor({ value, onChange, divisionName }: Champions
                 Invalid JSON
               </Badge>
             )}
+            <Badge variant="secondary">{divisionName}</Badge>
           </div>
           <Button onClick={() => setMode('visual')} variant="outline" size="sm">
             <Eye className="w-4 h-4 mr-2" />
@@ -207,10 +267,52 @@ export function ChampionshipsEditor({ value, onChange, divisionName }: Champions
         <Textarea
           value={jsonText}
           onChange={(e) => handleJsonChange(e.target.value)}
-          rows={25}
+          rows={30}
           className="font-mono text-sm"
           placeholder="Enter JSON data..."
         />
+
+        {/* Show quick templates for empty data */}
+        {Object.keys(data).length === 0 && (
+          <Alert>
+            <PlusCircle className="h-4 w-4" />
+            <AlertDescription>
+              <div className="flex flex-col gap-2">
+                <span className="font-semibold">Quick Start Templates:</span>
+                <div className="flex gap-2 flex-wrap">
+                  <Button
+                    onClick={() => createTemplate(PROVINCIAL_TEMPLATE)}
+                    size="sm"
+                    variant="outline"
+                  >
+                    Provincial Championships
+                  </Button>
+                  <Button
+                    onClick={() => createTemplate(NATIONAL_TEMPLATE)}
+                    size="sm"
+                    variant="outline"
+                  >
+                    National Championships
+                  </Button>
+                  <Button
+                    onClick={() => createTemplate(CONFERENCE_TEMPLATE)}
+                    size="sm"
+                    variant="outline"
+                  >
+                    Conference Championships
+                  </Button>
+                  <Button
+                    onClick={() => createTemplate(DIVISION_TEMPLATE)}
+                    size="sm"
+                    variant="outline"
+                  >
+                    Division Championships
+                  </Button>
+                </div>
+              </div>
+            </AlertDescription>
+          </Alert>
+        )}
       </div>
     );
   }
@@ -230,23 +332,94 @@ export function ChampionshipsEditor({ value, onChange, divisionName }: Champions
 
       {tabs.length === 0 && (
         <>
-          <Alert>
-            <AlertCircle className="h-4 w-4" />
-            <AlertDescription>
-              {data && Object.keys(data).length > 0
-                ? `Championships data is in an unrecognized format. Use the JSON Editor to view and edit the data. Current data keys: ${Object.keys(data).join(', ')}`
-                : 'No championships data found. Use the JSON Editor to add data.'
-              }
-            </AlertDescription>
-          </Alert>
+          {data && Object.keys(data).length > 0 ? (
+            <Alert>
+              <AlertTriangle className="h-4 w-4" />
+              <AlertDescription>
+                <div className="flex flex-col gap-2">
+                  <span className="font-semibold">Championships data is in an unrecognized format.</span>
+                  <p className="text-sm">Current data keys: {Object.keys(data).join(', ')}</p>
+                  <p className="text-sm">Use the JSON Editor to view, edit, or restructure this data.</p>
+                  <Button
+                    onClick={() => setMode('json')}
+                    size="sm"
+                  >
+                    <Code className="w-4 h-4 mr-2" />
+                    Open JSON Editor
+                  </Button>
+                </div>
+              </AlertDescription>
+            </Alert>
+          ) : (
+            <>
+              <Alert>
+                <Database className="h-4 w-4" />
+                <AlertDescription>
+                  <div className="flex flex-col gap-3">
+                    <span className="font-semibold">No championships data found for {divisionName}.</span>
+                    <p className="text-sm">Choose a template to get started:</p>
+                    <div className="flex gap-2 flex-wrap">
+                      <Button
+                        onClick={() => createTemplate(PROVINCIAL_TEMPLATE)}
+                        size="sm"
+                      >
+                        <PlusCircle className="w-4 h-4 mr-2" />
+                        Provincial Championships
+                      </Button>
+                      <Button
+                        onClick={() => createTemplate(NATIONAL_TEMPLATE)}
+                        size="sm"
+                      >
+                        <PlusCircle className="w-4 h-4 mr-2" />
+                        National Championships
+                      </Button>
+                      <Button
+                        onClick={() => createTemplate(CONFERENCE_TEMPLATE)}
+                        size="sm"
+                      >
+                        <PlusCircle className="w-4 h-4 mr-2" />
+                        Conference Championships
+                      </Button>
+                      <Button
+                        onClick={() => createTemplate(DIVISION_TEMPLATE)}
+                        size="sm"
+                      >
+                        <PlusCircle className="w-4 h-4 mr-2" />
+                        Division Championships
+                      </Button>
+                      <Button
+                        onClick={() => setMode('json')}
+                        size="sm"
+                        variant="outline"
+                      >
+                        <Code className="w-4 h-4 mr-2" />
+                        Use JSON Editor
+                      </Button>
+                    </div>
+                  </div>
+                </AlertDescription>
+              </Alert>
+              <div className="p-4 bg-blue-50 border border-blue-200 rounded">
+                <p className="text-sm text-blue-800">
+                  <strong>Template Guide:</strong>
+                </p>
+                <ul className="text-sm text-blue-700 mt-2 space-y-1">
+                  <li>• <strong>Provincial Championships:</strong> ALA Provincial Championship with gold/silver/bronze medals</li>
+                  <li>• <strong>National Championships:</strong> National Championship results (Minto Cup, Founders Cup, etc.)</li>
+                  <li>• <strong>Conference Championships:</strong> North/South conference champions</li>
+                  <li>• <strong>Division Championships:</strong> Division champions for multi-division formats</li>
+                </ul>
+              </div>
+            </>
+          )}
         </>
       )}
 
       {tabs.length > 0 && (
-        <Tabs defaultValue={defaultTab} className="w-full">
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
           <TabsList className="grid w-full" style={{ gridTemplateColumns: `repeat(${tabs.length}, 1fr)` }}>
             {tabs.map(tab => (
-              <TabsTrigger key={tab.key} value={tab.key}>
+              <TabsTrigger key={tab.key} value={`tab-${tab.key}`}>
                 {tab.label}
               </TabsTrigger>
             ))}
@@ -259,7 +432,7 @@ export function ChampionshipsEditor({ value, onChange, divisionName }: Champions
             const isConference = tab.type === 'conference';
 
             return (
-              <TabsContent key={tab.key} value={tab.key} className="space-y-4">
+              <TabsContent key={tab.key} value={`tab-${tab.key}`} className="space-y-4">
                 {isProvincialOrNational && (
                   <Card>
                     <CardHeader>
@@ -366,7 +539,7 @@ export function ChampionshipsEditor({ value, onChange, divisionName }: Champions
                         </div>
 
                         {(sectionData.results || []).length === 0 && (
-                          <p className="text-sm text-gray-500 italic">No results added yet.</p>
+                          <p className="text-sm text-gray-500 italic">No results added yet. Click "Add Result" to add one.</p>
                         )}
 
                         {(sectionData.results || []).map((result: any, idx: number) => (
@@ -552,7 +725,7 @@ export function ChampionshipsEditor({ value, onChange, divisionName }: Champions
                         </div>
 
                         {(sectionData.results || []).length === 0 && (
-                          <p className="text-sm text-gray-500 italic">No champions added yet.</p>
+                          <p className="text-sm text-gray-500 italic">No champions added yet. Click "Add Champion" to add one.</p>
                         )}
 
                         <div className="grid gap-2">
@@ -704,7 +877,7 @@ export function ChampionshipsEditor({ value, onChange, divisionName }: Champions
                         </div>
 
                         {(sectionData.champions || []).length === 0 && (
-                          <p className="text-sm text-gray-500 italic">No champions added yet.</p>
+                          <p className="text-sm text-gray-500 italic">No champions added yet. Click "Add Champion" to add one.</p>
                         )}
 
                         <div className="grid gap-2">
