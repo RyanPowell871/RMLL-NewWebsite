@@ -91,10 +91,10 @@ export function BylawsPage() {
           </div>
         </div>
         <p className="text-sm sm:text-base text-gray-700 leading-relaxed">
-          Rocky Mountain Lacrosse League — Alberta Amateur Major Lacrosse Bylaws. These bylaws govern the organization,
+          Rocky Mountain Lacrosse League - Alberta Amateur Major Lacrosse Bylaws. These bylaws govern the organization,
           membership, executive structure, meetings, discipline, and operations of the RMLL.
         </p>
-        <p className="text-xs text-gray-500 mt-2 italic">Revised — December 1, 2024</p>
+        <p className="text-xs text-gray-500 mt-2 italic">Revised - December 1, 2024</p>
 
         <button
           onClick={() => setExpandAll(!expandAll)}
@@ -574,7 +574,7 @@ export function BylawsPage() {
           define the duties of RMLL Executive members and employees of the RMLL.
         </Li>
 
-        <Sub id="6.07">RMLL EXECUTIVE'S AUTHORITY — FINAL AND BINDING</Sub>
+        <Sub id="6.07">RMLL EXECUTIVE'S AUTHORITY - FINAL AND BINDING</Sub>
         <P>
           Subject only to those rights of appeal as provided for herein and bylaws and regulations of the ALA and LC,
           all decisions, rulings and interpretations of the RMLL Executive are final and binding upon Franchise
@@ -1054,7 +1054,7 @@ export function BylawsPage() {
 
       {/* BYLAW 12 */}
       <BylawSection number="12" title="Exclusive Jurisdiction" defaultOpen={expandAll} key={`12-${expandAll}`}>
-        <Sub id="12.01">RMLL EXECUTIVE DECISIONS — FINAL AND BINDING</Sub>
+        <Sub id="12.01">RMLL EXECUTIVE DECISIONS - FINAL AND BINDING</Sub>
         <P>
           All members of the RMLL Executive, Franchise Holders, Members, and Members of a Member shall accept as
           final and binding the decisions of the RMLL Executive including, without limiting the generality of the

@@ -78,7 +78,7 @@ export function CodeOfConductPage() {
         <h3 className="text-lg sm:text-xl font-bold mb-3">Our Standard</h3>
         <p className="text-sm sm:text-base text-blue-100 leading-relaxed">
           The RMLL is committed to maintaining the highest standards of conduct across all levels of the organization.
-          These principles apply to all participants — players, coaches, officials, volunteers, and administrators —
+          These principles apply to all participants - players, coaches, officials, volunteers, and administrators -
           and reflect our dedication to the values of fair play, respect, and sportsmanship that are central to the
           game of lacrosse.
         </p>

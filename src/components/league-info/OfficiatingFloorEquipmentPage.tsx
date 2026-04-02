@@ -45,7 +45,7 @@ export function OfficiatingFloorEquipmentPage() {
 
       <h3>Frame Size</h3>
       <p>
-        <strong>4' × 4'6"</strong>
+        <strong>4' x 4'6"</strong>
       </p>
 
       <h3>CLA Net Standards</h3>
@@ -90,7 +90,7 @@ export function OfficiatingFloorEquipmentPage() {
 
       <h3>Suppliers for Mesh</h3>
       <p>
-        One supplier for black mesh for 4' × 4'6" frames is:
+        One supplier for black mesh for 4' x 4'6" frames is:
       </p>
 
       <div className="not-prose my-4">
@@ -101,7 +101,7 @@ export function OfficiatingFloorEquipmentPage() {
             Phone: <a href="tel:1-888-932-2728" className="text-[#013fac] font-semibold hover:underline">1-888-932-2728</a>
           </p>
           <p className="text-xs text-gray-500 mt-2 italic">
-            When ordering new mesh, make sure mesh is being ordered for 4' × 4'6" frames.
+            When ordering new mesh, make sure mesh is being ordered for 4' x 4'6" frames.
           </p>
         </div>
       </div>
@@ -112,7 +112,7 @@ export function OfficiatingFloorEquipmentPage() {
         <li>
           If the <strong>arena owns</strong> the nets, then just ask the arena to order the black
           mesh as it would be their cost. Ensure it is communicated to the arena that the mesh is for{' '}
-          <strong>4' × 4'6" frames</strong>.
+          <strong>4' x 4'6" frames</strong>.
         </li>
       </ul>
 
@@ -122,13 +122,13 @@ export function OfficiatingFloorEquipmentPage() {
       </p>
       <blockquote>
         <p>
-          <strong>CLA Box Lacrosse Rule 8(a) — page 19:</strong> The mesh must have sufficient slack.
-          If the mesh is the correct size for a 4' × 4'6" frame there will be a lot of slack, which
+          <strong>CLA Box Lacrosse Rule 8(a) - page 19:</strong> The mesh must have sufficient slack.
+          If the mesh is the correct size for a 4' x 4'6" frame there will be a lot of slack, which
           is correct.
         </p>
       </blockquote>
       <p>
-        The mesh should be touching the floor due to the slack — this contact is a good guide for
+        The mesh should be touching the floor due to the slack - this contact is a good guide for
         proper stringing. <strong>More slack is always better than less.</strong>
       </p>
 
@@ -136,12 +136,12 @@ export function OfficiatingFloorEquipmentPage() {
       <div className="not-prose my-8">
         <div className="border-2 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] bg-white overflow-hidden">
           <div className="bg-gradient-to-r from-[#013fac] to-[#0149c9] text-white px-4 py-2 border-b-2 border-black">
-            <h3 className="text-sm font-bold tracking-wide m-0">REFERENCE PHOTOS — PROPERLY STRUNG 4' x 4'6" NET</h3>
+            <h3 className="text-sm font-bold tracking-wide m-0">REFERENCE PHOTOS - PROPERLY STRUNG 4' x 4'6" NET</h3>
           </div>
           <div className="p-4 bg-gray-50">
             <p className="text-sm text-gray-600 mb-4">
               The following photos show what a 4' x 4'6" frame with correctly strung black mesh should look like.
-              Note how the mesh is touching the floor due to the slack — this contact is a good guide for proper stringing.
+              Note how the mesh is touching the floor due to the slack - this contact is a good guide for proper stringing.
             </p>
 
             {/* Full-width front views */}
@@ -186,7 +186,7 @@ export function OfficiatingFloorEquipmentPage() {
                 <img src={netSideSlack} alt="Side angle showing mesh touching the floor" className="w-full h-auto" />
                 <div className="px-3 py-2 bg-gray-100 border-t border-gray-200">
                   <p className="text-xs font-semibold text-gray-700">Mesh Floor Contact</p>
-                  <p className="text-xs text-gray-500">Mesh touching the floor — key indicator of correct slack</p>
+                  <p className="text-xs text-gray-500">Mesh touching the floor - key indicator of correct slack</p>
                 </div>
               </div>
               <div className="border border-gray-200 rounded-lg overflow-hidden bg-white">

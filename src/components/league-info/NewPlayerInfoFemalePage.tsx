@@ -7,7 +7,7 @@ import {
   ClipboardList, Repeat, Truck, CalendarDays, TrendingUp, Globe
 } from 'lucide-react';
 
-/* ─── helpers ─── */
+/* --- helpers --- */
 interface CollapsibleSectionProps {
   title: string;
   icon: React.ReactNode;
@@ -33,11 +33,11 @@ function CollapsibleSection({ title, icon, children, defaultOpen = false, accent
   );
 }
 
-/* ─── data ─── */
+/* --- data --- */
 const DIFFERENCES = [
-  'Games are 3 × twenty-minute stop time periods, with 10-minute intermissions and a minimum 30-minute warmup.',
+  'Games are 3 x twenty-minute stop time periods, with 10-minute intermissions and a minimum 30-minute warmup.',
   'Season is usually longer than minor lacrosse (16 games) and playoffs run into mid/late June.',
-  'Nets are bigger (4\'×4\'6″ instead of 4\'×4\'4″).',
+  'Nets are bigger (4\'x4\'6″ instead of 4\'x4\'4″).',
   'Provincial travel (and in some divisions, inter-provincial travel).',
   'Home and away uniforms.',
   'New teams to play.',
@@ -140,7 +140,7 @@ const KEY_CONTACTS = [
   { role: 'President', name: 'Duane Bratt', email: 'dbratt@mtroyal.ca' },
 ];
 
-/* ─── franchise card ─── */
+/* --- franchise card --- */
 function FranchiseCard({ franchise }: { franchise: FranchiseInfo }) {
   const [showBoundary, setShowBoundary] = useState(false);
   return (
@@ -191,7 +191,7 @@ function FranchiseCard({ franchise }: { franchise: FranchiseInfo }) {
   );
 }
 
-/* ─── main component ─── */
+/* --- main component --- */
 export function NewPlayerInfoFemalePage() {
   return (
     <div>
@@ -216,7 +216,7 @@ export function NewPlayerInfoFemalePage() {
             <Shield className="w-4 h-4 text-pink-200" />
             <span className="text-pink-100">Division Commissioner: </span>
             <strong>Alex Traboulay</strong>
-            <span className="text-pink-200 mx-1">—</span>
+            <span className="text-pink-200 mx-1">-</span>
             <a href="mailto:abladieslaxcomish@gmail.com" className="underline text-white hover:text-pink-200">abladieslaxcomish@gmail.com</a>
           </div>
         </div>
@@ -308,7 +308,7 @@ export function NewPlayerInfoFemalePage() {
         </div>
       </div>
 
-      {/* Boundaries & Franchises — North */}
+      {/* Boundaries & Franchises - North */}
       <CollapsibleSection title="North Franchises & Boundaries" icon={<MapPin className="w-5 h-5" />} defaultOpen>
         <div className="mt-3 space-y-3">
           <p className="text-sm text-gray-700">
@@ -323,7 +323,7 @@ export function NewPlayerInfoFemalePage() {
         </div>
       </CollapsibleSection>
 
-      {/* Boundaries & Franchises — South */}
+      {/* Boundaries & Franchises - South */}
       <CollapsibleSection title="South Franchises & Draft (CDLA)" icon={<MapPin className="w-5 h-5" />} defaultOpen>
         <div className="mt-3 space-y-3">
           <p className="text-sm text-gray-700">

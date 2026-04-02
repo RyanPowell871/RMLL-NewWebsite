@@ -49,7 +49,7 @@ export function OfficiatingOffFloorOfficialsPage() {
         </div>
       </div>
 
-      <h2>RMLL Regulation 13 — Maintenance of Order</h2>
+      <h2>RMLL Regulation 13 - Maintenance of Order</h2>
 
       <div className="not-prose my-4 space-y-0">
         {/* Reg 13.1 */}

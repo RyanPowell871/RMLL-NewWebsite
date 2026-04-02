@@ -97,9 +97,9 @@ export function RegulationsPage() {
           </div>
         </div>
         <p className="text-sm sm:text-base text-gray-700 leading-relaxed">
-          Rocky Mountain Lacrosse League — Alberta Amateur Major Lacrosse Regulations. These regulations govern playing divisions, franchises, fees, facilities, player eligibility, rosters, trades, playoffs, discipline, and all operational aspects of the RMLL.
+          Rocky Mountain Lacrosse League - Alberta Amateur Major Lacrosse Regulations. These regulations govern playing divisions, franchises, fees, facilities, player eligibility, rosters, trades, playoffs, discipline, and all operational aspects of the RMLL.
         </p>
-        <p className="text-xs text-gray-500 mt-2 italic">Revised — December 1, 2024</p>
+        <p className="text-xs text-gray-500 mt-2 italic">Revised - December 1, 2024</p>
         <div className="flex flex-wrap gap-2 mt-4">
           <button onClick={() => setShowTOC(!showTOC)} className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold rounded border-2 border-[#013fac] text-[#013fac] hover:bg-[#013fac] hover:text-white transition-colors">
             <List className="w-3.5 h-3.5" />{showTOC ? 'Hide' : 'Show'} Table of Contents
@@ -241,7 +241,7 @@ export function RegulationsPage() {
           <p><strong>Senior Major Female:</strong> Mon, Tue, Fri, Sat, Sun</p>
           <p><strong>Junior Major Female:</strong> Mon, Wed, Fri, Sat, Sun</p>
         </div>
-        <S n="8.3">Junior A and Junior B Tier I Pre-Season Practice Days — Junior A will not schedule floor times on Tuesday and Thursday and Junior B Tier I will not schedule floor times on Monday and Wednesday for January through April.</S>
+        <S n="8.3">Junior A and Junior B Tier I Pre-Season Practice Days - Junior A will not schedule floor times on Tuesday and Thursday and Junior B Tier I will not schedule floor times on Monday and Wednesday for January through April.</S>
         <S n="8.4">Division Playoffs will commence no earlier than five (5) days following the completion of Regular Season play.</S>
         <S n="8.5">ALA Provincials or RMLL Championships will be finished no later than seven (7) days before a scheduled National Championship.</S>
       </Section>
@@ -277,7 +277,7 @@ export function RegulationsPage() {
 
       <Section id="13" title="Rules of Play" open={isOpen('13')} onToggle={() => toggle('13')}>
         <S n="13.1">Rules of play in RMLL shall be those of the LC Rule Book, in RMLL Regulations (including Schedule 11), and in the ALA Regulations for the current season.</S>
-        <S n="13.2">Overtime — Regular Season: 2-minute rest then 5-minute sudden victory overtime. If still tied, game declared a tie (1 point each). Playoff/Provincial: Continue after 2-minute rest for full 10-minute stop time. If still tied, 10-minute rest then 20-minute periods until sudden victory goal.</S>
+        <S n="13.2">Overtime - Regular Season: 2-minute rest then 5-minute sudden victory overtime. If still tied, game declared a tie (1 point each). Playoff/Provincial: Continue after 2-minute rest for full 10-minute stop time. If still tied, 10-minute rest then 20-minute periods until sudden victory goal.</S>
         <S n="13.3-13.6">Official Report required for straight time or shortened intermissions. Officials must record bench count. Home Franchise gets delay of game penalty if Off Floor Officials not in place. Water breaks may be allowed on goalie request.</S>
       </Section>
 
@@ -304,9 +304,9 @@ export function RegulationsPage() {
         <S n="16.1-16.3">All Officials to be paid prior to the start of each game by the Home Franchise. Each Official paid by cheque or cash (exact amount).</S>
         <p className="font-semibold text-gray-900 mt-2">Official Game Fees (per Official):</p>
         <div className="ml-4 space-y-1 text-xs">
-          <p>Junior A and Senior B — $85.00</p>
-          <p>Senior C and Junior B Tier I — $79.00</p>
-          <p>Junior B Tier II, Tier III, Sr. & Jr. Major Female — $73.00</p>
+          <p>Junior A and Senior B - $85.00</p>
+          <p>Senior C and Junior B Tier I - $79.00</p>
+          <p>Junior B Tier II, Tier III, Sr. & Jr. Major Female - $73.00</p>
         </div>
         <S n="16.5">NSF cheque: Franchise fined $50.00 plus all bank charges; fine doubles with each additional occurrence.</S>
         <S n="16.6">If Officials not paid before game start, Officials will not proceed and game will be declared a default.</S>
@@ -314,10 +314,10 @@ export function RegulationsPage() {
       </Section>
 
       <Section id="17" title="ALRA Official Reimbursement" open={isOpen('17')} onToggle={() => toggle('17')}>
-        <S n="17.1">Official Driver Mileage — $0.53/km round-trip, first 50 km not paid until round-trip exceeds 50 km.</S>
-        <S n="17.2">Official Passenger Mileage — $0.15/km round-trip, first 50 km not paid until round-trip exceeds 50 km.</S>
-        <S n="17.3">Official Per Diem — $30.00 when round-trip exceeds 200 km (no overnight). For overnight trips, $70.00/day.</S>
-        <S n="17.4">Official Hotel Accommodation — ALRA VP books accommodation; RMLL invoices split between Franchises.</S>
+        <S n="17.1">Official Driver Mileage - $0.53/km round-trip, first 50 km not paid until round-trip exceeds 50 km.</S>
+        <S n="17.2">Official Passenger Mileage - $0.15/km round-trip, first 50 km not paid until round-trip exceeds 50 km.</S>
+        <S n="17.3">Official Per Diem - $30.00 when round-trip exceeds 200 km (no overnight). For overnight trips, $70.00/day.</S>
+        <S n="17.4">Official Hotel Accommodation - ALRA VP books accommodation; RMLL invoices split between Franchises.</S>
         <S n="17.5">Officials assigned to inter-provincial games submit expense claims for parking, flights, hotel, mileage and per diem.</S>
       </Section>
 
@@ -345,7 +345,7 @@ export function RegulationsPage() {
         <S n="21.1">Each Franchise must designate one person as Head Coach on their Franchise Certificate and game sheet.</S>
         <S n="21.2">Each Junior and Senior Major Female Franchise must have one female coach registered as Bench Personnel.</S>
         <S n="21.3">All coaches and trainers must comply with LC minimum standard certification requirements.</S>
-        <S n="21.5">All Alberta Franchise Bench Personnel and managers must be registered in the RMLL RAMP Intent-to-Play Staff Registration. Opens December 1, closes July 15 – 11:59 PM. Late registration subject to $50.00 ALA fee.</S>
+        <S n="21.5">All Alberta Franchise Bench Personnel and managers must be registered in the RMLL RAMP Intent-to-Play Staff Registration. Opens December 1, closes July 15 - 11:59 PM. Late registration subject to $50.00 ALA fee.</S>
         <S n="21.7">Coaches, Managers, and Trainers must be on their Franchise roster. Only roster coaches and trainers allowed on bench during games.</S>
         <S n="21.8">Player Coaches only allowed in Senior C and Senior Major Female Divisions.</S>
         <S n="21.9">In Senior B, an individual can be both a player and a coach, but cannot be listed as both on the same game sheet.</S>
@@ -361,16 +361,16 @@ export function RegulationsPage() {
         <S n="23.1">The RMLL shall have jurisdiction over all amateur Box players who are a minimum of 17 years of age as of December 31 in the year they wish to compete.</S>
         <S n="23.2">Senior Divisions open to players 22+ years of age. No player under 22 on December 31 shall be on a Senior Franchise roster. Active professional players not eligible to play Senior C.</S>
         <S n="23.3-23.6">Senior B Franchise holds playing rights per 50/40 Player Protected List. Senior C holds rights per previous season final roster until released, traded or not on roster as of May 1.</S>
-        <S n="23.7-23.8">Senior Major Female — same rights structure as Senior C.</S>
+        <S n="23.7-23.8">Senior Major Female - same rights structure as Senior C.</S>
         <S n="23.9">Junior Divisions open to players under 22 and minimum 17 years of age on December 31. Proof of age by birth certificate or equivalent.</S>
         <S n="23.10">If a player resides outside approved boundaries of all Franchises in a Division, the player is a Free Agent for that Division.</S>
         <S n="23.11">A Junior or Senior player who last played outside Alberta or never played in Alberta is a Free Agent unless on a Protected List.</S>
         <S n="23.12">Each year the ALA provides lists of Female and Male Graduating U17 players. Specific draft eligibility rules apply.</S>
-        <S n="23.13-23.16">Junior A — 60/50 Player Protected List. Junior B Tier I — 45/35 Player Protected List (rights held until released, traded, or not on final roster for 2 consecutive seasons).</S>
-        <S n="23.17">Junior B Tier II Playing Rights — detailed boundary rules for Wheatland Area, GELC Area, CALL Area, CDLA Area, and SALA Area.</S>
+        <S n="23.13-23.16">Junior A - 60/50 Player Protected List. Junior B Tier I - 45/35 Player Protected List (rights held until released, traded, or not on final roster for 2 consecutive seasons).</S>
+        <S n="23.17">Junior B Tier II Playing Rights - detailed boundary rules for Wheatland Area, GELC Area, CALL Area, CDLA Area, and SALA Area.</S>
         <S n="23.18">All first-year Junior Eligible players must register with a Junior B Tier II Franchise.</S>
-        <S n="23.19-23.21">Junior Major Female — playing rights and Protected Lists for Calgary and surrounding area Franchises (40/35 Player Protected List).</S>
-        <S n="23.20">New Junior Players to Non-Drafting Franchises — geographical boundaries defined for St. Albert Drillers, Sherwood Park Titans, Capital Region Saints, and Red Deer Riot.</S>
+        <S n="23.19-23.21">Junior Major Female - playing rights and Protected Lists for Calgary and surrounding area Franchises (40/35 Player Protected List).</S>
+        <S n="23.20">New Junior Players to Non-Drafting Franchises - geographical boundaries defined for St. Albert Drillers, Sherwood Park Titans, Capital Region Saints, and Red Deer Riot.</S>
       </Section>
 
       <Section id="24" title="Player Eligibility" open={isOpen('24')} onToggle={() => toggle('24')}>
@@ -393,7 +393,7 @@ export function RegulationsPage() {
         <S n="26.5">Any rostered player who plays more than ten (10) games and is then released cannot register with a lower Division in that year. (Goalies: only games with playing minutes count.)</S>
         <S n="26.6-26.8">Lateral moves require release and Commissioner approval. Players returning to RMLL within 2 years remain property of last Franchise. Players turning out to practice but not playing in more than 1 of first 6 games may appeal for release.</S>
         <S n="26.9">A player refused a release may appeal to Division Commissioner. No appeal from Commissioner's decision.</S>
-        <S n="26.10">Close relatives on different Franchises — if Franchises can't agree on trade, submit to final offer arbitration.</S>
+        <S n="26.10">Close relatives on different Franchises - if Franchises can't agree on trade, submit to final offer arbitration.</S>
         <S n="26.11">If a Franchise ceases to operate, the Division will decide whether to hold a dispersal draft or allow players to become free agents.</S>
       </Section>
 
@@ -407,10 +407,10 @@ export function RegulationsPage() {
       </Section>
 
       <Section id="28" title="Player Lists" open={isOpen('28')} onToggle={() => toggle('28')}>
-        <S n="28.1">Entry Draft Lists — Draft process documented in separate schedules. Senior Entry Drafts for aged-out Juniors. Junior Entry Drafts for U17 Graduating players.</S>
-        <S n="28.2">LC Negotiation List — Senior B, Junior A, and Junior B Tier I must submit maximum 25 players prior to February 23.</S>
-        <S n="28.3">Division Team XX Player Protected Lists — management documented in Schedules 7-10.</S>
-        <S n="28.5">Franchise Roster — entered in RMLL Franchise Management System. Maximum players: Jr. A & Tier I = 25; Sr. B & Jr. Major Female = 30; Sr. C & Sr. Major Female = 40; Jr. B Tier II = 25 + 5 Tier III.</S>
+        <S n="28.1">Entry Draft Lists - Draft process documented in separate schedules. Senior Entry Drafts for aged-out Juniors. Junior Entry Drafts for U17 Graduating players.</S>
+        <S n="28.2">LC Negotiation List - Senior B, Junior A, and Junior B Tier I must submit maximum 25 players prior to February 23.</S>
+        <S n="28.3">Division Team XX Player Protected Lists - management documented in Schedules 7-10.</S>
+        <S n="28.5">Franchise Roster - entered in RMLL Franchise Management System. Maximum players: Jr. A & Tier I = 25; Sr. B & Jr. Major Female = 30; Sr. C & Sr. Major Female = 40; Jr. B Tier II = 25 + 5 Tier III.</S>
         <S n="28.5.4">Must be entered by April 27 (or 4 days before first game if season starts before May 1). Player not registered until Intent-to-Play completed and all mandatory fields entered.</S>
         <S n="28.8">After May 1, a higher-level Franchise may not approach a player from a lower Franchise if it would leave the lower Franchise below 18 players and one goalie.</S>
         <S n="28.9">A player becomes a Free Agent at 12:00 am on May 1 if not listed on any Division Protected List.</S>
@@ -502,7 +502,7 @@ export function RegulationsPage() {
         <p className="font-semibold text-gray-900 mt-2">Balanced Schedule Tiebreakers:</p>
         <div className="ml-4 space-y-1 text-xs">
           <p>1. Head-to-head record</p>
-          <p>2. Goal Average Formula: GF / (GF + GA) — using only games between tied teams</p>
+          <p>2. Goal Average Formula: GF / (GF + GA) - using only games between tied teams</p>
           <p>3. Goals Against Formula using all games</p>
           <p>4. Lowest penalty minutes</p>
         </div>
@@ -579,9 +579,9 @@ export function RegulationsPage() {
                 ['Late draft Protected List submissions', '$100/day'],
                 ['Late roster entry', '$250 + $50/day after'],
                 ['Missing player contact info', '$25/field'],
-                ['Game default — 1st offence', '$1,500'],
-                ['Game default — 2nd offence', '$2,000'],
-                ['Game default — 3rd offence', '$3,000 + suspension'],
+                ['Game default - 1st offence', '$1,500'],
+                ['Game default - 2nd offence', '$2,000'],
+                ['Game default - 3rd offence', '$3,000 + suspension'],
                 ['Season default (withdrawal after schedule posted)', '$2,000'],
                 ['Delay of game (30+ min)', '$250 minimum'],
                 ['Removing from floor / refusing to play', '$250'],
@@ -610,8 +610,8 @@ export function RegulationsPage() {
                 ['Late trophy return', '$100 + $25/month'],
                 ['650+ PIM in Regular Season', '$250'],
                 ['750+ PIM in Regular Season', 'Franchise hearing review'],
-                ['Off Floor Official — Abuse of Official game misconduct', 'Suspended remainder of Season'],
-                ['Monies owing to RMLL', '"Bad standing" — no voting, no drafts, no games'],
+                ['Off Floor Official - Abuse of Official game misconduct', 'Suspended remainder of Season'],
+                ['Monies owing to RMLL', '"Bad standing" - no voting, no drafts, no games'],
               ].map(([offence, fine], i) => (
                 <tr key={i} className={i % 2 ? 'bg-gray-50' : ''}><td className="border border-gray-300 px-2 py-1">{offence}</td><td className="border border-gray-300 px-2 py-1 text-right font-mono whitespace-nowrap">{fine}</td></tr>
               ))}
@@ -679,7 +679,7 @@ export function RegulationsPage() {
       {/* === SCHEDULES === */}
       <GroupHeader title="Schedules" />
 
-      <Section id="S1" title="Schedule 1: LC, ALA, RMLL Calendar — Due Dates" open={isOpen('S1')} onToggle={() => toggle('S1')}>
+      <Section id="S1" title="Schedule 1: LC, ALA, RMLL Calendar - Due Dates" open={isOpen('S1')} onToggle={() => toggle('S1')}>
         <div className="overflow-x-auto">
           <table className="text-xs border-collapse w-full">
             <thead><tr className="bg-gray-100"><th className="border border-gray-300 px-2 py-1 text-left">Due Date</th><th className="border border-gray-300 px-2 py-1 text-left">Division</th><th className="border border-gray-300 px-2 py-1 text-left">Item</th></tr></thead>
@@ -720,13 +720,13 @@ export function RegulationsPage() {
       <Section id="S2" title="Schedule 2: New Franchise Certificate Request" open={isOpen('S2')} onToggle={() => toggle('S2')}>
         <p>A new Franchise may request an RMLL Franchise Certificate. Requires written submission of:</p>
         <ol className="list-decimal ml-6 space-y-1 mt-2">
-          <li><strong>Financial Stability</strong> — Evidence of financing for at least one full year, including Season budget</li>
-          <li><strong>Exposure</strong> — Proof entry won't impose unwarranted burden; coaching certification; number of qualified Officials; access to call-ups; travel constraints</li>
-          <li><strong>Operational Personnel</strong> — Primary/Secondary contact, Financial/Scheduling contact, Registrar, Head Coach, Assistant Coaches, Franchise Holder Directors/Officers</li>
-          <li><strong>Players</strong> — List of potential players with years played, birth year, U17/Junior level</li>
-          <li><strong>Future Players</strong> — Where future players will come from for 2-3 years</li>
-          <li><strong>Facility</strong> — Comparable facility available with suitable dates/times. Complete Facility Specification Form</li>
-          <li><strong>Local Support</strong> — Evidence of local lacrosse infrastructure</li>
+          <li><strong>Financial Stability</strong> - Evidence of financing for at least one full year, including Season budget</li>
+          <li><strong>Exposure</strong> - Proof entry won't impose unwarranted burden; coaching certification; number of qualified Officials; access to call-ups; travel constraints</li>
+          <li><strong>Operational Personnel</strong> - Primary/Secondary contact, Financial/Scheduling contact, Registrar, Head Coach, Assistant Coaches, Franchise Holder Directors/Officers</li>
+          <li><strong>Players</strong> - List of potential players with years played, birth year, U17/Junior level</li>
+          <li><strong>Future Players</strong> - Where future players will come from for 2-3 years</li>
+          <li><strong>Facility</strong> - Comparable facility available with suitable dates/times. Complete Facility Specification Form</li>
+          <li><strong>Local Support</strong> - Evidence of local lacrosse infrastructure</li>
           <li><strong>Reason(s) for Request</strong></li>
           <li><strong>Acceptance of RMLL Bylaws and Regulations</strong></li>
         </ol>
@@ -767,7 +767,7 @@ export function RegulationsPage() {
         <S n="">Players north of Leduc southern boundary: Beaumont Outlaws, Fort Saskatchewan Rebels, Edmonton Miners. Players south of Didsbury northern boundary: Rockyview Knights, Calgary Senior Mountaineers. Players between: Central Alberta (if established).</S>
         <S n="">Once drafted, a player is property of that team until released or traded. If a player goes to a higher league (WLA, MSL), rights remain with drafting team.</S>
         <p className="font-semibold mt-3">Senior B 40 Player Protected List:</p>
-        <S n="">50 players allowed Feb 1 – Apr 15; 40 players from Apr 16 – Feb 1 of following year. No Hold-out or Injured Reserve Lists. Frozen from July 1 to February 1. Published on RMLL website. All changes communicated to Commissioner and Executive Director.</S>
+        <S n="">50 players allowed Feb 1 - Apr 15; 40 players from Apr 16 - Feb 1 of following year. No Hold-out or Injured Reserve Lists. Frozen from July 1 to February 1. Published on RMLL website. All changes communicated to Commissioner and Executive Director.</S>
       </Section>
 
       <Section id="S8" title="Schedule 8: Junior A Drafts and Protected Lists" open={isOpen('S8')} onToggle={() => toggle('S8')}>
@@ -780,10 +780,10 @@ export function RegulationsPage() {
       <Section id="S9" title="Schedule 9: Junior B Tier I Drafts and Protected List" open={isOpen('S9')} onToggle={() => toggle('S9')}>
         <p className="font-semibold">Alberta Tier I Drafts (4 separate drafts):</p>
         <div className="ml-4 space-y-2 mt-2 text-xs">
-          <p><strong>Draft 1 — North:</strong> Fort Saskatchewan Rebels, Crude Lacrosse Club, Edmonton Warriors, Beaumont Outlaws. 20 rounds. Players from GELC area associations.</p>
-          <p><strong>Draft 2 — Central:</strong> Red Deer Rampage, Mountain View Mavericks. 20 rounds. Rampage drafts from Red Deer; Mavericks from Olds/Innisfail; rounds 9-20 shared from CALL area.</p>
-          <p><strong>Draft 3 — South:</strong> Calgary Chill, Calgary Shamrocks, Calgary Mountaineers, Rockyview Silvertips, Okotoks Marauders. 20 rounds from CDLA area clubs.</p>
-          <p><strong>Draft 4 — Southern Alberta:</strong> Southern Alberta Rockies. 20 rounds from Brooks, Crowsnest, Claresholm, Lethbridge, Taber, Medicine Hat.</p>
+          <p><strong>Draft 1 - North:</strong> Fort Saskatchewan Rebels, Crude Lacrosse Club, Edmonton Warriors, Beaumont Outlaws. 20 rounds. Players from GELC area associations.</p>
+          <p><strong>Draft 2 - Central:</strong> Red Deer Rampage, Mountain View Mavericks. 20 rounds. Rampage drafts from Red Deer; Mavericks from Olds/Innisfail; rounds 9-20 shared from CALL area.</p>
+          <p><strong>Draft 3 - South:</strong> Calgary Chill, Calgary Shamrocks, Calgary Mountaineers, Rockyview Silvertips, Okotoks Marauders. 20 rounds from CDLA area clubs.</p>
+          <p><strong>Draft 4 - Southern Alberta:</strong> Southern Alberta Rockies. 20 rounds from Brooks, Crowsnest, Claresholm, Lethbridge, Taber, Medicine Hat.</p>
         </div>
         <p className="font-semibold mt-3">35 Player Protected List:</p>
         <S n="">35 players (not a roster; roster max 25). No Hold-out or Injury Lists. Players remain until released, traded, or not on final roster for 2 consecutive seasons. Expanded to 45 from draft date to April 10. Frozen from July 16 to next draft date. Published on RMLL website.</S>
@@ -792,9 +792,9 @@ export function RegulationsPage() {
       </Section>
 
       <Section id="S10" title="Schedule 10: Junior Major Female Draft and Protected Lists" open={isOpen('S10')} onToggle={() => toggle('S10')}>
-        <p className="font-semibold">Junior Major Female Graduating U17 Draft — Calgary and Surrounding Area:</p>
+        <p className="font-semibold">Junior Major Female Graduating U17 Draft - Calgary and Surrounding Area:</p>
         <S n="">Draft held prior to February 12 each year. Host alternates among Rockyview Silvertips, Calgary Cardinals, and Okotoks Raiders. Three teams draft from ALA Graduating U17 Female List (Fury and female CDLA U17 players). Rounds continue until all eligible players drafted or each Franchise reaches 40-player limit.</S>
-        <p className="font-semibold mt-3">35 Player Protected List — Calgary Area:</p>
+        <p className="font-semibold mt-3">35 Player Protected List - Calgary Area:</p>
         <S n="">35 players (roster max 30). No Hold-out or Injury Lists. Players remain until released, traded, or not on final roster for 2 consecutive seasons. Expanded to 40 from draft date to April 5. Frozen from July 1 to next draft date.</S>
       </Section>
 

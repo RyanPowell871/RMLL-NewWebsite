@@ -38,7 +38,7 @@ const STEPS = [
   {
     step: 6,
     title: 'Pay Registration Fee',
-    description: 'ALA Player Registration Fee — $87.00 plus admin fee (this payment is submitted directly to the ALA).',
+    description: 'ALA Player Registration Fee - $87.00 plus admin fee (this payment is submitted directly to the ALA).',
   },
   {
     step: 7,
@@ -79,7 +79,7 @@ export function RegistrationPage() {
             </p>
             <div className="flex flex-wrap gap-3 mt-3">
               <div className="bg-white border border-amber-300 rounded px-3 py-1.5 text-xs text-amber-800">
-                <strong>Exception:</strong> Out-of-province teams — Intent-to-Play does not apply
+                <strong>Exception:</strong> Out-of-province teams - Intent-to-Play does not apply
               </div>
               <div className="bg-white border border-amber-300 rounded px-3 py-1.5 text-xs text-amber-800">
                 <strong>Exception:</strong> Minor Lacrosse call-ups do not complete the Intent-to-Play

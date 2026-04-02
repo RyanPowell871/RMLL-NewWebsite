@@ -190,7 +190,7 @@ export function PlanningMeetingAGMPage() {
           </p>
           <p>
             <span className="font-semibold">Location:</span>{' '}
-            Delta Hotel by Marriott Calgary South – Atrium Building – 135 Southland Drive S.E., Calgary
+            Delta Hotel by Marriott Calgary South - Atrium Building - 135 Southland Drive S.E., Calgary
           </p>
           <p>
             <span className="font-semibold">Atrium Building Floor Map:</span>{' '}
@@ -268,7 +268,7 @@ export function PlanningMeetingAGMPage() {
 
         <div className="space-y-1 text-sm text-gray-800">
           <p><span className="font-semibold">Date:</span> Sunday, November 16, 2025</p>
-          <p><span className="font-semibold">Location:</span> Delta Hotel by Marriott Calgary South – Atrium – Nakiska Ballroom</p>
+          <p><span className="font-semibold">Location:</span> Delta Hotel by Marriott Calgary South - Atrium - Nakiska Ballroom</p>
           <p><span className="font-semibold">Time:</span> 9:30 A.M.</p>
         </div>
 
@@ -303,7 +303,7 @@ export function PlanningMeetingAGMPage() {
           </div>
         </div>
 
-        {/* Executive Reports — full-width panel */}
+        {/* Executive Reports - full-width panel */}
         <div className="rounded-lg overflow-hidden border border-gray-200 bg-white">
           <TableHeader>Executive Reports</TableHeader>
           <div className="flex flex-col items-center gap-1.5 py-5 px-4">

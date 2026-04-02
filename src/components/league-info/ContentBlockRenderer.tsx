@@ -21,7 +21,7 @@ import type {
   ContactTableBlock, DividerBlock, ButtonLinkBlock, KeyValueBlock
 } from '../../utils/page-content-types';
 
-// ─── Icon Registry ───
+// --- Icon Registry ---
 const ICON_MAP: Record<string, LucideIcon> = {
   Shield, Star, Heart, Target, Users, Handshake, History, Award, Landmark,
   BookOpen, ExternalLink, Info, AlertTriangle, CheckCircle, Briefcase,
@@ -35,7 +35,7 @@ function getIcon(name?: string): LucideIcon {
   return ICON_MAP[name] || FileText;
 }
 
-// ─── Block Renderers ───
+// --- Block Renderers ---
 
 function RenderHero({ block }: { block: HeroBlock }) {
   const Icon = getIcon(block.icon);
@@ -317,7 +317,7 @@ function RenderContactTable({ block }: { block: ContactTableBlock }) {
                     {item.email}
                   </a>
                 ) : (
-                  <span className="text-gray-400">—</span>
+                  <span className="text-gray-400">-</span>
                 )}
               </td>
             </tr>
@@ -375,7 +375,7 @@ function RenderDivider() {
   return <hr className="my-6 border-gray-200" />;
 }
 
-// ─── Main Block Renderer ───
+// --- Main Block Renderer ---
 
 function RenderBlock({ block }: { block: ContentBlock }) {
   switch (block.type) {
@@ -399,7 +399,7 @@ function RenderBlock({ block }: { block: ContentBlock }) {
   }
 }
 
-// ─── Collapsible Section Wrapper ───
+// --- Collapsible Section Wrapper ---
 
 function CollapsibleSectionWrapper({
   section,
@@ -427,9 +427,9 @@ function CollapsibleSectionWrapper({
     setManuallyToggled(true);
   };
 
-  // Extract number from title (e.g., "1 — Name" -> "1", "2 — Interpretation" -> "2")
+  // Extract number from title (e.g., "1 - Name" -> "1", "2 - Interpretation" -> "2")
   // Also handle formats like "Bylaw 1", "Section 1", etc.
-  const numberMatch = section.title.match(/^(\d+)[\s—-]|bylaw\s+(\d+)/i);
+  const numberMatch = section.title.match(/^(\d+)[\s--]|bylaw\s+(\d+)/i);
   const sectionNumber = numberMatch ? (numberMatch[1] || numberMatch[2]) : '';
 
   return (
@@ -463,7 +463,7 @@ function CollapsibleSectionWrapper({
   );
 }
 
-// ─── Section Renderer ───
+// --- Section Renderer ---
 
 function RenderSection({ section, expandAll }: { section: ContentSection; expandAll?: boolean }) {
   const content = (
@@ -481,7 +481,7 @@ function RenderSection({ section, expandAll }: { section: ContentSection; expand
   return <div className="space-y-4">{content}</div>;
 }
 
-// ─── Page Renderer with Expand/Collapse All Support ───
+// --- Page Renderer with Expand/Collapse All Support ---
 
 export function ContentPageRenderer({ schema }: { schema: PageContentSchema }) {
   const [expandAll, setExpandAll] = useState(false);

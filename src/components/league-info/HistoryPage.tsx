@@ -126,7 +126,7 @@ export function HistoryPage() {
         <p className="text-sm sm:text-base text-gray-700 leading-relaxed">
           Alberta has a rich history of lacrosse without many people even knowing it. Teams from Alberta have challenged
           for all four major trophies in Canadian box lacrosse and over the last 30 years Albertan teams have brought
-          home five national championships. The following pages chronicle the history of lacrosse in this province — from
+          home five national championships. The following pages chronicle the history of lacrosse in this province - from
           the earliest pickup games in the 1880s to the modern RMLL and professional NLL franchises.
         </p>
         <p className="text-xs text-gray-500 mt-3 italic">
@@ -168,7 +168,7 @@ export function HistoryPage() {
           <p>
             Once the interest in the field game subsided and the interest of the box game grew. Teams sprung up from all
             over the province to battle for the provincial title until interest disappeared. Following the Second World
-            War there is little recorded history dealing with lacrosse in Alberta. The teams likely didn't vanish — just,
+            War there is little recorded history dealing with lacrosse in Alberta. The teams likely didn't vanish - just,
             compared to world events, didn't draw much attention at the time.
           </p>
         </Prose>
@@ -304,7 +304,7 @@ export function HistoryPage() {
         <h5 className="font-bold text-[#013fac] mt-6 mb-1 text-sm uppercase tracking-wide">Junior Tier II</h5>
 
         <StandingsTable
-          title="2002 Junior Tier II — North Division"
+          title="2002 Junior Tier II - North Division"
           headers={['Team', 'GP', 'W', 'L', 'T', 'Pts', 'GF', 'GA']}
           rows={[
             ['Titans', '17', '15', '1', '1', '31', '190', '89'],
@@ -316,7 +316,7 @@ export function HistoryPage() {
         />
 
         <StandingsTable
-          title="2002 Junior Tier II — South Division"
+          title="2002 Junior Tier II - South Division"
           headers={['Team', 'GP', 'W', 'L', 'T', 'Pts', 'GF', 'GA']}
           rows={[
             ['Mustangs', '17', '11', '4', '2', '24', '161', '128'],
@@ -374,10 +374,10 @@ export function HistoryPage() {
           <p>
             Competition for the National Championship in the Junior "B" classification was initiated by the Canadian
             Lacrosse Association in September, 1964. A silver cup donated by Castrol Oils Limited served as the winner's
-            trophy (1964–1971) but was retired to the Canadian Lacrosse Hall of Fame, New Westminster, B.C. in 1972.
+            trophy (1964-1971) but was retired to the Canadian Lacrosse Hall of Fame, New Westminster, B.C. in 1972.
           </p>
           <p>
-            In 1972, the C.L.A. inaugurated the Founder's Trophy (1972–Present) as emblematic of the Junior "B"
+            In 1972, the C.L.A. inaugurated the Founder's Trophy (1972-Present) as emblematic of the Junior "B"
             Championship of Canada. This beautiful handcrafted unique trophy commemorates the founders of organized
             lacrosse, particularly the contributions of "The Father of Organized Lacrosse", Dr. George W. Beers of
             Montreal, Quebec who wrote the first rulebook and in 1867 was instrumental in organizing the National
@@ -390,18 +390,18 @@ export function HistoryPage() {
         </Prose>
         <ChampionshipList
           items={[
-            { year: '2002', detail: 'Edmonton Miners — Finished third at Founder\'s Cup' },
-            { year: '2001', detail: 'Edmonton Miners — Finished second at Founder\'s Cup' },
-            { year: '2000', detail: 'Calgary Jr. Mountaineers — Finished fourth at Founder\'s Cup' },
-            { year: '1999', detail: 'Edmonton Miners — WON FOUNDER\'S CUP', highlight: true },
+            { year: '2002', detail: 'Edmonton Miners - Finished third at Founder\'s Cup' },
+            { year: '2001', detail: 'Edmonton Miners - Finished second at Founder\'s Cup' },
+            { year: '2000', detail: 'Calgary Jr. Mountaineers - Finished fourth at Founder\'s Cup' },
+            { year: '1999', detail: 'Edmonton Miners - WON FOUNDER\'S CUP', highlight: true },
             { year: '1998', detail: 'Edmonton Miners' },
             { year: '1997', detail: 'Edmonton Miners' },
-            { year: '1996', detail: 'Edmonton Miners — Finished third at Founder\'s Cup' },
-            { year: '1995', detail: 'Edmonton Miners — Finished second at Founder\'s Cup' },
-            { year: '1983', detail: 'Enoch Tomahawks — Finished second at Founder\'s Cup' },
+            { year: '1996', detail: 'Edmonton Miners - Finished third at Founder\'s Cup' },
+            { year: '1995', detail: 'Edmonton Miners - Finished second at Founder\'s Cup' },
+            { year: '1983', detail: 'Enoch Tomahawks - Finished second at Founder\'s Cup' },
             { year: '1982', detail: 'Calgary' },
             { year: '1981', detail: 'Calgary' },
-            { year: '1980', detail: 'Enoch Tomahawks — WON FOUNDER\'S CUP', highlight: true },
+            { year: '1980', detail: 'Enoch Tomahawks - WON FOUNDER\'S CUP', highlight: true },
           ]}
         />
         <p className="text-sm text-gray-600 mt-2">
@@ -432,21 +432,21 @@ export function HistoryPage() {
         </Prose>
         <ChampionshipList
           items={[
-            { year: '2002', detail: 'Edmonton Outlaws — 4-1 record — WON PRESIDENT\'S CUP', highlight: true },
-            { year: '2001', detail: 'Edmonton Outlaws — 1-3 record — finished 5th out of 6' },
+            { year: '2002', detail: 'Edmonton Outlaws - 4-1 record - WON PRESIDENT\'S CUP', highlight: true },
+            { year: '2001', detail: 'Edmonton Outlaws - 1-3 record - finished 5th out of 6' },
             { year: '2000', detail: 'Did not send team' },
             { year: '1999', detail: 'Edmonton Outlaws' },
-            { year: '1995', detail: 'Edmonton Miners — finished third' },
+            { year: '1995', detail: 'Edmonton Miners - finished third' },
             { year: '1994', detail: 'Edmonton Miners' },
-            { year: '1993', detail: 'Edmonton Miners — finished second' },
-            { year: '1992', detail: 'Edmonton Miners — finished third' },
-            { year: '1991', detail: 'Edmonton Miners — finished second' },
-            { year: '1990', detail: 'Edmonton Miners — finished second' },
-            { year: '1989', detail: 'Edmonton Miners — finished third' },
-            { year: '1983', detail: 'Calgary Mountaineers — WON PRESIDENT\'S CUP', highlight: true },
-            { year: '1978', detail: 'Sherwood Park Capitals — finished second' },
-            { year: '1976', detail: 'Edmonton Fullers — finished second' },
-            { year: '1975', detail: 'Edmonton Fullers — WON PRESIDENT\'S CUP', highlight: true },
+            { year: '1993', detail: 'Edmonton Miners - finished second' },
+            { year: '1992', detail: 'Edmonton Miners - finished third' },
+            { year: '1991', detail: 'Edmonton Miners - finished second' },
+            { year: '1990', detail: 'Edmonton Miners - finished second' },
+            { year: '1989', detail: 'Edmonton Miners - finished third' },
+            { year: '1983', detail: 'Calgary Mountaineers - WON PRESIDENT\'S CUP', highlight: true },
+            { year: '1978', detail: 'Sherwood Park Capitals - finished second' },
+            { year: '1976', detail: 'Edmonton Fullers - finished second' },
+            { year: '1975', detail: 'Edmonton Fullers - WON PRESIDENT\'S CUP', highlight: true },
           ]}
         />
 
@@ -462,7 +462,7 @@ export function HistoryPage() {
           </p>
         </Prose>
         <ChampionshipList
-          items={[{ year: '2000', detail: 'Calgary Mountaineers — WON ALCAN CUP', highlight: true }]}
+          items={[{ year: '2000', detail: 'Calgary Mountaineers - WON ALCAN CUP', highlight: true }]}
         />
 
         {/* Minto Cup */}
@@ -499,14 +499,14 @@ export function HistoryPage() {
         </Prose>
 
         <div className="bg-gray-50 border border-gray-200 rounded-lg p-4 my-4">
-          <h5 className="font-bold text-gray-800 text-sm mb-2">1979 Minto Cup — Round-Robin Scores</h5>
+          <h5 className="font-bold text-gray-800 text-sm mb-2">1979 Minto Cup - Round-Robin Scores</h5>
           <ul className="text-sm text-gray-700 space-y-1">
-            <li>Peterborough defeated Alberta 8–5</li>
-            <li>Peterborough defeated Burnaby 11–7</li>
-            <li>Burnaby defeated Alberta 18–7</li>
-            <li>Peterborough defeated Alberta 11–5</li>
-            <li>Burnaby defeated Peterborough 10–4</li>
-            <li className="font-bold text-green-700">Alberta defeated Burnaby 14–10</li>
+            <li>Peterborough defeated Alberta 8-5</li>
+            <li>Peterborough defeated Burnaby 11-7</li>
+            <li>Burnaby defeated Alberta 18-7</li>
+            <li>Peterborough defeated Alberta 11-5</li>
+            <li>Burnaby defeated Peterborough 10-4</li>
+            <li className="font-bold text-green-700">Alberta defeated Burnaby 14-10</li>
           </ul>
           <h5 className="font-bold text-gray-800 text-sm mt-3 mb-1">Championship (Single Game)</h5>
           <p className="text-sm text-gray-700">Burnaby 8, Peterborough 6</p>
@@ -523,7 +523,7 @@ export function HistoryPage() {
             while the opposition teams went through the Dominion Playoffs. The leagues of Alberta, Manitoba, Quebec and
             one of BC or Ontario would send their champions to the Dominion Playoffs for the chance to reach the Mann
             Cup. The last recorded Alberta based squad to reach the Dominion Playoffs was the Medicine Hat Badmen in 1939
-            when they faced off against the St. Catherine's Athletics and lost 32–8.
+            when they faced off against the St. Catherine's Athletics and lost 32-8.
           </p>
           <p>
             The Mann Cup was presented by the late Sir Donald Mann, builder of the Canadian Northern Railway, for the
@@ -542,31 +542,31 @@ export function HistoryPage() {
         </Prose>
         <ChampionshipList
           items={[
-            { year: '1939', detail: 'Medicine Hat Badmen — lost in Dominion Playoffs — 32-8 to St. Catherine\'s' },
-            { year: '1938', detail: 'Medicine Hat Badmen — lost Western Final — 25-8 to New West. Adanacs' },
-            { year: '1937', detail: 'Calgary Rangers — lost in Dominion Playoffs — 28-8 to Orillia' },
-            { year: '1936', detail: 'Calgary Pontiacs — lost in Dominion Playoffs — 19-5 to North Shore' },
-            { year: '1934', detail: 'Calgary Shamrocks — lost Western Semi-Final by default to Winnipeg' },
-            { year: '1933', detail: 'Calgary Shamrocks — lost in Dominion Playoffs — 15-4 to Hamilton' },
+            { year: '1939', detail: 'Medicine Hat Badmen - lost in Dominion Playoffs - 32-8 to St. Catherine\'s' },
+            { year: '1938', detail: 'Medicine Hat Badmen - lost Western Final - 25-8 to New West. Adanacs' },
+            { year: '1937', detail: 'Calgary Rangers - lost in Dominion Playoffs - 28-8 to Orillia' },
+            { year: '1936', detail: 'Calgary Pontiacs - lost in Dominion Playoffs - 19-5 to North Shore' },
+            { year: '1934', detail: 'Calgary Shamrocks - lost Western Semi-Final by default to Winnipeg' },
+            { year: '1933', detail: 'Calgary Shamrocks - lost in Dominion Playoffs - 15-4 to Hamilton' },
             {
               year: '1932',
               detail:
-                'Calgary Shamrocks — lost Western Semi-Final — two game total goal series 32-11 to North Vancouver (17-6; 15-5)',
+                'Calgary Shamrocks - lost Western Semi-Final - two game total goal series 32-11 to North Vancouver (17-6; 15-5)',
             },
-            { year: '1931', detail: 'Calgary All-Stars — lost in Dominion Playoffs — 8-5 to Brampton' },
-            { year: '1930', detail: 'Edmonton Native Sons — lost in Dominion Playoffs — 17-0 to New West.' },
-            { year: '1929', detail: 'Edmonton Native Sons — lost in Dominion Playoffs — 14-1 to Oshawa' },
-            { year: '1928', detail: 'Edmonton Native Sons — lost in Dominion Playoffs — 13-1 to Winnipeg' },
-            { year: '1927', detail: 'Edmonton Native Sons — lost in Dominion Playoffs — 13-3 to Toronto' },
+            { year: '1931', detail: 'Calgary All-Stars - lost in Dominion Playoffs - 8-5 to Brampton' },
+            { year: '1930', detail: 'Edmonton Native Sons - lost in Dominion Playoffs - 17-0 to New West.' },
+            { year: '1929', detail: 'Edmonton Native Sons - lost in Dominion Playoffs - 14-1 to Oshawa' },
+            { year: '1928', detail: 'Edmonton Native Sons - lost in Dominion Playoffs - 13-1 to Winnipeg' },
+            { year: '1927', detail: 'Edmonton Native Sons - lost in Dominion Playoffs - 13-3 to Toronto' },
             {
               year: '1919',
               detail:
-                'Edmonton Eskimos — made Mann Cup round robin — defeated Lawson 13-3, lost two game series to Victoria 28-5 (19-4; 9-1)',
+                'Edmonton Eskimos - made Mann Cup round robin - defeated Lawson 13-3, lost two game series to Victoria 28-5 (19-4; 9-1)',
             },
             {
               year: '1914',
               detail:
-                'Calgary Chinooks — AWARDED MANN CUP — A disputed Mann Cup Playoffs regarding a Vancouver player; the Mann Cup Trustees awarded the Cup to Calgary',
+                'Calgary Chinooks - AWARDED MANN CUP - A disputed Mann Cup Playoffs regarding a Vancouver player; the Mann Cup Trustees awarded the Cup to Calgary',
               highlight: true,
             },
           ]}
@@ -575,8 +575,8 @@ export function HistoryPage() {
         <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 my-4">
           <h5 className="font-bold text-gray-800 text-sm mb-2">Inter-League Exhibitions of Note</h5>
           <ul className="text-sm text-gray-700 space-y-1">
-            <li>1908 — New Westminster Salmonbellies defeated Calgary 6–2</li>
-            <li>1906 — Vancouver Maple Leafs defeated Calgary Strathcona 15–4</li>
+            <li>1908 - New Westminster Salmonbellies defeated Calgary 6-2</li>
+            <li>1906 - Vancouver Maple Leafs defeated Calgary Strathcona 15-4</li>
           </ul>
         </div>
 
@@ -599,9 +599,9 @@ export function HistoryPage() {
         <Prose>
           <p>
             The first truly professional lacrosse team in Alberta is the Calgary Roughnecks of the National Lacrosse
-            League. They entered the NLL during the 2001–2002 season as an expansion franchise. At the halfway mark of
-            their initial season they had managed a 4–4 record with a couple of tight games but ultimately fell off the
-            pace in the second half and hit a streak with 9 losses in a row to finish at 4–12. Two of those losses came
+            League. They entered the NLL during the 2001-2002 season as an expansion franchise. At the halfway mark of
+            their initial season they had managed a 4-4 record with a couple of tight games but ultimately fell off the
+            pace in the second half and hit a streak with 9 losses in a row to finish at 4-12. Two of those losses came
             in overtime while another saw the game winning goal scored with a mere 19 seconds remaining.
           </p>
           <p>
@@ -623,10 +623,10 @@ export function HistoryPage() {
             <div><span className="font-semibold text-gray-900">First Goaltender Win:</span> Matt King, Dec. 2, 2001 @ Ottawa</div>
           </div>
           <div className="border-t border-gray-200 mt-3 pt-3 grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-1 text-sm text-gray-700">
-            <div><span className="font-semibold text-gray-900">First Team Win:</span> 17–11 @ Ottawa, Dec. 2, 2001</div>
-            <div><span className="font-semibold text-gray-900">First Home Win:</span> 20–13 vs. Columbus, Dec. 14, 2001</div>
-            <div><span className="font-semibold text-gray-900">First Road Win:</span> 17–11 @ Ottawa, Dec. 2, 2001</div>
-            <div><span className="font-semibold text-gray-900">First OT Win:</span> 14–13 @ New Jersey, Dec. 28, 2001</div>
+            <div><span className="font-semibold text-gray-900">First Team Win:</span> 17-11 @ Ottawa, Dec. 2, 2001</div>
+            <div><span className="font-semibold text-gray-900">First Home Win:</span> 20-13 vs. Columbus, Dec. 14, 2001</div>
+            <div><span className="font-semibold text-gray-900">First Road Win:</span> 17-11 @ Ottawa, Dec. 2, 2001</div>
+            <div><span className="font-semibold text-gray-900">First OT Win:</span> 14-13 @ New Jersey, Dec. 28, 2001</div>
           </div>
         </div>
 
@@ -638,7 +638,7 @@ export function HistoryPage() {
             ['2002', '6', '3', '116', '111'],
             ['2005', '10', '6', '216', '208'],
             ['2006', '9', '7', '183', '178'],
-            ['2007', '9', '7', '–', '–'],
+            ['2007', '9', '7', '-', '-'],
             ['2008', '7', '9', '183', '178'],
             ['2009', '12', '4', '206', '167'],
           ]}
@@ -651,7 +651,7 @@ export function HistoryPage() {
         <Prose>
           <p>
             The Edmonton Rush's first season in the National Lacrosse League was in 2006. The Rush became Alberta's
-            second professional lacrosse team. They finished with a final record of 1–15 in their first season of play,
+            second professional lacrosse team. They finished with a final record of 1-15 in their first season of play,
             finishing last in the Western Division out of playoffs.
           </p>
         </Prose>
@@ -668,10 +668,10 @@ export function HistoryPage() {
             <div><span className="font-semibold text-gray-900">First Goaltender Win:</span> Pat Campbell, Feb. 17, 2006 @ Calgary</div>
           </div>
           <div className="border-t border-gray-200 mt-3 pt-3 grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-1 text-sm text-gray-700">
-            <div><span className="font-semibold text-gray-900">First Team Win:</span> 12–11 @ Calgary, Feb. 17, 2006</div>
-            <div><span className="font-semibold text-gray-900">First Home Win:</span> 13–12 vs. Philadelphia, Jan. 6, 2007</div>
-            <div><span className="font-semibold text-gray-900">First Road Win:</span> 12–11 @ Calgary, Feb. 17, 2006</div>
-            <div><span className="font-semibold text-gray-900">First OT Win:</span> 9–8 vs. Portland, Feb. 23, 2007</div>
+            <div><span className="font-semibold text-gray-900">First Team Win:</span> 12-11 @ Calgary, Feb. 17, 2006</div>
+            <div><span className="font-semibold text-gray-900">First Home Win:</span> 13-12 vs. Philadelphia, Jan. 6, 2007</div>
+            <div><span className="font-semibold text-gray-900">First Road Win:</span> 12-11 @ Calgary, Feb. 17, 2006</div>
+            <div><span className="font-semibold text-gray-900">First OT Win:</span> 9-8 vs. Portland, Feb. 23, 2007</div>
           </div>
         </div>
 
@@ -680,7 +680,7 @@ export function HistoryPage() {
           headers={['Year', 'W', 'L', 'GF', 'GA']}
           rows={[
             ['2006', '1', '15', '150', '202'],
-            ['2007', '6', '10', '–', '–'],
+            ['2007', '6', '10', '-', '-'],
             ['2008', '4', '12', '141', '197'],
             ['2009', '5', '11', '159', '200'],
           ]}
@@ -700,7 +700,7 @@ export function HistoryPage() {
           </p>
           <p>
             The Rocky Mountain Lacrosse League is grateful to the historians and volunteers who have worked to preserve
-            the record of lacrosse in Alberta — from the earliest days of the Calgary and Edmonton Lacrosse Clubs in the
+            the record of lacrosse in Alberta - from the earliest days of the Calgary and Edmonton Lacrosse Clubs in the
             1880s to the modern era of professional and amateur competition.
           </p>
         </div>

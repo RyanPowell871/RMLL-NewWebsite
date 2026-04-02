@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { Trophy, Filter } from 'lucide-react';
 
-/* ─── Types ─── */
+/* --- Types --- */
 
 interface PointLeaderEntry {
   year: number;
@@ -23,7 +23,7 @@ interface DivisionAward {
   entries: PointLeaderEntry[];
 }
 
-/* ─── Data ─── */
+/* --- Data --- */
 
 const DIVISION_AWARDS: DivisionAward[] = [
   {
@@ -139,11 +139,11 @@ const FILTERS: { id: FilterId; label: string; shortLabel: string }[] = [
   { id: 'central', label: 'Central Division', shortLabel: 'Central' },
 ];
 
-/* ─── Table Component ─── */
+/* --- Table Component --- */
 
 function AwardTable({ award }: { award: DivisionAward }) {
   const title = award.awardName
-    ? `${award.awardName} – ${award.division} Regular Season Point Leader`
+    ? `${award.awardName} - ${award.division} Regular Season Point Leader`
     : `${award.division} Regular Season Point Leader`;
 
   // Determine if any entries have detailed stats (goals/assists/games)
@@ -195,7 +195,7 @@ function AwardTable({ award }: { award: DivisionAward }) {
                     {entry.year}
                   </td>
                   <td className="px-3 py-2 border-b border-gray-100 text-center text-gray-500 tabular-nums">
-                    {entry.jersey || '—'}
+                    {entry.jersey || '-'}
                   </td>
                   <td className="px-3 py-2 border-b border-gray-100">
                     <div>
@@ -216,10 +216,10 @@ function AwardTable({ award }: { award: DivisionAward }) {
                   {hasDetailedStats && (
                     <>
                       <td className="px-3 py-2 border-b border-gray-100 text-center tabular-nums text-gray-700 hidden md:table-cell">
-                        {entry.goals ?? '—'}
+                        {entry.goals ?? '-'}
                       </td>
                       <td className="px-3 py-2 border-b border-gray-100 text-center tabular-nums text-gray-700 hidden md:table-cell">
-                        {entry.assists ?? '—'}
+                        {entry.assists ?? '-'}
                       </td>
                     </>
                   )}
@@ -228,7 +228,7 @@ function AwardTable({ award }: { award: DivisionAward }) {
                   </td>
                   {hasDetailedStats && (
                     <td className="px-3 py-2 border-b border-gray-100 text-center tabular-nums text-gray-500 hidden lg:table-cell">
-                      {entry.games ?? '—'}
+                      {entry.games ?? '-'}
                     </td>
                   )}
                 </tr>
@@ -241,7 +241,7 @@ function AwardTable({ award }: { award: DivisionAward }) {
   );
 }
 
-/* ─── Main Component ─── */
+/* --- Main Component --- */
 
 export function PointLeaderAwards() {
   const [activeFilter, setActiveFilter] = useState<FilterId>('all');
@@ -263,7 +263,7 @@ export function PointLeaderAwards() {
           <Trophy className="w-7 h-7 text-[#013fac] shrink-0 mt-0.5" />
           <div>
             <h3 className="text-lg sm:text-xl font-bold text-gray-900">
-              Junior B Tier 1 – Regular Season Point Leaders
+              Junior B Tier 1 - Regular Season Point Leaders
             </h3>
             <p className="text-sm text-gray-600 mt-1">
               Divisional and overall regular season scoring champions, recognized annually since the league's early years.

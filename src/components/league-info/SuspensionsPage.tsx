@@ -351,7 +351,7 @@ function FilterSection({
 }
 
 /* ===============================================================
- *  TABLE VIEW — expandable rows
+ *  TABLE VIEW - expandable rows
  * =============================================================== */
 
 function ExpandableRow({ s }: { s: Suspension }) {
@@ -388,7 +388,7 @@ function ExpandableRow({ s }: { s: Suspension }) {
           {penaltyStr ? (
             <span className={`font-medium ${s.penalties?.suspension ? 'text-red-700' : 'text-amber-700'}`}>{penaltyStr}</span>
           ) : (
-            <span className="text-gray-400">—</span>
+            <span className="text-gray-400">-</span>
           )}
         </td>
         <td className="px-2 py-1.5 text-gray-400 whitespace-nowrap hidden sm:table-cell">{s.date}</td>

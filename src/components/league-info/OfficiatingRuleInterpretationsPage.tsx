@@ -8,7 +8,7 @@ export function OfficiatingRuleInterpretationsPage() {
         players.
       </p>
 
-      <h2>Rule 68 Interpretation — Thirty Second Rule</h2>
+      <h2>Rule 68 Interpretation - Thirty Second Rule</h2>
       <div className="not-prose my-4">
         <div className="bg-blue-50 border-2 border-[#013fac] rounded-lg overflow-hidden">
           <div className="bg-gradient-to-r from-[#013fac] to-[#0149c9] text-white px-4 py-2">

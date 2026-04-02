@@ -2,7 +2,7 @@ import { useState, useMemo, useEffect, useCallback } from 'react';
 import { Search, MapPin, Phone, Building2, Filter, ChevronDown, ChevronRight, ClipboardCheck, RefreshCw, Loader2, AlertTriangle, Globe, FileText, Download } from 'lucide-react';
 import { fetchFacilities } from '../../services/sportzsoft/api';
 
-/* ─── Facility Data (normalized from API) ─── */
+/* --- Facility Data (normalized from API) --- */
 interface Facility {
   id: number;
   name: string;
@@ -81,7 +81,7 @@ export function FacilitiesPage() {
         throw new Error(response?.Message || 'API returned unsuccessful response');
       }
 
-      // The SportzSoft API wraps data in various ways — try common patterns
+      // The SportzSoft API wraps data in various ways - try common patterns
       let rawList: any[] = [];
 
       if (Array.isArray(response)) {
@@ -303,7 +303,7 @@ export function FacilitiesPage() {
             </div>
 
             <p className="text-xs text-gray-500 italic mt-4">
-              Source: RMLL Regulations — Regulation 6: Facilities. See the full Regulations page for complete regulatory text.
+              Source: RMLL Regulations - Regulation 6: Facilities. See the full Regulations page for complete regulatory text.
               <span className="block mt-1 text-amber-600">
                 <strong>Note:</strong> This regulation text is also displayed on the Regulations page. When Regulation 6 is updated there,
                 it should also be updated here to maintain consistency.
@@ -497,7 +497,7 @@ export function FacilitiesPage() {
         <p className="font-bold mb-1">Note</p>
         <p>
           Facility data is sourced live from the SportzSoft league management system. Addresses link to Google Maps for directions.
-          Facility information is subject to change — contact your division commissioner for the most current venue details.
+          Facility information is subject to change - contact your division commissioner for the most current venue details.
         </p>
       </div>
     </div>

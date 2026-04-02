@@ -38,13 +38,13 @@ export function OfficiatingRulebookPage() {
           <a href="https://lacrosse.ca/development/officials/rule-books/" target="_blank" rel="noopener noreferrer">
             CLA Rule Books & Casebooks
           </a>{' '}
-          — Official rules, casebooks, and supplementary materials
+          - Official rules, casebooks, and supplementary materials
         </li>
         <li>
           <a href="https://lacrosse.ca" target="_blank" rel="noopener noreferrer">
             Lacrosse Canada
           </a>{' '}
-          — National governing body for lacrosse in Canada
+          - National governing body for lacrosse in Canada
         </li>
       </ul>
 

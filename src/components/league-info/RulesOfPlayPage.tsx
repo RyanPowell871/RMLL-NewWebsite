@@ -119,7 +119,7 @@ export function RulesOfPlayPage() {
   const TOC_ITEMS = [
     { group: 'Rules & Procedure Package', items: [
       { id: 'intro', label: 'Introduction' },
-      { id: 'special-note', label: 'Special Note — Crease Dives' },
+      { id: 'special-note', label: 'Special Note - Crease Dives' },
     ]},
     { group: '2024 Rule Modifications', items: [
       { id: '4sec', label: '4-Second Count' },
@@ -145,16 +145,16 @@ export function RulesOfPlayPage() {
       { id: 'possession', label: 'NLL Possession Rules' },
       { id: 'signals', label: 'Signals' },
     ]},
-    { group: 'Appendix A — Penalty Situations', items: [
+    { group: 'Appendix A - Penalty Situations', items: [
       { id: 'app-intro', label: 'Appendix Introduction & RMLL Updates' },
-      { id: 'sit-1-3', label: 'Situations 1–3, 15b' },
-      { id: 'sit-5-12', label: 'Situations 5–12' },
-      { id: 'sit-13-23', label: 'Situations 13–23' },
-      { id: 'sit-24-33', label: 'Situations 24–33' },
-      { id: 'sit-34-43', label: 'Situations 34–43' },
-      { id: 'sit-44-50', label: 'Situations 44–50' },
-      { id: 'sit-51-58', label: 'Situations 51–58' },
-      { id: 'sit-59-64', label: 'Situations 59–64' },
+      { id: 'sit-1-3', label: 'Situations 1-3, 15b' },
+      { id: 'sit-5-12', label: 'Situations 5-12' },
+      { id: 'sit-13-23', label: 'Situations 13-23' },
+      { id: 'sit-24-33', label: 'Situations 24-33' },
+      { id: 'sit-34-43', label: 'Situations 34-43' },
+      { id: 'sit-44-50', label: 'Situations 44-50' },
+      { id: 'sit-51-58', label: 'Situations 51-58' },
+      { id: 'sit-59-64', label: 'Situations 59-64' },
     ]},
   ];
 
@@ -164,14 +164,14 @@ export function RulesOfPlayPage() {
     {
       num: 1,
       teamA: '2 min minor (Player #1)',
-      teamB: '—',
+      teamB: '-',
       floor: '5-on-4',
       resolution: 'Team A short-handed. If Team B scores, Player #1 is released.',
     },
     {
       num: 2,
       teamA: '2 min minor (Player #1)\n2 min minor (Player #2)',
-      teamB: '—',
+      teamB: '-',
       floor: '5-on-3',
       resolution: 'Player #1 serves first (least time, first in first out). If Team B scores, Player #1 released. If second goal, Player #2 released.',
     },
@@ -180,14 +180,14 @@ export function RulesOfPlayPage() {
       teamA: '2 min minor (Player #1)',
       teamB: '2 min minor (Player #3)',
       floor: '4-on-4',
-      resolution: 'Coincidental minors — cancel. Both players serve penalty time but teams play at full strength with substitutes. Players released at goal, penalty, time-out, or end of period upon expiration.',
+      resolution: 'Coincidental minors - cancel. Both players serve penalty time but teams play at full strength with substitutes. Players released at goal, penalty, time-out, or end of period upon expiration.',
     },
     {
       num: '15b',
       teamA: '2 min minor (Player #1)',
       teamB: '2 min minor (Player #3)',
       floor: '4-on-4',
-      resolution: 'Single minor to each team at same stoppage with no other penalties — 4-on-4 with minor on clock as time-served penalty. Players released upon expiration of penalty time. Consistent with current LC rules.',
+      resolution: 'Single minor to each team at same stoppage with no other penalties - 4-on-4 with minor on clock as time-served penalty. Players released upon expiration of penalty time. Consistent with current LC rules.',
     },
   ];
 
@@ -195,14 +195,14 @@ export function RulesOfPlayPage() {
     {
       num: 5,
       teamA: '5 min major (Player #1)',
-      teamB: '—',
+      teamB: '-',
       floor: '5-on-4',
-      resolution: 'Team A short-handed. Goals do NOT release Player #1 — major served in entirety. Player released after 5 min.',
+      resolution: 'Team A short-handed. Goals do NOT release Player #1 - major served in entirety. Player released after 5 min.',
     },
     {
       num: 6,
       teamA: '2 min minor (Player #1)\n5 min major (Player #2)',
-      teamB: '—',
+      teamB: '-',
       floor: '5-on-3',
       resolution: 'Player #1 (minor) serves first. If goal scored on Team A, Player #1 released. Player #2 serves full 5 min major regardless of goals.',
       notes: 'If one player gets a 2+5 min penalty, minor served first.',
@@ -210,23 +210,23 @@ export function RulesOfPlayPage() {
     {
       num: 7,
       teamA: '2 min minor (Player #1)',
-      teamB: '—',
+      teamB: '-',
       floor: '5-on-4',
-      resolution: 'Goal scored during delayed penalty on Team B. Player #1 penalty goes on clock. Rule 37.2 — "roll the box." Minor still on clock.',
+      resolution: 'Goal scored during delayed penalty on Team B. Player #1 penalty goes on clock. Rule 37.2 - "roll the box." Minor still on clock.',
       notes: 'When goal scored on delay and penalty being served, "roll the box."',
     },
     {
       num: 8,
       teamA: '5 min major (Player #1)',
-      teamB: '—',
+      teamB: '-',
       floor: '5-on-4',
-      resolution: 'Goal scored on Team A during major. Major continues — served in entirety.',
+      resolution: 'Goal scored on Team A during major. Major continues - served in entirety.',
       notes: 'Once a goal comes off a major penalty, next powerplay goal counts against the major.',
     },
     {
       num: 9,
       teamA: '2+5 min (Player #1)',
-      teamB: '—',
+      teamB: '-',
       floor: '5-on-4',
       resolution: 'Minor served first. If goal scored, minor is cancelled, major starts. Player serves remainder of major after minor expires or is cancelled by goal.',
     },
@@ -242,14 +242,14 @@ export function RulesOfPlayPage() {
       teamA: '5 min major (Player #1)\n2 min minor (Player #2)',
       teamB: '5 min major (Player #3)',
       floor: '5-on-4\nthen 4-on-4',
-      resolution: 'Coincidental majors cancel for floor strength. Team A has additional minor (Player #2) — 5-on-4 for 2 min. After minor expires/goal, returns to 4-on-4 (or 5-on-5 once majors expire).',
+      resolution: 'Coincidental majors cancel for floor strength. Team A has additional minor (Player #2) - 5-on-4 for 2 min. After minor expires/goal, returns to 4-on-4 (or 5-on-5 once majors expire).',
     },
     {
       num: 12,
       teamA: '2 min minor (Player #1)\n2 min minor (Player #2)',
       teamB: '2 min minor (Player #3)',
       floor: '5-on-4',
-      resolution: 'One coincidental minor pair cancels (Player #1 vs Player #3). Team A still has Player #2\'s minor — 5-on-4. If goal scored on Team A, Player #2 released.',
+      resolution: 'One coincidental minor pair cancels (Player #1 vs Player #3). Team A still has Player #2\'s minor - 5-on-4. If goal scored on Team A, Player #2 released.',
     },
   ];
 
@@ -257,30 +257,30 @@ export function RulesOfPlayPage() {
     {
       num: 13,
       teamA: '10 min misconduct (Player #1)',
-      teamB: '—',
+      teamB: '-',
       floor: '5-on-5',
       resolution: 'Misconduct does not affect floor strength. Player #1 sits 10 min. Substitute allowed. If GM (Game Misconduct), player ejected for remainder of game.',
     },
     {
       num: 15,
       teamA: '2 min minor (Player #1)\n10 min misconduct (Player #1)',
-      teamB: '—',
+      teamB: '-',
       floor: '5-on-4',
-      resolution: 'Minor affects floor strength. Player #1 serves both — minor first, then misconduct. In-Home or designated player may serve the minor portion. After minor expires (or goal), misconduct begins.',
+      resolution: 'Minor affects floor strength. Player #1 serves both - minor first, then misconduct. In-Home or designated player may serve the minor portion. After minor expires (or goal), misconduct begins.',
     },
     {
       num: 16,
       teamA: '2 min minor (Player #1)',
       teamB: '2 min minor (Player #3)\n10 min misconduct (Player #3)',
       floor: '4-on-4\nthen 5-on-4',
-      resolution: 'Coincidental minors cancel for floor strength. Player #3 still serves 10 min misconduct after minor time. Team B short-handed for misconduct? No — misconduct doesn\'t affect floor strength.',
+      resolution: 'Coincidental minors cancel for floor strength. Player #3 still serves 10 min misconduct after minor time. Team B short-handed for misconduct? No - misconduct doesn\'t affect floor strength.',
     },
     {
       num: 17,
-      teamA: '—',
+      teamA: '-',
       teamB: '2 min minor (Player #3, Goalie)',
       floor: '5-on-4',
-      resolution: 'Goalie minor — In-Home or designated player serves the penalty. Goalie remains in net. Team B short-handed.',
+      resolution: 'Goalie minor - In-Home or designated player serves the penalty. Goalie remains in net. Team B short-handed.',
     },
     {
       num: 18,
@@ -292,14 +292,14 @@ export function RulesOfPlayPage() {
     {
       num: 19,
       teamA: '2 min minor (Player #1)',
-      teamB: '—',
+      teamB: '-',
       floor: '5-on-4\n(delayed)',
       resolution: 'Delayed penalty signaled against Team A. Play continues until completion of play. Team A cannot score during delay. If Team B scores during delay, penalty still assessed.',
     },
     {
       num: 20,
       teamA: '2 min minor (Player #1)\n2 min minor (Player #2, on delay)',
-      teamB: '—',
+      teamB: '-',
       floor: '5-on-3',
       resolution: 'First penalty being served. Second penalty called on delay. Both go on clock at stoppage. Player #1 serves first, then Player #2.',
     },
@@ -308,19 +308,19 @@ export function RulesOfPlayPage() {
       teamA: '2 min minor (Player #1, on delay)',
       teamB: '2 min minor (Player #3, on delay)',
       floor: '4-on-4',
-      resolution: 'Both penalties called on same delayed stoppage. Coincidental — cancel for floor strength. Both serve time, substitutes allowed.',
+      resolution: 'Both penalties called on same delayed stoppage. Coincidental - cancel for floor strength. Both serve time, substitutes allowed.',
     },
     {
       num: 22,
       teamA: '2 min minor (Player #1)\n5 min major + GM (Player #2)',
-      teamB: '—',
+      teamB: '-',
       floor: '5-on-3',
       resolution: 'Player #2 ejected (Game Misconduct). Major served by In-Home or designated player. Team A short 2 players. Minor served first (Player #1), major in entirety.',
     },
     {
       num: 23,
       teamA: '5 min match penalty (Player #1)',
-      teamB: '—',
+      teamB: '-',
       floor: '5-on-4',
       resolution: 'Match penalty = player ejected + automatic review. In RMLL LC play, match penalties end after 2 goals scored against (not served in entirety like regular majors). Served by In-Home.',
     },
@@ -330,16 +330,16 @@ export function RulesOfPlayPage() {
     {
       num: 24,
       teamA: '2 min minor (Player #1, serving)\n2 min minor (Player #2, delayed)',
-      teamB: '—',
+      teamB: '-',
       floor: '5-on-4\nthen 5-on-3',
-      resolution: 'Player #1 already serving. Player #2 penalty on delay. At stoppage, Player #2\'s penalty goes on clock. Floor goes 5-on-3. Rule 37.2 applies — if goal scored, Player #1 released first (least time).',
+      resolution: 'Player #1 already serving. Player #2 penalty on delay. At stoppage, Player #2\'s penalty goes on clock. Floor goes 5-on-3. Rule 37.2 applies - if goal scored, Player #1 released first (least time).',
     },
     {
       num: 25,
       teamA: '2 min minor (Player #1)\n5 min major (Player #2)',
       teamB: '2 min minor (Player #3)',
       floor: '5-on-4',
-      resolution: 'One coincidental minor pair cancels (Player #1 vs Player #3). Team A still has Player #2\'s major — 5-on-4. Major served in entirety.',
+      resolution: 'One coincidental minor pair cancels (Player #1 vs Player #3). Team A still has Player #2\'s major - 5-on-4. Major served in entirety.',
     },
     {
       num: 26,
@@ -347,7 +347,7 @@ export function RulesOfPlayPage() {
       teamB: '2 min minor (Player #3)\n2 min minor (Player #4)',
       floor: '4-on-4\nthen 3-on-3',
       resolution: 'Two coincidental minor pairs cancel. If only one pair cancels (per Rule 37.2), remaining minors create 4-on-4. If all assessed simultaneously, 3-on-3 with all four serving.',
-      notes: 'Rule 37.2 — cancel as many as possible, least players short.',
+      notes: 'Rule 37.2 - cancel as many as possible, least players short.',
     },
     {
       num: 27,
@@ -359,28 +359,28 @@ export function RulesOfPlayPage() {
     {
       num: 28,
       teamA: '2 min minor (Player #1)',
-      teamB: '—',
+      teamB: '-',
       floor: '5-on-4',
       resolution: 'Standard power play. If Team B scores, Player #1 released. 5-on-5 resumes.',
     },
     {
       num: 29,
       teamA: '2 min minor (Player #1, serving)\nGoal scored on Team A',
-      teamB: '—',
+      teamB: '-',
       floor: '5-on-4\nthen 5-on-5',
       resolution: 'Goal scored during Player #1\'s minor. Player #1 released immediately. Teams return to 5-on-5. Face-off at center.',
     },
     {
       num: 30,
       teamA: '2 min minor (Player #1)\n2 min minor (Player #2)',
-      teamB: '—',
+      teamB: '-',
       floor: '5-on-3',
       resolution: 'Two minors stacked. If goal scored, Player #1 released (least time remaining). Floor becomes 5-on-4. If second goal scored, Player #2 released.',
     },
     {
       num: 31,
       teamA: '5 min major (Player #1)\n2 min minor (Player #2)',
-      teamB: '—',
+      teamB: '-',
       floor: '5-on-3',
       resolution: 'Minor served first. If goal scored, minor player released (5-on-4). Major continues full 5 min regardless of goals.',
     },
@@ -404,9 +404,9 @@ export function RulesOfPlayPage() {
     {
       num: 34,
       teamA: '2 min minor (Player #1)',
-      teamB: '—',
+      teamB: '-',
       floor: '5-on-4',
-      resolution: 'Standard minor — Team B power play. Goal releases Player #1.',
+      resolution: 'Standard minor - Team B power play. Goal releases Player #1.',
     },
     {
       num: 35,
@@ -420,7 +420,7 @@ export function RulesOfPlayPage() {
       teamA: '2 min minor (Player #1)\n2 min minor (Player #2)',
       teamB: '2 min minor (Player #3)',
       floor: '5-on-4',
-      resolution: 'One pair cancels (Player #1 vs #3). Player #2\'s minor remains — 5-on-4 for Team B.',
+      resolution: 'One pair cancels (Player #1 vs #3). Player #2\'s minor remains - 5-on-4 for Team B.',
     },
     {
       num: 37,
@@ -439,21 +439,21 @@ export function RulesOfPlayPage() {
     {
       num: 39,
       teamA: '2 min minor (In-Home serving)',
-      teamB: '—',
+      teamB: '-',
       floor: '5-on-4',
-      resolution: 'In-Home designated to serve bench minor or non-designated player penalty. In-Home\'s time does not count toward penalty — only corrects floor strength. In-Home serves, team short-handed.',
+      resolution: 'In-Home designated to serve bench minor or non-designated player penalty. In-Home\'s time does not count toward penalty - only corrects floor strength. In-Home serves, team short-handed.',
     },
     {
       num: 40,
       teamA: '5 min major + GM (Player #1)',
-      teamB: '—',
+      teamB: '-',
       floor: '5-on-4',
       resolution: 'Player #1 ejected. In-Home or designated player serves the 5 min major from penalty box. Major served in entirety. No early release for goals.',
     },
     {
       num: 41,
       teamA: '2 min minor (Player #1)\n2 min minor (Player #2)\n2 min minor (Player #3, delayed)',
-      teamB: '—',
+      teamB: '-',
       floor: '5-on-3',
       resolution: 'Two penalties serving, third on delay. At stoppage, third penalty goes on. Cannot go below 3-on-5. Third penalty results in penalty shot to Team B instead.',
     },
@@ -467,9 +467,9 @@ export function RulesOfPlayPage() {
     {
       num: 43,
       teamA: '2 min minor (Goalie)',
-      teamB: '—',
+      teamB: '-',
       floor: '5-on-4',
-      resolution: 'Goalie penalty — In-Home or designated player serves from box. Goalie remains in net. If goalie receives GM, backup replaces; In-Home serves penalty.',
+      resolution: 'Goalie penalty - In-Home or designated player serves from box. Goalie remains in net. If goalie receives GM, backup replaces; In-Home serves penalty.',
     },
   ];
 
@@ -477,7 +477,7 @@ export function RulesOfPlayPage() {
     {
       num: 44,
       teamA: '2 min minor (Player #1, serving)\n2 min minor (Player #2, serving)\n2 min minor (Player #3, delayed)',
-      teamB: '—',
+      teamB: '-',
       floor: '5-on-3',
       resolution: 'Already 5-on-3. Third penalty on delay cannot make floor go below 3. Penalty shot awarded to Team B. Player #3\'s penalty cancelled by penalty shot. Players #1 and #2 continue serving.',
     },
@@ -486,7 +486,7 @@ export function RulesOfPlayPage() {
       teamA: '2 min minor (Player #1, serving)\nGoal scored during delay',
       teamB: '2 min minor (Player #3, delayed)',
       floor: '5-on-4\nthen 5-on-5',
-      resolution: 'Goal scored during delayed penalty. Player #1 released (goal on power play). Player #3\'s penalty goes on clock. Net result: roll the box — Team B now serves minor. 5-on-4 Team A.',
+      resolution: 'Goal scored during delayed penalty. Player #1 released (goal on power play). Player #3\'s penalty goes on clock. Net result: roll the box - Team B now serves minor. 5-on-4 Team A.',
       notes: 'Goal on delay with penalty being served = "roll the box."',
     },
     {
@@ -499,28 +499,28 @@ export function RulesOfPlayPage() {
     {
       num: 47,
       teamA: '2 min minor (Player #1)',
-      teamB: '—',
+      teamB: '-',
       floor: '5-on-4',
       resolution: 'Penalty shot awarded to Team B (e.g., breakaway foul). Penalty shot does NOT release Player #1 regardless of outcome. Minor continues on clock after shot.',
     },
     {
       num: 48,
       teamA: '2 min minor (Player #1)\n2 min minor (Player #2)',
-      teamB: '—',
+      teamB: '-',
       floor: '5-on-3',
       resolution: 'Third penalty called (Player #3 on delay). Penalty shot awarded. The penalty with least time remaining is cancelled by the penalty shot. New penalty time added to clock.',
     },
     {
       num: 49,
       teamA: '2 min minor (Player #1)',
-      teamB: '—',
+      teamB: '-',
       floor: '5-on-4',
-      resolution: 'Team A scores while short-handed (shorthanded goal). Player #1 is NOT released — minor continues. Shorthanded goals do not affect penalty time.',
+      resolution: 'Team A scores while short-handed (shorthanded goal). Player #1 is NOT released - minor continues. Shorthanded goals do not affect penalty time.',
     },
     {
       num: 50,
       teamA: '2 min double minor (Player #1)',
-      teamB: '—',
+      teamB: '-',
       floor: '5-on-4',
       resolution: 'Double minor = 4 min total. If goal scored during first 2 min, first minor cancelled, second minor begins. If goal scored during second 2 min, Player #1 released.',
     },
@@ -530,7 +530,7 @@ export function RulesOfPlayPage() {
     {
       num: 51,
       teamA: '5 min match penalty (Player #1)',
-      teamB: '—',
+      teamB: '-',
       floor: '5-on-4',
       resolution: 'Match penalty in RMLL: served by In-Home. In LC play, match penalties end after 2 goals scored against the penalized team. Player ejected + automatic league review.',
       notes: 'RMLL Update: Match penalties need 2 goals to end in LC play.',
@@ -544,7 +544,7 @@ export function RulesOfPlayPage() {
     },
     {
       num: 53,
-      teamA: '—',
+      teamA: '-',
       teamB: '5 min major (Player #3, Goalie)',
       floor: '5-on-4',
       resolution: 'Goalie receives major. Goalie ejected from game (major = ejection for goalies in many rules). Backup goalie enters. In-Home serves the 5 min major. Served in entirety.',
@@ -552,7 +552,7 @@ export function RulesOfPlayPage() {
     {
       num: 54,
       teamA: '2 min minor (Player #1)',
-      teamB: '—',
+      teamB: '-',
       floor: '5-on-4',
       resolution: 'During Player #1\'s penalty, Player #1 receives additional 10 min misconduct from box. Misconduct starts after minor expires. Floor strength unaffected by misconduct.',
     },
@@ -573,17 +573,17 @@ export function RulesOfPlayPage() {
     {
       num: 57,
       teamA: '2 min minor (Player #1)',
-      teamB: '—',
+      teamB: '-',
       floor: '5-on-4',
       resolution: 'End of period during penalty. Player #1\'s remaining time carries to next period. Penalty resumes at start of next period. If minor has 0:30 left, it starts with 0:30 in next period.',
     },
     {
       num: 58,
       teamA: '5 min match penalty (Player #1)\n2 min minor (Player #2)',
-      teamB: '—',
+      teamB: '-',
       floor: '5-on-3',
       resolution: 'Two time-served penalties. Team A down 2 players. Minor served first (least time). In RMLL LC play, match ends after 2 goals. If goal scored, minor player released first.',
-      notes: 'Rule 38.3 — All penalties served in entirety in RMLL.',
+      notes: 'Rule 38.3 - All penalties served in entirety in RMLL.',
     },
   ];
 
@@ -604,7 +604,7 @@ export function RulesOfPlayPage() {
     },
     {
       num: 61,
-      teamA: '—',
+      teamA: '-',
       teamB: 'Penalty Shot',
       floor: '5-on-5',
       resolution: 'Penalty shot awarded. Play stops. Designated shooter takes shot. Regardless of outcome (goal or save), play restarts with face-off. No penalty time assessed for the infraction that caused the penalty shot.',
@@ -619,14 +619,14 @@ export function RulesOfPlayPage() {
     {
       num: 63,
       teamA: '2 min minor (Player #1, serving)\n2 min minor (Player #2, serving)',
-      teamB: '—',
+      teamB: '-',
       floor: '5-on-3',
       resolution: 'Team A already 5-on-3. If ANOTHER penalty on Team A (Player #3), penalty shot awarded to Team B. Player with least time remaining is cancelled by the penalty shot. New penalty time replaces it.',
     },
     {
       num: 64,
       teamA: '5 min major (Player #1)\n2 min minor (Player #2, delayed)',
-      teamB: '—',
+      teamB: '-',
       floor: '5-on-4\nthen 5-on-3',
       resolution: 'Major being served. Minor on delay. At stoppage, minor goes on clock. 5-on-3. Minor player released first if goal scored (least time). Major continues full 5 min.',
     },
@@ -718,7 +718,7 @@ export function RulesOfPlayPage() {
           </p>
         </Section>
 
-        <Section id="special-note" title="Special Note — Crease Dives" open={openSections.has('special-note')} onToggle={() => toggle('special-note')}>
+        <Section id="special-note" title="Special Note - Crease Dives" open={openSections.has('special-note')} onToggle={() => toggle('special-note')}>
           <Note type="important">
             <p className="font-bold">The 2024 RMLL Playing Rules being implemented have nothing to do with crease dives.</p>
           </Note>
@@ -916,7 +916,7 @@ export function RulesOfPlayPage() {
             these fouls, not the "Too Many Players" palm signal.
           </p>
           <div className="mt-2 bg-amber-50 border border-amber-200 rounded-lg p-3">
-            <p className="font-bold text-amber-900">Clarification: Rule 36(c) — Too Many Players — Penalty Shot</p>
+            <p className="font-bold text-amber-900">Clarification: Rule 36(c) - Too Many Players - Penalty Shot</p>
             <p className="text-amber-800 mt-1">
               If a player has their path altered by a player illegally on the floor (calling for a delayed penalty for
               Too Many Players and they meet the criteria for a breakaway), a penalty shot will be awarded. If
@@ -987,7 +987,7 @@ export function RulesOfPlayPage() {
               <li><strong>Penalty release:</strong> Worst one player will lose is either 5 min or minor(s) or one goal off major.</li>
               <li>Player receiving a major penalty will serve the penalty time in its entirety. Player is released upon expiry of full penalty time on next technical stoppage. If two goals are scored on the major, team may substitute a player from players bench being short-handed.</li>
               <li>If a player who has incurred penalty time which results in a substitute from the bench to serve a portion of his time, then the player will only remain in the penalty box for the balance of time the sub is not serving.</li>
-              <li>Match penalties — substitute must serve penalty. It is full time served unless three goals scored.</li>
+              <li>Match penalties - substitute must serve penalty. It is full time served unless three goals scored.</li>
               <li className="font-bold">Minor penalty release after goal:
                 <ul className="list-disc ml-5 mt-1 font-normal">
                   <li>Is the team scored against short-handed?</li>
@@ -1092,14 +1092,14 @@ export function RulesOfPlayPage() {
             from the defensive zone is considered delay of game. A minor penalty will be assessed.
           </p>
           <p>
-            Officials are instructed to use their judgment — an errant pass or deflection that goes into the netting
+            Officials are instructed to use their judgment - an errant pass or deflection that goes into the netting
             should not be penalized, but deliberately clearing the ball over the glass/netting is delay of game.
           </p>
         </Section>
 
         <Section id="possession" title="NLL Possession Rules" open={openSections.has('possession')} onToggle={() => toggle('possession')}>
           <p>
-            NLL possession rules are adopted <strong>(with exception of penalties after goals — this will result in
+            NLL possession rules are adopted <strong>(with exception of penalties after goals - this will result in
             possession)</strong>.
           </p>
           <div className="mt-3 bg-gray-50 border border-gray-200 rounded-lg p-4">
@@ -1116,7 +1116,7 @@ export function RulesOfPlayPage() {
                 <p className="font-bold text-gray-800">After the Whistle:</p>
                 <ul className="list-disc ml-5 space-y-0.5">
                   <li>Team with the least amount of time on the clock gets possession.</li>
-                  <li>If even time — last team with possession retains, or face-off.</li>
+                  <li>If even time - last team with possession retains, or face-off.</li>
                 </ul>
               </div>
             </div>
@@ -1126,7 +1126,7 @@ export function RulesOfPlayPage() {
 
         <Section id="signals" title="Signals" open={openSections.has('signals')} onToggle={() => toggle('signals')}>
           <Note type="info">
-            <p><strong>2024 RMLL Rules of Play — Signals:</strong> To be Released.</p>
+            <p><strong>2024 RMLL Rules of Play - Signals:</strong> To be Released.</p>
             <p className="text-xs mt-1">A companion signals document with official referee signals for the 2024 rule changes is forthcoming.</p>
           </Note>
         </Section>
@@ -1136,7 +1136,7 @@ export function RulesOfPlayPage() {
       {/* APPENDIX A: PENALTY SITUATIONS                   */}
       {/* ================================================== */}
 
-      <GroupHeader title="Appendix A — NLL Penalty Administration Situations" />
+      <GroupHeader title="Appendix A - NLL Penalty Administration Situations" />
 
       <Note type="important">
         <div>
@@ -1146,8 +1146,8 @@ export function RulesOfPlayPage() {
             <p className="font-bold text-red-900">RMLL Updates:</p>
             <ul className="list-disc ml-5 space-y-0.5">
               <li><strong>Match penalties need 2 goals to end in LC play</strong> (not served in entirety like regular majors).</li>
-              <li><strong>All penalties served in entirety</strong> — player released upon expiry of full penalty time on next technical stoppage.</li>
-              <li><strong>In-Home time only corrects floor strength</strong> — does not count toward penalty time served by the penalized player.</li>
+              <li><strong>All penalties served in entirety</strong> - player released upon expiry of full penalty time on next technical stoppage.</li>
+              <li><strong>In-Home time only corrects floor strength</strong> - does not count toward penalty time served by the penalized player.</li>
             </ul>
           </div>
         </div>
@@ -1169,50 +1169,50 @@ export function RulesOfPlayPage() {
             <li>Minors: Released by powerplay goals. First in, first out (least time).</li>
             <li>Majors: Served in entirety (5 min). Goals do NOT release early.</li>
             <li>Match Penalties (RMLL LC): End after 2 goals scored against. Player ejected.</li>
-            <li>Misconducts: 10 min — do NOT affect floor strength.</li>
-            <li>Game Misconducts: Player ejected — penalty served by In-Home/designate.</li>
+            <li>Misconducts: 10 min - do NOT affect floor strength.</li>
+            <li>Game Misconducts: Player ejected - penalty served by In-Home/designate.</li>
             <li>Goalie Penalties: Served by In-Home/designated player. Goalie stays in net.</li>
             <li>Coincidentals: Cancel for floor strength. Teams substitute. Players still serve time.</li>
             <li>3rd penalty when already 5-on-3: Results in penalty shot, not 6-on-3.</li>
           </ul>
         </Section>
 
-        <Section id="sit-1-3" title="Situations 1–3, 15b" open={openSections.has('sit-1-3')} onToggle={() => toggle('sit-1-3')}>
+        <Section id="sit-1-3" title="Situations 1-3, 15b" open={openSections.has('sit-1-3')} onToggle={() => toggle('sit-1-3')}>
           <SituationTable situations={situations1to3} />
         </Section>
 
-        <Section id="sit-5-12" title="Situations 5–12" open={openSections.has('sit-5-12')} onToggle={() => toggle('sit-5-12')}>
+        <Section id="sit-5-12" title="Situations 5-12" open={openSections.has('sit-5-12')} onToggle={() => toggle('sit-5-12')}>
           <SituationTable situations={situations5to12} />
         </Section>
 
-        <Section id="sit-13-23" title="Situations 13–23" open={openSections.has('sit-13-23')} onToggle={() => toggle('sit-13-23')}>
+        <Section id="sit-13-23" title="Situations 13-23" open={openSections.has('sit-13-23')} onToggle={() => toggle('sit-13-23')}>
           <SituationTable situations={situations13to23} />
         </Section>
 
-        <Section id="sit-24-33" title="Situations 24–33" open={openSections.has('sit-24-33')} onToggle={() => toggle('sit-24-33')}>
+        <Section id="sit-24-33" title="Situations 24-33" open={openSections.has('sit-24-33')} onToggle={() => toggle('sit-24-33')}>
           <SituationTable situations={situations24to33} />
         </Section>
 
-        <Section id="sit-34-43" title="Situations 34–43" open={openSections.has('sit-34-43')} onToggle={() => toggle('sit-34-43')}>
+        <Section id="sit-34-43" title="Situations 34-43" open={openSections.has('sit-34-43')} onToggle={() => toggle('sit-34-43')}>
           <SituationTable situations={situations34to43} />
         </Section>
 
-        <Section id="sit-44-50" title="Situations 44–50" open={openSections.has('sit-44-50')} onToggle={() => toggle('sit-44-50')}>
+        <Section id="sit-44-50" title="Situations 44-50" open={openSections.has('sit-44-50')} onToggle={() => toggle('sit-44-50')}>
           <SituationTable situations={situations44to50} />
         </Section>
 
-        <Section id="sit-51-58" title="Situations 51–58" open={openSections.has('sit-51-58')} onToggle={() => toggle('sit-51-58')}>
+        <Section id="sit-51-58" title="Situations 51-58" open={openSections.has('sit-51-58')} onToggle={() => toggle('sit-51-58')}>
           <SituationTable situations={situations51to58} />
         </Section>
 
-        <Section id="sit-59-64" title="Situations 59–64" open={openSections.has('sit-59-64')} onToggle={() => toggle('sit-59-64')}>
+        <Section id="sit-59-64" title="Situations 59-64" open={openSections.has('sit-59-64')} onToggle={() => toggle('sit-59-64')}>
           <SituationTable situations={situations59to64} />
         </Section>
       </div>
 
       {/* Footer */}
       <div className="text-center text-xs text-gray-400 py-4 border-t border-gray-200 mt-8">
-        <p>2024 RMLL Rules & Procedure Package — Revised April 2, 2024</p>
+        <p>2024 RMLL Rules & Procedure Package - Revised April 2, 2024</p>
         <p className="mt-1">Original Documents: OLA Jr A/Sr A Document | NLL Casebook | BCLA Document | NLL Rules</p>
       </div>
     </div>

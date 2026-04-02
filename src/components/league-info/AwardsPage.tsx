@@ -5,7 +5,7 @@ import { Award, Trophy, ChevronDown, ChevronRight, Heart, Star, Quote } from 'lu
 import billSuchaAwardPhoto from 'figma:asset/43baae1dfe97f21ad34f3ec5b183fc9a91b1ddbd.png';
 import wayneSutherlandPhoto from 'figma:asset/cd2b8ac5d778cd8a0d9c952eef39aa2e6eed1730.png';
 
-/* ─── Award Data ─── */
+/* --- Award Data --- */
 
 interface AwardRecipient {
   year: number;
@@ -40,7 +40,7 @@ const AWARDS: AwardData[] = [
     title: 'Bill Sucha Volunteer of the Year Award',
     subtitle: 'Recognizing exceptional volunteer contributions to Major Lacrosse',
     honoree: 'Bill Sucha',
-    honoreeDates: 'January 18, 1957 – December 13, 2018',
+    honoreeDates: 'January 18, 1957 - December 13, 2018',
     createdYear: 2018,
     description: 'In recognition of the contribution Bill Sucha made to the sport of lacrosse throughout the years, in November 2018, the RMLL created the Bill Sucha Volunteer of the Year Award and presented the inaugural award to Bill\'s sons, David and Steven at the 2018 AGM. Annual nominations for the Bill Sucha Volunteer of the Year Award is for a sustained period of exceptional volunteer work in Major Lacrosse.',
     biography: [
@@ -50,8 +50,8 @@ const AWARDS: AwardData[] = [
       'Bill was innately adept at navigating the political pitfalls that come with all major sports associations. In fact, Bill did so to such an extent that not only was he able to move the sport of lacrosse in Alberta positively forward, but he did so by building relationships, working with not against opposing voices, and gaining genuine friendships along the way.',
       'Bill was unique among his volunteering peers and he set a standard regarding how to get things done the right way. Which is to say, by treating people the way he hoped to be treated. With respect, dignity, and appreciation. Bill didn\'t have enemies, he had people he hadn\'t yet convinced. That\'s leadership.',
       'Bill\'s earnest approach to volunteering most certainly endeared him to his peers, but it\'s not enough to get people in the same room who invariably have differing opinions on how something should be done. No, to be a great leader one must also actually get things done and perhaps above all other considerations, this was a trademark of Bill.',
-      'Bill knew how to get things done because he was the first to get his hands dirty… but he did so with community building in mind. If a hole needed to be dug, Bill didn\'t just start digging. No, Bill would bring 10 shovels, invite 50 people, bring food and wine for 75, then start digging himself until the hole was dug. And guess what, those other shovels would happily have hands on them. Bill made things happen.',
-      'Bill did it the right way – he executed the responsibility of being a volunteer the right way. Those throughout the RMLL, and those who knew Bill personally will be forever grateful for Bill\'s tireless dedication to the RMLL, the sport of lacrosse, the athletes. Bill left an indelible mark on our lacrosse volunteer community that will not be forgotten.',
+      'Bill knew how to get things done because he was the first to get his hands dirty... but he did so with community building in mind. If a hole needed to be dug, Bill didn\'t just start digging. No, Bill would bring 10 shovels, invite 50 people, bring food and wine for 75, then start digging himself until the hole was dug. And guess what, those other shovels would happily have hands on them. Bill made things happen.',
+      'Bill did it the right way - he executed the responsibility of being a volunteer the right way. Those throughout the RMLL, and those who knew Bill personally will be forever grateful for Bill\'s tireless dedication to the RMLL, the sport of lacrosse, the athletes. Bill left an indelible mark on our lacrosse volunteer community that will not be forgotten.',
     ],
     dedication: 'We dedicate the RMLL Volunteer of the Year Award to Bill Sucha, which will hence forward be known as the Bill Sucha Volunteer of the Year Award.\n\nThank You Bill!',
     recipients: [
@@ -104,7 +104,7 @@ const AWARDS: AwardData[] = [
   },
 ];
 
-/* ─── Component ─── */
+/* --- Component --- */
 
 function AwardCard({ award }: { award: AwardData }) {
   const [showBio, setShowBio] = useState(false);
@@ -234,16 +234,16 @@ function AwardCard({ award }: { award: AwardData }) {
                             <span className={`ml-2 text-xs ${award.accentColor} font-bold`}>(Inaugural)</span>
                           )}
                           {r.affiliation && (
-                            <span className="text-gray-500 text-xs sm:hidden ml-1">— {r.affiliation}</span>
+                            <span className="text-gray-500 text-xs sm:hidden ml-1">- {r.affiliation}</span>
                           )}
                         </div>
                       )}
                     </td>
                     <td className="px-4 py-2.5 border border-gray-200 text-gray-600 hidden sm:table-cell">
                       {r.notAwarded ? (
-                        <span className="text-gray-300">—</span>
+                        <span className="text-gray-300">-</span>
                       ) : (
-                        r.affiliation || <span className="text-gray-300">—</span>
+                        r.affiliation || <span className="text-gray-300">-</span>
                       )}
                     </td>
                   </tr>

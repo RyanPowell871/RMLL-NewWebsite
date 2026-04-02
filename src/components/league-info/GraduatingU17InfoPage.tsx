@@ -6,7 +6,7 @@ import {
   Info, Building2, Megaphone
 } from 'lucide-react';
 
-/* ─── Collapsible Section ─── */
+/* --- Collapsible Section --- */
 interface CollapsibleSectionProps {
   title: string;
   icon: React.ReactNode;
@@ -36,7 +36,7 @@ function CollapsibleSection({ title, icon, children, defaultOpen = false, accent
   );
 }
 
-/* ─── Session Card ─── */
+/* --- Session Card --- */
 interface SessionInfo {
   clubs: string;
   date: string;
@@ -51,7 +51,7 @@ function SessionCard({ session, index }: { session: SessionInfo; index: number }
 
   return (
     <div className="border rounded-lg overflow-hidden" style={{ borderColor: `${color}30` }}>
-      {/* Header – clubs served */}
+      {/* Header - clubs served */}
       <div className="px-5 py-3 flex items-start gap-3" style={{ backgroundColor: `${color}08` }}>
         <div className="p-1.5 rounded-md mt-0.5" style={{ backgroundColor: `${color}15` }}>
           <Users className="w-4 h-4" style={{ color }} />
@@ -81,21 +81,21 @@ function SessionCard({ session, index }: { session: SessionInfo; index: number }
   );
 }
 
-/* ─── Main Page ─── */
+/* --- Main Page --- */
 const SESSIONS: SessionInfo[] = [
   {
     clubs: 'Graduating U17 Players from GELC, Wheatland and Grande Prairie Minor Lacrosse Clubs',
     date: 'Friday, January 9, 2026',
     time: '7:00 pm to 9:30 pm',
-    location: 'Central Lions Recreation Centre – Large Auditorium',
+    location: 'Central Lions Recreation Centre - Large Auditorium',
     address: '11113-113 Street, Edmonton',
   },
   {
     clubs: 'Graduating U17 Players from CALL, CDLA and SALA Minor Lacrosse Clubs',
     date: 'Friday, January 16, 2026',
     time: '7:00 pm to 9:30 pm',
-    location: 'Acadia Recreation Centre – Rose Hall',
-    address: '240 – 90 Ave. S.E., Calgary',
+    location: 'Acadia Recreation Centre - Rose Hall',
+    address: '240 - 90 Ave. S.E., Calgary',
   },
 ];
 
@@ -120,7 +120,7 @@ export function GraduatingU17InfoPage() {
 
       <div className="space-y-5">
 
-        {/* ── Overview ── */}
+        {/* -- Overview -- */}
         <CollapsibleSection
           title="About the Information Sessions"
           icon={<Info className="w-5 h-5 text-[#013fac]" />}
@@ -138,7 +138,7 @@ export function GraduatingU17InfoPage() {
           </div>
         </CollapsibleSection>
 
-        {/* ── 2026 Sessions ── */}
+        {/* -- 2026 Sessions -- */}
         <CollapsibleSection
           title="2026 RMLL Information Sessions"
           icon={<Calendar className="w-5 h-5 text-[#013fac]" />}

@@ -110,7 +110,7 @@ export function BadStandingPage() {
             </div>
             <div className="flex items-center gap-3 text-xs text-gray-500">
               <span>{entry.team}</span>
-              <span className="text-gray-300">•</span>
+              <span className="text-gray-300">*</span>
               <span>{entry.date}</span>
             </div>
           </div>
@@ -122,7 +122,7 @@ export function BadStandingPage() {
         <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
           <p className="text-xs text-gray-500 font-semibold uppercase tracking-wider mb-2">RMLL Regulation Reference</p>
           <p className="text-sm text-gray-700">
-            As per RMLL Schedule 11 (Fine Schedule): <em>"Monies owing to RMLL"</em> results in <strong>"Bad standing"</strong> — 
+            As per RMLL Schedule 11 (Fine Schedule): <em>"Monies owing to RMLL"</em> results in <strong>"Bad standing"</strong> - 
             no voting, no drafts, no games. Players must resolve all outstanding fees with their Franchise to be removed from this list.
           </p>
         </div>

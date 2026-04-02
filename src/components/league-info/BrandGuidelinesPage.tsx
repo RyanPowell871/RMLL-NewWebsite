@@ -82,10 +82,10 @@ const LOGO_VARIANTS: LogoVariant[] = [
     src: 'https://nkfbehspyjookipapdbp.supabase.co/storage/v1/object/public/make-9a1ba23f-images/1774223389508-kcvcngeu67.png',
     bgClass: 'bg-white',
     downloads: [
-      { label: 'PNG – Full Size', size: 'Original' },
-      { label: 'PNG – Large (512w)', size: '512w' },
-      { label: 'PNG – Medium (256w)', size: '256w' },
-      { label: 'PNG – Small (128w)', size: '128w' },
+      { label: 'PNG - Full Size', size: 'Original' },
+      { label: 'PNG - Large (512w)', size: '512w' },
+      { label: 'PNG - Medium (256w)', size: '256w' },
+      { label: 'PNG - Small (128w)', size: '128w' },
     ],
   },
   {
@@ -95,9 +95,9 @@ const LOGO_VARIANTS: LogoVariant[] = [
     src: 'https://nkfbehspyjookipapdbp.supabase.co/storage/v1/object/public/make-9a1ba23f-images/1774223389516-e9kz3q3g3k.png',
     bgClass: 'bg-white',
     downloads: [
-      { label: 'PNG – Full Size', size: 'Original' },
-      { label: 'PNG – Banner (800w)', size: '800w' },
-      { label: 'PNG – Medium (400w)', size: '400w' },
+      { label: 'PNG - Full Size', size: 'Original' },
+      { label: 'PNG - Banner (800w)', size: '800w' },
+      { label: 'PNG - Medium (400w)', size: '400w' },
     ],
   },
   // Jersey Shoulder Patch Logo Variant
@@ -108,9 +108,9 @@ const LOGO_VARIANTS: LogoVariant[] = [
     src: 'https://nkfbehspyjookipapdbp.supabase.co/storage/v1/object/public/make-9a1ba23f-images/1774223389508-kcvcngeu67.png',
     bgClass: 'bg-[#001741]', // Navy background for contrast
     downloads: [
-      { label: 'PNG – Full Size', size: 'Original' },
-      { label: 'PNG – Large (512w)', size: '512w' },
-      { label: 'PNG – Medium (256w)', size: '256w' },
+      { label: 'PNG - Full Size', size: 'Original' },
+      { label: 'PNG - Large (512w)', size: '512w' },
+      { label: 'PNG - Medium (256w)', size: '256w' },
     ],
   },
   {
@@ -120,8 +120,8 @@ const LOGO_VARIANTS: LogoVariant[] = [
     src: 'https://nkfbehspyjookipapdbp.supabase.co/storage/v1/object/public/make-9a1ba23f-images/1774223389508-kcvcngeu67.png',
     bgClass: 'bg-[#001741]',
     downloads: [
-      { label: 'PNG – Full Size', size: 'Original' },
-      { label: 'PNG – Large (512w)', size: '512w' },
+      { label: 'PNG - Full Size', size: 'Original' },
+      { label: 'PNG - Large (512w)', size: '512w' },
     ],
   },
   {
@@ -131,8 +131,8 @@ const LOGO_VARIANTS: LogoVariant[] = [
     src: 'https://nkfbehspyjookipapdbp.supabase.co/storage/v1/object/public/make-9a1ba23f-images/1774223389516-e9kz3q3g3k.png',
     bgClass: 'bg-[#001741]',
     downloads: [
-      { label: 'PNG – Full Size', size: 'Original' },
-      { label: 'PNG – Banner (800w)', size: '800w' },
+      { label: 'PNG - Full Size', size: 'Original' },
+      { label: 'PNG - Banner (800w)', size: '800w' },
     ],
   },
 ];
@@ -162,7 +162,7 @@ const USAGE_RULES: UsageRule[] = [
 
 
 // ---------------------------------------------------------------------------
-// Download helper – resizes via an off-screen canvas then triggers a download
+// Download helper - resizes via an off-screen canvas then triggers a download
 // Refactored to compute height proportionally to prevent squishing
 // ---------------------------------------------------------------------------
 function downloadLogo(src: string, fileName: string, targetSize: string) {
@@ -261,14 +261,14 @@ export function BrandGuidelinesPage() {
           </div>
         </div>
         <p className="text-sm sm:text-base text-gray-700 leading-relaxed">
-          These guidelines ensure the RMLL brand is represented consistently across all media —
+          These guidelines ensure the RMLL brand is represented consistently across all media -
           from team websites and social media to print materials and arena signage. When in doubt,
           contact the RMLL Executive Director for approval.
         </p>
       </div>
 
       {/* ------------------------------------------------------------------ */}
-      {/* SECTION 1 – Logo Downloads                                          */}
+      {/* SECTION 1 - Logo Downloads                                          */}
       {/* ------------------------------------------------------------------ */}
       <section>
         <div className="flex items-center gap-3 mb-5">
@@ -335,7 +335,7 @@ export function BrandGuidelinesPage() {
       </section>
 
       {/* ------------------------------------------------------------------ */}
-      {/* SECTION 2 – Clear Space & Minimum Size                              */}
+      {/* SECTION 2 - Clear Space & Minimum Size                              */}
       {/* ------------------------------------------------------------------ */}
       <section>
         <div className="flex items-center gap-3 mb-5">
@@ -404,7 +404,7 @@ export function BrandGuidelinesPage() {
       </section>
 
       {/* ------------------------------------------------------------------ */}
-      {/* SECTION 3 – Colour Palette                                          */}
+      {/* SECTION 3 - Colour Palette                                          */}
       {/* ------------------------------------------------------------------ */}
       <section>
         <div className="flex items-center gap-3 mb-5">
@@ -447,7 +447,7 @@ export function BrandGuidelinesPage() {
       </section>
 
       {/* ------------------------------------------------------------------ */}
-      {/* SECTION 4 – Typography                                              */}
+      {/* SECTION 4 - Typography                                              */}
       {/* ------------------------------------------------------------------ */}
       <section>
         <div className="flex items-center gap-3 mb-5">
@@ -466,10 +466,10 @@ export function BrandGuidelinesPage() {
             </h4>
             <p className="text-xs text-gray-500 mb-4">Weights: 400 (Regular), 600 (Semibold), 700 (Bold), 800 (Extra Bold), 900 (Black)</p>
             <div className="space-y-2 border-t border-gray-100 pt-4">
-              <p className="text-2xl font-black text-gray-900">Heading – Black 900</p>
-              <p className="text-lg font-bold text-gray-800">Subheading – Bold 700</p>
-              <p className="text-base font-semibold text-gray-700">Label – Semibold 600</p>
-              <p className="text-sm text-gray-600">Body text – Regular 400. The quick brown fox jumps over the lazy dog.</p>
+              <p className="text-2xl font-black text-gray-900">Heading - Black 900</p>
+              <p className="text-lg font-bold text-gray-800">Subheading - Bold 700</p>
+              <p className="text-base font-semibold text-gray-700">Label - Semibold 600</p>
+              <p className="text-sm text-gray-600">Body text - Regular 400. The quick brown fox jumps over the lazy dog.</p>
             </div>
           </div>
 
@@ -483,7 +483,7 @@ export function BrandGuidelinesPage() {
               </p>
               <p>
                 <strong className="text-gray-900">Body copy</strong> should use Inter <em>Regular (400)</em> or <em>Semibold (600)</em> at
-                14–16 px with a line-height of 1.5–1.75 for readability.
+                14-16 px with a line-height of 1.5-1.75 for readability.
               </p>
               <p>
                 <strong className="text-gray-900">Stats & scores</strong> use <em>Bold (700)</em> or <em>Black (900)</em> with
@@ -499,7 +499,7 @@ export function BrandGuidelinesPage() {
       </section>
 
       {/* ------------------------------------------------------------------ */}
-      {/* SECTION 5 – Usage Do's & Don'ts                                     */}
+      {/* SECTION 5 - Usage Do's & Don'ts                                     */}
       {/* ------------------------------------------------------------------ */}
       <section>
         <div className="flex items-center gap-3 mb-5">
@@ -543,7 +543,7 @@ export function BrandGuidelinesPage() {
       </section>
 
       {/* ------------------------------------------------------------------ */}
-      {/* SECTION 6 – Quick Reference / Download All                          */}
+      {/* SECTION 6 - Quick Reference / Download All                          */}
       {/* ------------------------------------------------------------------ */}
       <section>
         <div className="bg-gradient-to-r from-[#0F2942] to-[#1a3a5c] text-white rounded-xl p-6 sm:p-8 shadow-lg">

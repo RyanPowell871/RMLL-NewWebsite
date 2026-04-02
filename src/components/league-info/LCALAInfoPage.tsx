@@ -6,7 +6,7 @@ import {
   Globe, FileText, Shield, Scale, BookOpen, Heart, Megaphone, ClipboardList, LucideIcon
 } from 'lucide-react';
 
-/* ─── Collapsible Section ─── */
+/* --- Collapsible Section --- */
 interface CollapsibleSectionProps {
   title: string;
   icon: React.ReactNode;
@@ -36,7 +36,7 @@ function CollapsibleSection({ title, icon, children, defaultOpen = false, accent
   );
 }
 
-/* ─── Link Card ─── */
+/* --- Link Card --- */
 interface LinkItem {
   label: string;
   url: string;
@@ -86,7 +86,7 @@ function LinkCard({ item }: { item: LinkItem }) {
   );
 }
 
-/* ─── Data ─── */
+/* --- Data --- */
 const LC_LINKS: LinkItem[] = [
   {
     label: 'Lacrosse Canada Bylaws',
@@ -156,7 +156,7 @@ const ALA_LINKS: LinkItem[] = [
   },
 ];
 
-/* ─── Main Page ─── */
+/* --- Main Page --- */
 export function LCALAInfoPage() {
 
   return (
@@ -178,7 +178,7 @@ export function LCALAInfoPage() {
 
       <div className="space-y-5">
 
-        {/* ── Lacrosse Canada ── */}
+        {/* -- Lacrosse Canada -- */}
         <CollapsibleSection
           title="Lacrosse Canada"
           icon={<Globe className="w-5 h-5 text-[#013fac]" />}
@@ -195,7 +195,7 @@ export function LCALAInfoPage() {
           </div>
         </CollapsibleSection>
 
-        {/* ── Alberta Lacrosse Association ── */}
+        {/* -- Alberta Lacrosse Association -- */}
         <CollapsibleSection
           title="Alberta Lacrosse Association (ALA)"
           icon={<Heart className="w-5 h-5 text-[#7c3aed]" />}

@@ -287,7 +287,7 @@ const EXECUTIVES_BY_YEAR: Record<string, HistoricalExecutive[]> = {
     { position: 'Sr. B Commissioner', name: 'Shauna Sterparn' },
     { position: 'Sr. C Commissioner', name: 'Mike Fynn' },
     { position: 'Jr. A Commissioner', name: 'Greg Lintz' },
-    { position: 'Jr. B Tier I Commissioner – Interim', name: 'Duane Bratt' },
+    { position: 'Jr. B Tier I Commissioner - Interim', name: 'Duane Bratt' },
     { position: 'Jr. B Tier II Commissioner', name: 'Rob Letendre' },
     { position: 'Jr. B Tier III Commissioner', name: 'Linda Robertson' },
     { position: 'Jr. & Sr. Ladies Commissioner', name: 'John Radford' },

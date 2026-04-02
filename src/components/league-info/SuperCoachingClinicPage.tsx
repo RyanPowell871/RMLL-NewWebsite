@@ -105,7 +105,7 @@ const SPORTZSOFT_REG_URL = 'https://www.sportzsoft.com/regApp/Login?OrgId=4023';
 const LOCKER_REG_URL = 'https://thelocker.coach.ca/event/public/5740859';
 const COMP_INTRO_LOCKER_URL = 'https://thelocker.coach.ca/event/public/5876592';
 
-const CERTIFICATION_TEXT = 'All Community Development coaches attending will receive their Competitive-Introduction "In-training" status. Coaches who already have taken Competitive-Introduction are encouraged to attend — they will receive more advanced on-floor material.';
+const CERTIFICATION_TEXT = 'All Community Development coaches attending will receive their Competitive-Introduction "In-training" status. Coaches who already have taken Competitive-Introduction are encouraged to attend - they will receive more advanced on-floor material.';
 const PD_POINTS_TEXT = 'Competitive Introduction Certified Coaches may receive eleven (11) PD points based on unique modules included in the Super Coaching Clinic.';
 
 function InfoRow({ icon, label, children }: { icon: React.ReactNode; label: string; children: React.ReactNode }) {
@@ -526,7 +526,7 @@ export function SuperCoachingClinicPage() {
                   </div>
                 </div>
 
-                {/* Sub-path: Have CC Number — show required info + register */}
+                {/* Sub-path: Have CC Number - show required info + register */}
                 {certSubPath === 'have-cc' && (
                   <div className="border-t-2 border-gray-100 pt-5 space-y-4">
                     <h5 className="font-bold text-gray-900 text-sm flex items-center gap-2">
@@ -577,7 +577,7 @@ export function SuperCoachingClinicPage() {
                   </div>
                 )}
 
-                {/* Sub-path: Don't Know CC Number — contact Jason Crook */}
+                {/* Sub-path: Don't Know CC Number - contact Jason Crook */}
                 {certSubPath === 'no-cc' && (
                   <div className="border-t-2 border-gray-100 pt-5 space-y-4">
                     <h5 className="font-bold text-gray-900 text-base">
@@ -609,7 +609,7 @@ export function SuperCoachingClinicPage() {
                   </div>
                 )}
 
-                {/* Sub-path: Not Taken Community Development — options */}
+                {/* Sub-path: Not Taken Community Development - options */}
                 {certSubPath === 'no-commdev' && (
                   <div className="border-t-2 border-gray-100 pt-5 space-y-4">
                     <h5 className="font-bold text-gray-900 text-base">

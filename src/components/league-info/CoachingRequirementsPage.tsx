@@ -5,7 +5,7 @@ import {
   Mail, ShieldCheck, Star, FileText, Users
 } from 'lucide-react';
 
-/* ─── Collapsible Section ─── */
+/* --- Collapsible Section --- */
 interface CollapsibleSectionProps {
   title: string;
   icon: React.ReactNode;
@@ -35,7 +35,7 @@ function CollapsibleSection({ title, icon, children, defaultOpen = false, accent
   );
 }
 
-/* ─── Certification Level Card ─── */
+/* --- Certification Level Card --- */
 interface CertLevelProps {
   level: string;
   yearLabel: string;
@@ -70,7 +70,7 @@ function CertLevelCard({ level, yearLabel, yearNote, requirements, accentColor, 
   );
 }
 
-/* ─── Main Page ─── */
+/* --- Main Page --- */
 export function CoachingRequirementsPage() {
   return (
     <div className="w-full">
@@ -96,7 +96,7 @@ export function CoachingRequirementsPage() {
 
       <div className="space-y-5">
 
-        {/* ── Community Development Stream ── */}
+        {/* -- Community Development Stream -- */}
         <CollapsibleSection
           title="Community Development"
           icon={<Users className="w-5 h-5 text-[#013fac]" />}
@@ -114,7 +114,7 @@ export function CoachingRequirementsPage() {
           </div>
         </CollapsibleSection>
 
-        {/* ── Competitive Introduction Stream ── */}
+        {/* -- Competitive Introduction Stream -- */}
         <CollapsibleSection
           title="Competitive Introduction"
           icon={<Award className="w-5 h-5 text-[#DC2626]" />}
@@ -159,7 +159,7 @@ export function CoachingRequirementsPage() {
           </div>
         </CollapsibleSection>
 
-        {/* ── Professional Development Points ── */}
+        {/* -- Professional Development Points -- */}
         <CollapsibleSection
           title="Professional Development (PD) Points"
           icon={<Clock className="w-5 h-5 text-[#013fac]" />}
@@ -219,7 +219,7 @@ export function CoachingRequirementsPage() {
           </div>
         </CollapsibleSection>
 
-        {/* ── Required Courses ── */}
+        {/* -- Required Courses -- */}
         <CollapsibleSection
           title="Required Course Details"
           icon={<BookOpen className="w-5 h-5 text-[#7c3aed]" />}
@@ -286,7 +286,7 @@ export function CoachingRequirementsPage() {
           </div>
         </CollapsibleSection>
 
-        {/* ── Loss of Certification ── */}
+        {/* -- Loss of Certification -- */}
         <CollapsibleSection
           title="Loss of Certification"
           icon={<AlertTriangle className="w-5 h-5 text-amber-600" />}
@@ -303,7 +303,7 @@ export function CoachingRequirementsPage() {
           </div>
         </CollapsibleSection>
 
-        {/* ── Female Only Teams ── */}
+        {/* -- Female Only Teams -- */}
         <CollapsibleSection
           title="Female Only Teams"
           icon={<Users className="w-5 h-5 text-purple-600" />}
@@ -320,7 +320,7 @@ export function CoachingRequirementsPage() {
           </div>
         </CollapsibleSection>
 
-        {/* ── Important Links ── */}
+        {/* -- Important Links -- */}
         <CollapsibleSection
           title="Important Links"
           icon={<ExternalLink className="w-5 h-5 text-[#013fac]" />}
@@ -400,7 +400,7 @@ export function CoachingRequirementsPage() {
           </div>
         </CollapsibleSection>
 
-        {/* ── Certification Pathway Summary Table ── */}
+        {/* -- Certification Pathway Summary Table -- */}
         <div className="border border-gray-200 rounded-lg overflow-hidden bg-white shadow-sm">
           <div className="px-5 py-4 bg-gradient-to-r from-[#0F2942] to-[#1a3a5c]">
             <h3 className="font-bold text-white flex items-center gap-2" style={{ fontFamily: 'var(--font-secondary)' }}>

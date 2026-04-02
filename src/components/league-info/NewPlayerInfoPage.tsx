@@ -25,7 +25,7 @@ import {
 } from 'lucide-react';
 import { ClipboardList } from 'lucide-react';
 
-/* ─── helpers ─── */
+/* --- helpers --- */
 
 // Navigate from /league-info to a page on / (cross-route navigation)
 function navigateToHomePage(page: string, params?: Record<string, any>) {
@@ -152,7 +152,7 @@ function DraftCard({ title, teams, eligiblePlayers, date, time, location, draftO
   );
 }
 
-/* ─── divisions data ─── */
+/* --- divisions data --- */
 const DIVISIONS = [
   { name: 'Alberta Series Lacrosse (Senior B)', teams: 5 },
   { name: 'Senior C', teams: 13 },
@@ -166,7 +166,7 @@ const DIVISIONS = [
 const MINOR_VS_JUNIOR = [
   'All games are 3 twenty-minute stop time periods, with 10-minute intermissions and a minimum 30-minute warmup.',
   'Season is usually longer, depending upon how deep you go in the playoffs.',
-  'Nets are bigger (4\'×4\'6″ instead of 4\'×4\').',
+  'Nets are bigger (4\'x4\'6″ instead of 4\'x4\').',
   'Provincial travel (and in some Divisions, inter-provincial travel).',
   '3-Person-Mechanic (Officials) for Jr. A and when available Sr. B, Tier I, and Tier II.',
   'RMLL modified rules of play making for a faster game.',
@@ -183,7 +183,7 @@ const CONTACTS = [
   { role: 'Jr. B Tier II Commissioner', name: 'Mike Medhurst', email: 'mmdhrst@gmail.com' },
 ];
 
-/* ─── main component ─── */
+/* --- main component --- */
 export function NewPlayerInfoPage() {
   return (
     <div>
@@ -298,7 +298,7 @@ export function NewPlayerInfoPage() {
             part of a team's success.
           </p>
           <p>
-            A player's commitment also increases with each level — a Junior B Tier II player is most likely on
+            A player's commitment also increases with each level - a Junior B Tier II player is most likely on
             the floor 2 to 3 times a week, whereas a Junior A player is on the floor 4 to 5 times a week.
           </p>
 
@@ -389,7 +389,7 @@ export function NewPlayerInfoPage() {
             the Junior B Tier I Division hold <strong>annual Drafts in February</strong>.
           </p>
           <p>
-            <strong>Graduating U17 Player Draft</strong> — At the end of each playing season, the ALA provides the RMLL with a list
+            <strong>Graduating U17 Player Draft</strong> - At the end of each playing season, the ALA provides the RMLL with a list
             of all the U17 players graduating from the season just completed. All male players on this list are eligible for
             the Junior A and Tier I Graduating U17 Player Drafts.
           </p>
@@ -530,7 +530,7 @@ export function NewPlayerInfoPage() {
           <div className="p-4 space-y-2 text-sm">
             <div className="flex items-center gap-2"><Calendar className="w-4 h-4 text-gray-400" /><span>Saturday, January 24, 2026</span></div>
             <div className="flex items-center gap-2"><Clock className="w-4 h-4 text-gray-400" /><span>6:00 PM to 9:00 PM</span></div>
-            <div className="flex items-start gap-2"><MapPin className="w-4 h-4 text-gray-400 mt-0.5" /><span>Servus Credit Union Place – Orion Plastics S Field House, St. Albert</span></div>
+            <div className="flex items-start gap-2"><MapPin className="w-4 h-4 text-gray-400 mt-0.5" /><span>Servus Credit Union Place - Orion Plastics S Field House, St. Albert</span></div>
             <div className="flex items-center gap-2"><DollarSign className="w-4 h-4 text-gray-400" /><span className="font-semibold">$40.00</span></div>
             <p className="text-xs text-gray-600">
               <strong>Who:</strong> Graduating U17 players from GELC, Wheatland, and Grande Prairie Minor Lacrosse Clubs
@@ -562,7 +562,7 @@ export function NewPlayerInfoPage() {
             </p>
             <p className="text-xs text-red-700 font-semibold">Registration Deadline: Monday, February 9, 2026</p>
             <div className="bg-amber-50 border border-amber-200 rounded p-2 text-xs text-amber-800">
-              <strong>Note:</strong> Registration is limited to 72 players and 12 goalies — register early!
+              <strong>Note:</strong> Registration is limited to 72 players and 12 goalies - register early!
             </div>
             <div className="flex flex-col gap-1">
               <a
@@ -593,7 +593,7 @@ export function NewPlayerInfoPage() {
       <CollapsibleSection title="Junior A Graduating U17 Player Draft" icon={<Trophy className="w-5 h-5" />} accentColor="border-[#8B4513]" defaultOpen>
         <div className="mt-3 space-y-3 text-sm text-gray-700 leading-relaxed">
           <p>
-            <strong>2026 Draft Eligible – Alberta Jr. A Teams:</strong> All U17 Players born in 2009 and on the ALA Male Graduating U17 Player List.
+            <strong>2026 Draft Eligible - Alberta Jr. A Teams:</strong> All U17 Players born in 2009 and on the ALA Male Graduating U17 Player List.
           </p>
           <p>
             Up until the draft date, all Graduating U17 Players on the Graduating U17 Player List from CALL, CDLA and SALA
@@ -633,7 +633,7 @@ export function NewPlayerInfoPage() {
             eligiblePlayers="All U17 Players born in 2009 on the ALA Male Graduating U17 Player List."
             date="Monday, February 16, 2026"
             time="7:00 PM"
-            location="Acadia Recreation Centre – Rose Hall – 240 90 Ave S.E., Calgary"
+            location="Acadia Recreation Centre - Rose Hall - 240 90 Ave S.E., Calgary"
             draftOrder={['Jr. A Blizzard', 'Jr. A Swat', 'Jr. A Miners', 'Jr. A Mounties', 'Jr. A Raiders']}
             notes="The Jr. A Miners, Saskatchewan Swat and Winnipeg Blizzard will be attending the Draft virtually."
           />
@@ -658,7 +658,7 @@ export function NewPlayerInfoPage() {
               Drafted players are automatically added to the Junior B Tier I Franchise's Protected List. A player can remain
               on a Jr. B Tier I team's Protected List for all <strong>five (5) years</strong> of their Junior eligibility unless released,
               traded, or not registered to the team's roster for <strong>two (2) consecutive playing seasons</strong>. An exception
-              to the two consecutive playing seasons is a Jr. B Tier I drafted player on a Junior A roster — this player can remain
+              to the two consecutive playing seasons is a Jr. B Tier I drafted player on a Junior A roster - this player can remain
               on the Tier I Protected List for all five (5) years of their Junior eligibility unless released or traded. A non-drafted
               player can be added to a Junior B Tier I Franchise's Protected List, if the player gives written permission.
             </p>
@@ -681,18 +681,18 @@ export function NewPlayerInfoPage() {
             <DraftCard
               title="Junior B Tier I Central Draft"
               teams="Rampage and Mavericks"
-              eligiblePlayers="Rounds 1–8: Rampage drafts from Red Deer Minor Lacrosse Association. Mavericks drafts from Olds & Innisfail Minor Lacrosse Associations. Rounds 9–20: Both teams draft from Blackfalds, Innisfail, Chargers, Kneehills, Lacoka, Olds, Red Deer, Stettler and Sylvan Lake Minor Lacrosse Associations."
+              eligiblePlayers="Rounds 1-8: Rampage drafts from Red Deer Minor Lacrosse Association. Mavericks drafts from Olds & Innisfail Minor Lacrosse Associations. Rounds 9-20: Both teams draft from Blackfalds, Innisfail, Chargers, Kneehills, Lacoka, Olds, Red Deer, Stettler and Sylvan Lake Minor Lacrosse Associations."
               date="Tuesday, February 17, 2026"
               time="7:00 PM"
-              location="Innisfail Legion – 5108 49 Ave #1, Innisfail"
+              location="Innisfail Legion - 5108 49 Ave #1, Innisfail"
               draftOrder={['Rampage', 'Mavericks']}
-              streamInfo="Streamed Live – Mavericks TV YouTube channel"
+              streamInfo="Streamed Live - Mavericks TV YouTube channel"
             />
 
             <DraftCard
               title="Junior B Tier I South Draft"
               teams="Silvertips, Chill, Shamrocks, Mounties & Marauders"
-              eligiblePlayers="Rounds 1–20: All 5 teams draft Graduating U17 Players from Rockyview Rage, Foothills Spurs, Okotoks Raiders, Strathmore Venom, Calgary Hornets, Calgary Knights, Calgary Axemen, and Calgary Sabrecats Minor Lacrosse Clubs."
+              eligiblePlayers="Rounds 1-20: All 5 teams draft Graduating U17 Players from Rockyview Rage, Foothills Spurs, Okotoks Raiders, Strathmore Venom, Calgary Hornets, Calgary Knights, Calgary Axemen, and Calgary Sabrecats Minor Lacrosse Clubs."
               date="Wednesday, February 18, 2026"
               time="7:00 PM"
               draftOrder={['Calgary Mounties', 'Okotoks Marauders', 'Calgary Chill', 'Rockyview Silvertips', 'Calgary Shamrocks']}
@@ -704,7 +704,7 @@ export function NewPlayerInfoPage() {
               eligiblePlayers="20 rounds of 4 selections from Blues, Beaumont, Fort Saskatchewan, Leduc, Parkland, Rams, Titans, Warriors, Westlock, Wizards, Grande Prairie, Flagstaff, Lakeland, Lloydminster, Vermilion, Wainwright, and Wood Buffalo Minor Lacrosse Associations."
               date="Friday, February 20, 2026"
               time="7:00 PM"
-              location="St. Albert Community Hall – 17 Perron St., St. Albert"
+              location="St. Albert Community Hall - 17 Perron St., St. Albert"
               draftOrder={['Edmonton Warriors', 'Beaumont Outlaws', 'St. Albert Crude', 'Fort Saskatchewan Rebels']}
             />
           </div>

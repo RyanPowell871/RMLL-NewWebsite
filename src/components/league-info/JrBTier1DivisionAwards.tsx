@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Heart, Trophy, Award, Shield, Star, Users, ChevronDown, ChevronUp } from 'lucide-react';
 
-/* ─── Jaydon Sommerfeld Memorial Award ─── */
+/* --- Jaydon Sommerfeld Memorial Award --- */
 
 interface MemorialRecipient {
   year: number;
@@ -20,7 +20,7 @@ const SOMMERFELD_RECIPIENTS: MemorialRecipient[] = [
   { year: 2016, player: 'Blake Tajiri', team: 'Calgary Chill' },
 ];
 
-/* ─── Annual Division Awards ─── */
+/* --- Annual Division Awards --- */
 
 interface AwardCategory {
   category: string;
@@ -74,7 +74,7 @@ const ANNUAL_AWARDS: AnnualAwards[] = [
   },
 ];
 
-/* ─── Components ─── */
+/* --- Components --- */
 
 function SommerfeldMemorialSection() {
   return (
@@ -215,7 +215,7 @@ function AnnualAwardsSection({ awards }: { awards: AnnualAwards }) {
   );
 }
 
-/* ─── Main Export ─── */
+/* --- Main Export --- */
 
 export function JrBTier1DivisionAwards() {
   return (

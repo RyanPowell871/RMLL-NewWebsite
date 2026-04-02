@@ -60,7 +60,7 @@ export function MissionStatementPage() {
           <ValueCard
             icon={<Handshake className="w-5 h-5" />}
             title="Fair Play & Sportsmanship"
-            description="Fair play and sportsmanship are at the heart of everything we do — on the floor, on the bench, and in the stands."
+            description="Fair play and sportsmanship are at the heart of everything we do - on the floor, on the bench, and in the stands."
             color="red"
           />
           <ValueCard
@@ -72,7 +72,7 @@ export function MissionStatementPage() {
           <ValueCard
             icon={<Target className="w-5 h-5" />}
             title="Enjoyment"
-            description="At every level — from Junior to Senior, Tier II to Sr. B — we believe lacrosse should be enjoyable for players, coaches, officials, and fans alike."
+            description="At every level - from Junior to Senior, Tier II to Sr. B - we believe lacrosse should be enjoyable for players, coaches, officials, and fans alike."
             color="blue"
           />
           <ValueCard
@@ -84,7 +84,7 @@ export function MissionStatementPage() {
           <ValueCard
             icon={<Heart className="w-5 h-5" />}
             title="Volunteerism"
-            description="Our league is built on the dedication of volunteers — coaches, managers, officials, and board members who give their time to strengthen lacrosse in our communities."
+            description="Our league is built on the dedication of volunteers - coaches, managers, officials, and board members who give their time to strengthen lacrosse in our communities."
             color="red"
           />
         </div>
