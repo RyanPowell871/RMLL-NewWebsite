@@ -5,6 +5,7 @@ import { Input } from '../ui/input';
 import { Label } from '../ui/label';
 import { Textarea } from '../ui/textarea';
 import { Badge } from '../ui/badge';
+import { TextareaWithLinkInserter } from './TextareaWithLinkInserter';
 import {
   Megaphone,
   Plus,
@@ -241,16 +242,18 @@ export function AnnouncementManager() {
 
               {/* Content */}
               <div>
-                <Label htmlFor="content">Content (HTML supported) *</Label>
-                <Textarea
+                <Label htmlFor="content">Content *</Label>
+                <TextareaWithLinkInserter
                   id="content"
-                  placeholder="<p>Your announcement content here. You can use HTML formatting.</p>"
                   value={formData.content}
-                  onChange={(e) => setFormData({ ...formData, content: e.target.value })}
-                  required
+                  onChange={(value) => setFormData({ ...formData, content: value })}
+                  placeholder="<p>Your announcement content here. You can use HTML formatting.</p>"
                   rows={6}
-                  className="mt-2 font-mono text-sm"
+                  className="mt-2"
                 />
+                <p className="text-xs text-gray-500 mt-1">
+                  HTML formatting is supported. Use the link button to insert links.
+                </p>
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">

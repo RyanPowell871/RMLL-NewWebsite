@@ -14,6 +14,7 @@ import {
   type NewsArticle,
 } from '../../services/cms-api';
 import { ImageUploader } from '../ImageUploader';
+import { TextareaWithLinkInserter } from './TextareaWithLinkInserter';
 
 export function NewsManager() {
   const [articles, setArticles] = useState<NewsArticle[]>([]);
@@ -312,7 +313,7 @@ export function NewsManager() {
 
       {/* Create/Edit Modal */}
       <Dialog open={showCreateModal} onOpenChange={setShowCreateModal}>
-        <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+        <DialogContent className="max-w-5xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>
               {editingArticle ? 'Edit Article' : 'Create New Article'}
@@ -336,23 +337,21 @@ export function NewsManager() {
 
             <div>
               <label className="block text-sm font-medium mb-1">Excerpt</label>
-              <textarea
+              <TextareaWithLinkInserter
                 value={formData.excerpt}
-                onChange={(e) => setFormData({ ...formData, excerpt: e.target.value })}
+                onChange={(value) => setFormData({ ...formData, excerpt: value })}
                 rows={2}
-                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-[#013fac] dark:bg-gray-800 dark:text-white"
                 placeholder="Brief summary of the article..."
               />
             </div>
 
             <div>
               <label className="block text-sm font-medium mb-1">Content *</label>
-              <textarea
+              <TextareaWithLinkInserter
                 value={formData.content}
-                onChange={(e) => setFormData({ ...formData, content: e.target.value })}
-                rows={10}
-                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-[#013fac] dark:bg-gray-800 dark:text-white"
-                required
+                onChange={(value) => setFormData({ ...formData, content: value })}
+                rows={12}
+                placeholder="Article content with full editing capabilities..."
               />
             </div>
 
