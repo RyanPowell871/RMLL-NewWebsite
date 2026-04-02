@@ -94,6 +94,7 @@ interface EditorState {
   aiOriginalContent: string;
   aiNewContent: string;
   aiFileName: string;
+  aiLinkInserterOpen: boolean;
 }
 
 export function DirectCodeEditor() {
@@ -125,6 +126,7 @@ export function DirectCodeEditor() {
     aiOriginalContent: '',
     aiNewContent: '',
     aiFileName: '',
+    aiLinkInserterOpen: false,
   });
 
   const [copyStatus, setCopyStatus] = useState<'idle' | 'copied'>('idle');
@@ -435,6 +437,17 @@ export function DirectCodeEditor() {
 
     insertTextAtCursor(link);
     setState((prev) => ({ ...prev, linkInserterOpen: false }));
+  };
+
+  // Handle link insertion into AI prompt
+  const handleInsertLinkToPrompt = (options: LinkInsertOptions) => {
+    const linkText = options.title || options.url;
+    const linkInfo = `\n\n[Link to insert: ${linkText} -> ${options.url}]`;
+    setState((prev) => ({
+      ...prev,
+      aiPrompt: prev.aiPrompt + linkInfo,
+      aiLinkInserterOpen: false,
+    }));
   };
 
   const handleCopyToClipboard = async () => {
@@ -879,7 +892,7 @@ export function DirectCodeEditor() {
 
       {/* AI Prompt Dialog */}
       <Dialog open={state.aiPromptOpen} onOpenChange={(open) => setState((prev) => ({ ...prev, aiPromptOpen: open }))}>
-        <DialogContent className="sm:max-w-[600px]">
+        <DialogContent className="sm:max-w-[700px]">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <Sparkles className="w-5 h-5 text-purple-600" />
@@ -891,13 +904,31 @@ export function DirectCodeEditor() {
           </DialogHeader>
           <div className="space-y-4">
             <div>
-              <Label htmlFor="ai-prompt">Your Request</Label>
+              <div className="flex items-center justify-between mb-2">
+                <Label htmlFor="ai-prompt">Your Request</Label>
+                <LinkInserter
+                  open={state.aiLinkInserterOpen}
+                  onOpenChange={(open) => setState((prev) => ({ ...prev, aiLinkInserterOpen: open }))}
+                  onInsert={handleInsertLinkToPrompt}
+                  trigger={
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setState((prev) => ({ ...prev, aiLinkInserterOpen: true }))}
+                      className="h-7 text-xs"
+                    >
+                      <Link2 className="w-3 h-3 mr-1.5" />
+                      Insert Link
+                    </Button>
+                  }
+                />
+              </div>
               <Textarea
                 id="ai-prompt"
                 placeholder="e.g., Change the welcome message to be more welcoming, update the colors to match the new brand, add a new section for..."
                 value={state.aiPrompt}
                 onChange={(e) => setState((prev) => ({ ...prev, aiPrompt: e.target.value }))}
-                rows={5}
+                rows={10}
                 className="mt-2 resize-none"
               />
             </div>
