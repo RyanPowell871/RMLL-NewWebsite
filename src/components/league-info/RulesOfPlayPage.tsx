@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { ChevronDown, ChevronRight, BookOpen, List, AlertTriangle, Info } from 'lucide-react';
 
-/* ─── Reusable UI ─── */
+/* --- Reusable UI --- */
 
 function Section({ id, title, children, open, onToggle }: { id: string; title: string; children: React.ReactNode; open: boolean; onToggle: () => void }) {
   return (
@@ -45,7 +45,7 @@ function Note({ children, type = 'info' }: { children: React.ReactNode; type?: '
   );
 }
 
-/* ─── Penalty Situation Table Row ─── */
+/* --- Penalty Situation Table Row --- */
 interface PenaltySituation {
   num: number | string;
   teamA: string;
@@ -90,7 +90,7 @@ function SituationTable({ situations, title }: { situations: PenaltySituation[];
   );
 }
 
-/* ─── Main Component ─── */
+/* --- Main Component --- */
 
 export function RulesOfPlayPage() {
   const [openSections, setOpenSections] = useState<Set<string>>(new Set());
@@ -158,7 +158,7 @@ export function RulesOfPlayPage() {
     ]},
   ];
 
-  /* ─── Penalty Situations Data ─── */
+  /* --- Penalty Situations Data --- */
 
   const situations1to3: PenaltySituation[] = [
     {
@@ -698,9 +698,9 @@ export function RulesOfPlayPage() {
         </div>
       )}
 
-      {/* ══════════════════════════════════════════════════ */}
+      {/* ================================================== */}
       {/* PART 1: RULES & PROCEDURE PACKAGE                */}
-      {/* ══════════════════════════════════════════════════ */}
+      {/* ================================================== */}
 
       <GroupHeader title="Rules & Procedure Package" />
 
@@ -735,9 +735,9 @@ export function RulesOfPlayPage() {
         </Section>
       </div>
 
-      {/* ══════════════════════════════════════════════════ */}
+      {/* ================================================== */}
       {/* PART 2: 2024 RULE MODIFICATIONS                  */}
-      {/* ══════════════════════════════════════════════════ */}
+      {/* ================================================== */}
 
       <GroupHeader title="2024 Rule Modifications" />
 
@@ -1005,9 +1005,9 @@ export function RulesOfPlayPage() {
         </Section>
       </div>
 
-      {/* ══════════════════════════════════════════════════ */}
+      {/* ================================================== */}
       {/* PART 3: ADDITIONAL RULES & CLARIFICATIONS        */}
-      {/* ══════════════════════════════════════════════════ */}
+      {/* ================================================== */}
 
       <GroupHeader title="Additional Rules & Clarifications" />
 
@@ -1132,9 +1132,9 @@ export function RulesOfPlayPage() {
         </Section>
       </div>
 
-      {/* ══════════════════════════════════════════════════ */}
+      {/* ================================================== */}
       {/* APPENDIX A: PENALTY SITUATIONS                   */}
-      {/* ══════════════════════════════════════════════════ */}
+      {/* ================================================== */}
 
       <GroupHeader title="Appendix A — NLL Penalty Administration Situations" />
 

@@ -137,7 +137,7 @@ export function RegulationsPage() {
         </div>
       )}
 
-      {/* ═══ GENERAL & STRUCTURE ═══ */}
+      {/* === GENERAL & STRUCTURE === */}
       <GroupHeader title="General & Structure" />
 
       <Section id="1" title="General" open={isOpen('1')} onToggle={() => toggle('1')}>
@@ -181,7 +181,7 @@ export function RegulationsPage() {
         <S n="4.1">Each Franchise Holder must file with the RMLL Executive Director on an annual basis proof of filings of their annual return and Schedule 5.</S>
       </Section>
 
-      {/* ═══ FINANCIAL ═══ */}
+      {/* === FINANCIAL === */}
       <GroupHeader title="Financial" />
 
       <Section id="5" title="Fees and Bonds" open={isOpen('5')} onToggle={() => toggle('5')}>
@@ -208,7 +208,7 @@ export function RegulationsPage() {
         <S n="5.19-5.22">Additional fees from other groups are in addition to RMLL fees. All fees and fines go into the RMLL General Account. 90% of casino profits allotted to the RMLL. An annual player registration fee may be established for each Division.</S>
       </Section>
 
-      {/* ═══ FACILITIES & SAFETY ═══ */}
+      {/* === FACILITIES & SAFETY === */}
       <GroupHeader title="Facilities & Safety" />
 
       <Section id="6" title="Facilities" open={isOpen('6')} onToggle={() => toggle('6')}>
@@ -226,7 +226,7 @@ export function RegulationsPage() {
         <S n="7.2">The Division Commissioner will send each Franchise the EAPs for all Franchises in their Division by April 30.</S>
       </Section>
 
-      {/* ═══ SEASON OPERATIONS ═══ */}
+      {/* === SEASON OPERATIONS === */}
       <GroupHeader title="Season Operations" />
 
       <Section id="8" title="Division Play" open={isOpen('8')} onToggle={() => toggle('8')}>
@@ -281,7 +281,7 @@ export function RegulationsPage() {
         <S n="13.3-13.6">Official Report required for straight time or shortened intermissions. Officials must record bench count. Home Franchise gets delay of game penalty if Off Floor Officials not in place. Water breaks may be allowed on goalie request.</S>
       </Section>
 
-      {/* ═══ GAME OPERATIONS ═══ */}
+      {/* === GAME OPERATIONS === */}
       <GroupHeader title="Game Operations" />
 
       <Section id="14" title="Maintenance of Order" open={isOpen('14')} onToggle={() => toggle('14')}>
@@ -338,7 +338,7 @@ export function RegulationsPage() {
         <S n="20.5">Game sheet information cannot be changed unless: wrong player credited, additional game misconduct not recorded, too many game misconducts recorded, or penalty recorded doesn't exist.</S>
       </Section>
 
-      {/* ═══ PERSONNEL & PLAYERS ═══ */}
+      {/* === PERSONNEL & PLAYERS === */}
       <GroupHeader title="Personnel & Players" />
 
       <Section id="21" title="Bench Personnel and Managers" open={isOpen('21')} onToggle={() => toggle('21')}>
@@ -467,7 +467,7 @@ export function RegulationsPage() {
         <S n="33.7">Tier III player can play for more than one team in Playoffs but cannot play against a team they played for in a previous round.</S>
       </Section>
 
-      {/* ═══ TRAVEL & EXHIBITION ═══ */}
+      {/* === TRAVEL & EXHIBITION === */}
       <GroupHeader title="Travel & Exhibition" />
 
       <Section id="34" title="Travel Permits" open={isOpen('34')} onToggle={() => toggle('34')}>
@@ -493,7 +493,7 @@ export function RegulationsPage() {
         <S n="36.1-36.4">As per ALA Regulation 6. Discipline Chair is the Division Commissioner. Team Event not required. ALA Regulation 6 does not apply to RMLL Playoff/Championship/Provincial Tournament Formats.</S>
       </Section>
 
-      {/* ═══ STANDINGS & PLAYOFFS ═══ */}
+      {/* === STANDINGS & PLAYOFFS === */}
       <GroupHeader title="Standings & Playoffs" />
 
       <Section id="37" title="Division Standings" open={isOpen('37')} onToggle={() => toggle('37')}>
@@ -533,7 +533,7 @@ export function RegulationsPage() {
         <S n="40.5">LC Anti-Doping: All athletes and personnel must complete CCES True Sport Clean 101 online education course.</S>
       </Section>
 
-      {/* ═══ DISCIPLINE ═══ */}
+      {/* === DISCIPLINE === */}
       <GroupHeader title="Discipline" />
 
       <Section id="41" title="Suspensions and Fines" open={isOpen('41')} onToggle={() => toggle('41')}>
@@ -644,7 +644,7 @@ export function RegulationsPage() {
         <S n="46.4">Commissioner may dismiss without hearing if grounds not met. Panel of 3 appointed. Hearing within 10 days. Parties have full rights to evidence, witnesses, and cross-examination. Panel may dismiss or allow appeal and impose any decision the original body could have imposed. Costs may be awarded for unreasonable or bad faith conduct.</S>
       </Section>
 
-      {/* ═══ ADMINISTRATIVE ═══ */}
+      {/* === ADMINISTRATIVE === */}
       <GroupHeader title="Administrative" />
 
       <Section id="47" title="Expenses" open={isOpen('47')} onToggle={() => toggle('47')}>
@@ -676,7 +676,7 @@ export function RegulationsPage() {
         <S n="50">At the President's discretion, electronic votes may be held between meetings. Process: President circulates motion by e-mail; motion must be moved and seconded; 2-day discussion period; 24-hour voting window. Non-response = vote in favour. Only e-mail votes from addresses on file accepted. President may suspend electronic voting if more discussion needed.</S>
       </Section>
 
-      {/* ═══ SCHEDULES ═══ */}
+      {/* === SCHEDULES === */}
       <GroupHeader title="Schedules" />
 
       <Section id="S1" title="Schedule 1: LC, ALA, RMLL Calendar — Due Dates" open={isOpen('S1')} onToggle={() => toggle('S1')}>

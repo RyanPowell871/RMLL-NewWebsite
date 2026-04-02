@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { CalendarDays, MapPin, Clock, FileText, ExternalLink, Download, Loader2, RefreshCw } from 'lucide-react';
 import { fetchDocuments, type Document } from '../../services/cms-api';
 
-/* ─── Document Matcher ─── */
+/* --- Document Matcher --- */
 function findDocument(docs: Document[], ...keywords: string[]): Document | null {
   const lowerKeywords = keywords.map(k => k.toLowerCase());
   for (const doc of docs) {
@@ -21,7 +21,7 @@ function findDocument(docs: Document[], ...keywords: string[]): Document | null 
   return null;
 }
 
-/* ─── Styled document link ─── */
+/* --- Styled document link --- */
 function CellLink({ doc, label, className = '' }: { doc: Document | null; label: string; className?: string }) {
   if (doc) {
     return (
@@ -38,7 +38,7 @@ function CellLink({ doc, label, className = '' }: { doc: Document | null; label:
   return <span className={`text-gray-400 italic ${className}`}>{label}</span>;
 }
 
-/* ─── Section header for table panels ─── */
+/* --- Section header for table panels --- */
 function TableHeader({ children }: { children: React.ReactNode }) {
   return (
     <div className="text-center py-3 px-4 bg-[#013fac]">
@@ -72,7 +72,7 @@ export function PlanningMeetingAGMPage() {
     loadDocuments();
   }, [loadDocuments]);
 
-  // ─── Match documents ───
+  // --- Match documents ---
   const floorMap = findDocument(documents, 'floor', 'map') || findDocument(documents, 'atrium');
 
   const divisionAgendas: { label: string; keywords: string[][] }[] = [
@@ -137,7 +137,7 @@ export function PlanningMeetingAGMPage() {
 
   return (
     <div className="space-y-8">
-      {/* ═══ Page Title ═══ */}
+      {/* === Page Title === */}
       <div className="text-center py-2">
         <div className="flex items-center gap-4">
           <div className="flex-1 h-[2px] bg-[#013fac]"></div>
@@ -174,7 +174,7 @@ export function PlanningMeetingAGMPage() {
         </div>
       )}
 
-      {/* ═══ Overview Section ═══ */}
+      {/* === Overview Section === */}
       <div className="space-y-3">
         <h3 className="text-xl sm:text-2xl font-bold text-gray-900">
           RMLL Planning and 2025 Annual General Meeting
@@ -210,7 +210,7 @@ export function PlanningMeetingAGMPage() {
         </div>
       </div>
 
-      {/* ═══ RMLL 2026 PLANNING MEETING ═══ */}
+      {/* === RMLL 2026 PLANNING MEETING === */}
       <div className="space-y-4">
         <h3 className="text-xl sm:text-2xl font-bold text-gray-900">
           RMLL 2026 Planning Meeting
@@ -260,7 +260,7 @@ export function PlanningMeetingAGMPage() {
         </div>
       </div>
 
-      {/* ═══ 2025 RMLL ANNUAL GENERAL MEETING ═══ */}
+      {/* === 2025 RMLL ANNUAL GENERAL MEETING === */}
       <div className="space-y-4">
         <h3 className="text-xl sm:text-2xl font-bold text-gray-900">
           2025 RMLL Annual General Meeting
@@ -314,7 +314,7 @@ export function PlanningMeetingAGMPage() {
         </div>
       </div>
 
-      {/* ═══ 2025 ELECTIONS ═══ */}
+      {/* === 2025 ELECTIONS === */}
       <div className="space-y-3">
         <h3 className="text-xl sm:text-2xl font-bold text-gray-900 underline">
           2025 Elections
@@ -325,7 +325,7 @@ export function PlanningMeetingAGMPage() {
         </div>
       </div>
 
-      {/* ═══ BYLAW REFERENCES ═══ */}
+      {/* === BYLAW REFERENCES === */}
       <div className="space-y-5 border-t border-gray-200 pt-6">
         <div>
           <h4 className="font-bold text-gray-900 text-sm mb-2">

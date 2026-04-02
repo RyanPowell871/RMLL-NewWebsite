@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { History, Trophy, Star, ChevronDown, ChevronRight, Shield, Award, Landmark, Users } from 'lucide-react';
 
-/* ─────────────── Section Toggle ─────────────── */
+/* --------------- Section Toggle --------------- */
 function CollapsibleSection({
   title,
   icon,
@@ -37,12 +37,12 @@ function CollapsibleSection({
   );
 }
 
-/* ─────────────── Prose Block ─────────────── */
+/* --------------- Prose Block --------------- */
 function Prose({ children }: { children: React.ReactNode }) {
   return <div className="prose-section space-y-4 text-sm sm:text-base text-gray-700 leading-relaxed">{children}</div>;
 }
 
-/* ─────────────── Standings Table ─────────────── */
+/* --------------- Standings Table --------------- */
 function StandingsTable({
   title,
   headers,
@@ -86,7 +86,7 @@ function StandingsTable({
   );
 }
 
-/* ─────────────── Championship List ─────────────── */
+/* --------------- Championship List --------------- */
 function ChampionshipList({ items }: { items: { year: string; detail: string; highlight?: boolean }[] }) {
   return (
     <div className="space-y-1 my-3">
@@ -108,7 +108,7 @@ function ChampionshipList({ items }: { items: { year: string; detail: string; hi
   );
 }
 
-/* ═══════════════ MAIN COMPONENT ═══════════════ */
+/* =============== MAIN COMPONENT =============== */
 export function HistoryPage() {
   return (
     <div className="space-y-6">
@@ -135,7 +135,7 @@ export function HistoryPage() {
         </p>
       </div>
 
-      {/* ─── 1. LACROSSE IN ALBERTA ─── */}
+      {/* --- 1. LACROSSE IN ALBERTA --- */}
       <CollapsibleSection
         title="The History of Lacrosse in Alberta"
         icon={<Landmark className="w-5 h-5 text-white" />}
@@ -174,7 +174,7 @@ export function HistoryPage() {
         </Prose>
       </CollapsibleSection>
 
-      {/* ─── 2. HISTORY OF THE RMLL ─── */}
+      {/* --- 2. HISTORY OF THE RMLL --- */}
       <CollapsibleSection
         title="The History of the RMLL"
         icon={<Shield className="w-5 h-5 text-white" />}
@@ -341,7 +341,7 @@ export function HistoryPage() {
         />
       </CollapsibleSection>
 
-      {/* ─── 3. PREVIOUS LEAGUES ─── */}
+      {/* --- 3. PREVIOUS LEAGUES --- */}
       <CollapsibleSection
         title="Previous Lacrosse Leagues in Alberta"
         icon={<History className="w-5 h-5 text-white" />}
@@ -360,7 +360,7 @@ export function HistoryPage() {
         </Prose>
       </CollapsibleSection>
 
-      {/* ─── 4. AMATEUR LACROSSE ─── */}
+      {/* --- 4. AMATEUR LACROSSE --- */}
       <CollapsibleSection
         title="Amateur Lacrosse in Alberta"
         icon={<Award className="w-5 h-5 text-white" />}
@@ -586,7 +586,7 @@ export function HistoryPage() {
         </p>
       </CollapsibleSection>
 
-      {/* ─── 5. PROFESSIONAL LACROSSE ─── */}
+      {/* --- 5. PROFESSIONAL LACROSSE --- */}
       <CollapsibleSection
         title="Professional Lacrosse in Alberta"
         icon={<Star className="w-5 h-5 text-white" />}

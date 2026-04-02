@@ -12,9 +12,9 @@ import {
 } from './suspensions-data';
 import { projectId, publicAnonKey } from '../../utils/supabase/info';
 
-/* ═══════════════════════════════════════════════════════════════
+/* ===============================================================
  *  TYPES
- * ═══════════════════════════════════════════════════════════════ */
+ * =============================================================== */
 
 type ViewMode = 'cards' | 'table';
 type PenaltyFilter = 'all' | 'fine' | 'suspension' | 'both' | 'team-fine';
@@ -37,9 +37,9 @@ const DEFAULT_FILTERS: Filters = {
   personType: 'all',
 };
 
-/* ═══════════════════════════════════════════════════════════════
+/* ===============================================================
  *  FILTER LOGIC
- * ═══════════════════════════════════════════════════════════════ */
+ * =============================================================== */
 
 function applyFilters(suspensions: Suspension[], filters: Filters): Suspension[] {
   return suspensions.filter(s => {
@@ -81,9 +81,9 @@ function applyFilters(suspensions: Suspension[], filters: Filters): Suspension[]
   });
 }
 
-/* ═══════════════════════════════════════════════════════════════
+/* ===============================================================
  *  STATS COMPUTATION
- * ═══════════════════════════════════════════════════════════════ */
+ * =============================================================== */
 
 interface Stats {
   totalRecords: number;
@@ -123,9 +123,9 @@ function computeStats(records: Suspension[]): Stats {
   };
 }
 
-/* ═══════════════════════════════════════════════════════════════
+/* ===============================================================
  *  COMPACT STATS BAR
- * ═══════════════════════════════════════════════════════════════ */
+ * =============================================================== */
 
 function StatsBar({ stats }: { stats: Stats }) {
   return (
@@ -145,9 +145,9 @@ function StatsBar({ stats }: { stats: Stats }) {
   );
 }
 
-/* ═══════════════════════════════════════════════════════════════
+/* ===============================================================
  *  SUSPENSION CARD
- * ═══════════════════════════════════════════════════════════════ */
+ * =============================================================== */
 
 function SuspensionCard({ s, isCarryover = false }: { s: Suspension; isCarryover?: boolean }) {
   const [expanded, setExpanded] = useState(false);
@@ -220,9 +220,9 @@ function SuspensionCard({ s, isCarryover = false }: { s: Suspension; isCarryover
   );
 }
 
-/* ═══════════════════════════════════════════════════════════════
+/* ===============================================================
  *  FILTER SECTION
- * ═══════════════════════════════════════════════════════════════ */
+ * =============================================================== */
 
 function FilterSection({
   filters,
@@ -350,9 +350,9 @@ function FilterSection({
   );
 }
 
-/* ═══════════════════════════════════════════════════════════════
+/* ===============================================================
  *  TABLE VIEW — expandable rows
- * ═══════════════════════════════════════════════════════════════ */
+ * =============================================================== */
 
 function ExpandableRow({ s }: { s: Suspension }) {
   const [expanded, setExpanded] = useState(false);
@@ -432,12 +432,12 @@ function SuspensionTable({ records }: { records: Suspension[] }) {
   );
 }
 
-/* ═══════════════════════════════════════════════════════════════
+/* ===============================================================
  *  MAIN PAGE COMPONENT
- * ═══════════════════════════════════════════════════════════════ */
+ * =============================================================== */
 
 export function SuspensionsPage() {
-  // ── Dynamic data from KV (with hardcoded fallback) ──
+  // -- Dynamic data from KV (with hardcoded fallback) --
   const [allSeasonsData, setAllSeasonsData] = useState<SeasonData[]>(SEASON_SUSPENSIONS);
   const [dataLoading, setDataLoading] = useState(true);
   const [dataSource, setDataSource] = useState<'loading' | 'api' | 'hardcoded'>('loading');

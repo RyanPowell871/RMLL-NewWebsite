@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Scale, ChevronDown, ChevronRight, BookOpen } from 'lucide-react';
 
-/* ─── Collapsible Bylaw Section ─── */
+/* --- Collapsible Bylaw Section --- */
 function BylawSection({
   number,
   title,
@@ -39,7 +39,7 @@ function BylawSection({
   );
 }
 
-/* ─── Subsection heading ─── */
+/* --- Subsection heading --- */
 function Sub({ id, children }: { id: string; children: React.ReactNode }) {
   return (
     <h4 className="font-bold text-gray-900 mt-4 mb-1 text-sm sm:text-base">
@@ -48,12 +48,12 @@ function Sub({ id, children }: { id: string; children: React.ReactNode }) {
   );
 }
 
-/* ─── Indented paragraph ─── */
+/* --- Indented paragraph --- */
 function P({ children }: { children: React.ReactNode }) {
   return <p className="ml-0 sm:ml-2">{children}</p>;
 }
 
-/* ─── Letter list item ─── */
+/* --- Letter list item --- */
 function Li({ letter, children }: { letter: string; children: React.ReactNode }) {
   return (
     <div className="flex items-start gap-2 ml-2 sm:ml-4">
@@ -63,7 +63,7 @@ function Li({ letter, children }: { letter: string; children: React.ReactNode })
   );
 }
 
-/* ─── Numbered definition ─── */
+/* --- Numbered definition --- */
 function Def({ num, children }: { num: string; children: React.ReactNode }) {
   return (
     <div className="flex items-start gap-2 ml-2 sm:ml-4 py-0.5">
@@ -73,7 +73,7 @@ function Def({ num, children }: { num: string; children: React.ReactNode }) {
   );
 }
 
-/* ═══════════════ MAIN COMPONENT ═══════════════ */
+/* =============== MAIN COMPONENT =============== */
 export function BylawsPage() {
   const [expandAll, setExpandAll] = useState(false);
 

@@ -188,9 +188,9 @@ export function FacilitiesPage() {
         </button>
       </div>
 
-      {/* ══════════════════════════════════════════════════ */}
-      {/* FACILITY SPECIFICATIONS FORM LINK                */}
-      {/* ══════════════════════════════════════════════════ */}
+      {/* ================================================== */}
+      {/* FACILITY SPECIFICATIONS FORM LINK                 */}
+      {/* ================================================== */}
 
       <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
         <div className="flex items-start gap-3">
@@ -213,9 +213,9 @@ export function FacilitiesPage() {
         </div>
       </div>
 
-      {/* ══════════════════════════════════════════════════ */}
-      {/* REGULATION 6: FACILITY SPECIFICATIONS              */}
-      {/* ══════════════════════════════════════════════════ */}
+      {/* ================================================== */}
+      {/* REGULATION 6: FACILITY SPECIFICATIONS               */}
+      {/* ================================================== */}
 
       <div className="border-2 border-gray-200 rounded-lg overflow-hidden shadow-sm">
         <button
