@@ -202,11 +202,11 @@ export function FacilitiesPage() {
             </p>
             <div className="mt-2">
               <a
-                href="/documents"
+                href="/league-info#documents?doc=e7dc34ee-477a-48dc-ae50-eb41110f1ce7"
                 className="inline-flex items-center gap-1.5 text-xs font-bold bg-[#013fac] text-white px-3 py-1.5 rounded hover:bg-[#0149c9] transition-colors"
               >
                 <Download className="w-3.5 h-3.5" />
-                Go to Documents Library
+                Home Facility Specifications
               </a>
             </div>
           </div>
