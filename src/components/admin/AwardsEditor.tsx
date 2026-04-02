@@ -136,7 +136,15 @@ export function AwardsEditor({ value, onChange, divisionName }: AwardsEditorProp
   const getDataStructure = () => {
     if (!data || Object.keys(data).length === 0) return 'empty';
     if (data.north || data.south) return 'conference';
-    if (data.pointLeaders || data.divisionAwards || data.tournaments) return 'standard';
+
+    // Check for Junior A format (uses winners instead of recipients)
+    const isJuniorAFormat = data.pointLeaders?.winners ||
+                            data.divisionAwards?.categories;
+
+    if (data.pointLeaders || data.divisionAwards || data.tournaments || isJuniorAFormat) {
+      return isJuniorAFormat ? 'juniorA' : 'standard';
+    }
+
     if (Array.isArray(data)) return 'array';
     return 'unknown';
   };
@@ -1097,6 +1105,548 @@ export function AwardsEditor({ value, onChange, divisionName }: AwardsEditorProp
             ))}
           </Tabs>
         )}
+      </div>
+    );
+  }
+
+  // Junior A structure (uses winners instead of recipients)
+  if (dataStructure === 'juniorA') {
+    const sections: any[] = [];
+    if (data.pointLeaders !== undefined) sections.push({ key: 'pointLeaders', label: 'Point Leaders', data: data.pointLeaders });
+    if (data.divisionAwards !== undefined) sections.push({ key: 'divisionAwards', label: 'Division Awards', data: data.divisionAwards });
+    if (data.tournaments !== undefined) sections.push({ key: 'tournaments', label: 'Tournaments', data: data.tournaments });
+
+    if (sections.length > 0 && !activeTab.startsWith('juniorA-')) {
+      setActiveTab(`juniorA-${sections[0].key}`);
+    }
+
+    const isJuniorAFormat = data.pointLeaders?.winners !== undefined;
+
+    return (
+      <div className="space-y-4">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <Badge variant="outline">Visual Editor</Badge>
+            <Badge variant="secondary">{divisionName}</Badge>
+            <Badge variant="outline">Junior A Format</Badge>
+          </div>
+          <Button onClick={() => setMode('json')} variant="outline" size="sm">
+            <Code className="w-4 h-4 mr-2" />
+            JSON Editor
+          </Button>
+        </div>
+
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+          <TabsList className="grid w-full" style={{ gridTemplateColumns: `repeat(${sections.length}, 1fr)` }}>
+            {sections.map(section => (
+              <TabsTrigger key={section.key} value={`juniorA-${section.key}`}>
+                {section.label}
+              </TabsTrigger>
+            ))}
+          </TabsList>
+
+          {sections.map(section => (
+            <TabsContent key={section.key} value={`juniorA-${section.key}`} className="space-y-4">
+              {/* Point Leaders - Junior A Format */}
+              {section.key === 'pointLeaders' && (
+                <>
+                  <Card>
+                    <CardHeader>
+                      <div className="flex items-center justify-between">
+                        <div>
+                          {editingHeading === 'juniorA-pointLeaders' ? (
+                            <div className="flex items-center gap-2">
+                              <Input
+                                value={section.data.title || ''}
+                                onChange={(e) => {
+                                  const newData = { ...data };
+                                  if (!newData.pointLeaders) newData.pointLeaders = {};
+                                  newData.pointLeaders.title = e.target.value;
+                                  handleDataChange(newData);
+                                }}
+                                className="text-lg font-semibold"
+                                placeholder="Point Leaders Title"
+                              />
+                              <Button
+                                onClick={() => setEditingHeading(null)}
+                                size="sm"
+                                variant="ghost"
+                                className="h-7 w-7 p-0"
+                              >
+                                <Check className="w-3 h-3 text-green-600" />
+                              </Button>
+                              <Button
+                                onClick={() => setEditingHeading(null)}
+                                size="sm"
+                                variant="ghost"
+                                className="h-7 w-7 p-0"
+                              >
+                                <X className="w-3 h-3 text-red-600" />
+                              </Button>
+                            </div>
+                          ) : (
+                            <CardTitle className="cursor-pointer hover:text-blue-600" onClick={() => setEditingHeading('juniorA-pointLeaders')}>
+                              {section.data.title || 'Point Leaders'}
+                            </CardTitle>
+                          )}
+                          {section.data.description && (
+                            <CardDescription>{section.data.description}</CardDescription>
+                          )}
+                          {section.data.award && (
+                            <CardDescription>{section.data.award}</CardDescription>
+                          )}
+                        </div>
+                        <Button onClick={() => {
+                          if (isJuniorAFormat) {
+                            const winners = [...(section.data.winners || [])];
+                            updateNestedData(['pointLeaders', 'winners'], [
+                              { year: '', player: '', team: '', stats: '' },
+                              ...winners
+                            ]);
+                          } else {
+                            const recipients = [...(section.data.recipients || [])];
+                            updateNestedData(['pointLeaders', 'recipients'], [
+                              { year: '', player: '', team: '', stats: '', points: 0, games: 0 },
+                              ...recipients
+                            ]);
+                          }
+                        }} size="sm">
+                          <Plus className="w-4 h-4 mr-2" />
+                          Add {isJuniorAFormat ? 'Winner' : 'Point Leader'}
+                        </Button>
+                      </div>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                      {section.data.note && (
+                        <div className="p-2 bg-yellow-50 border border-yellow-200 rounded text-xs text-yellow-800">
+                          {section.data.note}
+                        </div>
+                      )}
+                      <div className="space-y-2">
+                        {(isJuniorAFormat ? (section.data.winners || []) : (section.data.recipients || [])).map((item: any, idx: number) => (
+                          <div key={idx} className="bg-gray-50 border rounded p-3 space-y-2">
+                            <div className="flex items-center justify-between">
+                              <Badge>{item.year || 'New Entry'}</Badge>
+                              <div className="flex items-center gap-1">
+                                {idx > 0 && (
+                                  <Button onClick={() => {
+                                    const list = [...(isJuniorAFormat ? (section.data.winners || []) : (section.data.recipients || []))];
+                                    const temp = list[idx];
+                                    list[idx] = list[idx - 1];
+                                    list[idx - 1] = temp;
+                                    updateNestedData(['pointLeaders', isJuniorAFormat ? 'winners' : 'recipients'], list);
+                                  }} variant="ghost" size="sm" className="h-6 w-6 p-0">
+                                    <ChevronUp className="w-3 h-3" />
+                                  </Button>
+                                )}
+                                {idx < (isJuniorAFormat ? (section.data.winners || []) : (section.data.recipients || [])).length - 1 && (
+                                  <Button onClick={() => {
+                                    const list = [...(isJuniorAFormat ? (section.data.winners || []) : (section.data.recipients || []))];
+                                    const temp = list[idx];
+                                    list[idx] = list[idx + 1];
+                                    list[idx + 1] = temp;
+                                    updateNestedData(['pointLeaders', isJuniorAFormat ? 'winners' : 'recipients'], list);
+                                  }} variant="ghost" size="sm" className="h-6 w-6 p-0">
+                                    <ChevronDown className="w-3 h-3" />
+                                  </Button>
+                                )}
+                                <Button onClick={() => {
+                                  const list = [...(isJuniorAFormat ? (section.data.winners || []) : (section.data.recipients || []))];
+                                  list.splice(idx, 1);
+                                  updateNestedData(['pointLeaders', isJuniorAFormat ? 'winners' : 'recipients'], list);
+                                }} variant="ghost" size="sm">
+                                  <Trash2 className="w-4 h-4 text-red-600" />
+                                </Button>
+                              </div>
+                            </div>
+                            <div className="grid grid-cols-2 gap-2">
+                              <div>
+                                <Label className="text-xs">Year</Label>
+                                <Input value={item.year || ''} onChange={(e) => {
+                                  const list = [...(isJuniorAFormat ? (section.data.winners || []) : (section.data.recipients || []))];
+                                  list[idx] = { ...list[idx], year: e.target.value };
+                                  updateNestedData(['pointLeaders', isJuniorAFormat ? 'winners' : 'recipients'], list);
+                                }} placeholder="2025" />
+                              </div>
+                              <div>
+                                <Label className="text-xs">Team</Label>
+                                <Input value={item.team || ''} onChange={(e) => {
+                                  const list = [...(isJuniorAFormat ? (section.data.winners || []) : (section.data.recipients || []))];
+                                  list[idx] = { ...list[idx], team: e.target.value };
+                                  updateNestedData(['pointLeaders', isJuniorAFormat ? 'winners' : 'recipients'], list);
+                                }} placeholder="Team Name" />
+                              </div>
+                            </div>
+                            <div>
+                              <Label className="text-xs">Player</Label>
+                              <Input value={item.player || ''} onChange={(e) => {
+                                const list = [...(isJuniorAFormat ? (section.data.winners || []) : (section.data.recipients || []))];
+                                list[idx] = { ...list[idx], player: e.target.value };
+                                updateNestedData(['pointLeaders', isJuniorAFormat ? 'winners' : 'recipients'], list);
+                              }} placeholder="#17 John Doe" />
+                            </div>
+                            <div>
+                              <Label className="text-xs">Stats</Label>
+                              <Input value={item.stats || ''} onChange={(e) => {
+                                const list = [...(isJuniorAFormat ? (section.data.winners || []) : (section.data.recipients || []))];
+                                list[idx] = { ...list[idx], stats: e.target.value };
+                                updateNestedData(['pointLeaders', isJuniorAFormat ? 'winners' : 'recipients'], list);
+                              }} placeholder="46 goals; 54 assists" />
+                            </div>
+                            {!isJuniorAFormat && (
+                              <div className="grid grid-cols-2 gap-2">
+                                <div>
+                                  <Label className="text-xs">Points</Label>
+                                  <Input type="number" value={item.points || ''} onChange={(e) => {
+                                    const list = [...(section.data.recipients || [])];
+                                    list[idx] = { ...list[idx], points: e.target.value ? parseInt(e.target.value) || 0 : 0 };
+                                    updateNestedData(['pointLeaders', 'recipients'], list);
+                                  }} placeholder="100" />
+                                </div>
+                                <div>
+                                  <Label className="text-xs">Games</Label>
+                                  <Input type="number" value={item.games || ''} onChange={(e) => {
+                                    const list = [...(section.data.recipients || [])];
+                                    list[idx] = { ...list[idx], games: e.target.value ? parseInt(e.target.value) || 0 : 0 };
+                                    updateNestedData(['pointLeaders', 'recipients'], list);
+                                  }} placeholder="16" />
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                        ))}
+                        {((isJuniorAFormat ? (section.data.winners || []) : (section.data.recipients || [])).length === 0 && (
+                          <p className="text-sm text-gray-500 italic">
+                            No {isJuniorAFormat ? 'winners' : 'point leaders'} added yet. Click the Add button above to add one.
+                          </p>
+                        ))}
+                      </div>
+                    </CardContent>
+                  </Card>
+                </>
+              )}
+
+              {/* Division Awards - Junior A Format (uses categories instead of awards) */}
+              {section.key === 'divisionAwards' && (
+                <Card>
+                  <CardHeader>
+                    <div className="flex items-center justify-between">
+                      <div>
+                        {editingHeading === 'juniorA-divisionAwards' ? (
+                          <div className="flex items-center gap-2">
+                            <Input
+                              value={section.data.title || ''}
+                              onChange={(e) => {
+                                const newData = { ...data };
+                                if (!newData.divisionAwards) newData.divisionAwards = {};
+                                newData.divisionAwards.title = e.target.value;
+                                handleDataChange(newData);
+                              }}
+                              className="text-lg font-semibold"
+                              placeholder="Division Awards Title"
+                            />
+                            <Button
+                              onClick={() => setEditingHeading(null)}
+                              size="sm"
+                              variant="ghost"
+                              className="h-7 w-7 p-0"
+                            >
+                              <Check className="w-3 h-3 text-green-600" />
+                            </Button>
+                            <Button
+                              onClick={() => setEditingHeading(null)}
+                              size="sm"
+                              variant="ghost"
+                              className="h-7 w-7 p-0"
+                            >
+                              <X className="w-3 h-3 text-red-600" />
+                            </Button>
+                          </div>
+                        ) : (
+                          <CardTitle className="cursor-pointer hover:text-blue-600" onClick={() => setEditingHeading('juniorA-divisionAwards')}>
+                            {section.data.title || 'Division Awards'}
+                          </CardTitle>
+                        )}
+                        {section.data.description && (
+                          <CardDescription>{section.data.description}</CardDescription>
+                        )}
+                      </div>
+                      <Button onClick={() => {
+                        const list = section.data.categories || section.data.awards || [];
+                        updateNestedData(['divisionAwards', section.data.categories ? 'categories' : 'awards'], [
+                          { name: '', winners: [], recipients: [] },
+                          ...list
+                        ]);
+                      }} size="sm">
+                        <Plus className="w-4 h-4 mr-2" />
+                        Add Award Category
+                      </Button>
+                      </div>
+                    </CardHeader>
+                    <CardContent className="space-y-3">
+                      {(section.data.categories || section.data.awards || []).map((award: any, awardIdx: number) => (
+                        <Card key={awardIdx} className="border-l-4 border-l-[#013fac]">
+                          <CardHeader className="py-3">
+                            <div className="flex items-center gap-2">
+                              <Input
+                                value={award.name || ''}
+                                onChange={(e) => {
+                                  const list = [...(section.data.categories || section.data.awards || [])];
+                                  list[awardIdx] = { ...list[awardIdx], name: e.target.value };
+                                  updateNestedData(['divisionAwards', section.data.categories ? 'categories' : 'awards'], list);
+                                }}
+                                placeholder="Award Name"
+                                className="font-semibold flex-1"
+                              />
+                              <Button onClick={() => {
+                                const list = [...(section.data.categories || section.data.awards || [])];
+                                list.splice(awardIdx, 1);
+                                updateNestedData(['divisionAwards', section.data.categories ? 'categories' : 'awards'], list);
+                              }} variant="ghost" size="sm">
+                                <Trash2 className="w-4 h-4 text-red-600" />
+                              </Button>
+                            </div>
+                          </CardHeader>
+                          <CardContent className="space-y-2">
+                            {award.description !== undefined && (
+                              <TextareaWithLinkInserter
+                                id={`juniorA-divisionAwards-${awardIdx}-desc`}
+                                label="Description (optional)"
+                                value={award.description || ''}
+                                onChange={(value) => {
+                                  const list = [...(section.data.categories || section.data.awards || [])];
+                                  list[awardIdx] = { ...list[awardIdx], description: value };
+                                  updateNestedData(['divisionAwards', section.data.categories ? 'categories' : 'awards'], list);
+                                }}
+                                rows={2}
+                              />
+                            )}
+                            <div className="space-y-2">
+                              <div className="flex items-center justify-between">
+                                <Label className="text-sm font-semibold">Recipients</Label>
+                                <Button
+                                  onClick={() => {
+                                    const awardRecipients = [...(award.winners || award.recipients || [])];
+                                    awardRecipients.push({ year: '', player: '', team: '' });
+                                    const list = [...(section.data.categories || section.data.awards || [])];
+                                    list[awardIdx] = { ...list[awardIdx], winners: awardRecipients, recipients: awardRecipients };
+                                    updateNestedData(['divisionAwards', section.data.categories ? 'categories' : 'awards'], list);
+                                  }}
+                                  size="sm"
+                                  variant="outline"
+                                >
+                                  <Plus className="w-3 h-3 mr-1" />
+                                  Add Recipient
+                                </Button>
+                              </div>
+                              {(award.winners || award.recipients || []).map((recipient: any, rIdx: number) => (
+                                <div key={rIdx} className="flex items-center gap-2 bg-gray-50 rounded p-2">
+                                  <Input
+                                    value={recipient.year || ''}
+                                    onChange={(e) => {
+                                      const awardRecipients = [...(award.winners || award.recipients || [])];
+                                      awardRecipients[rIdx] = { ...awardRecipients[rIdx], year: e.target.value };
+                                      const list = [...(section.data.categories || section.data.awards || [])];
+                                      list[awardIdx] = { ...list[awardIdx], winners: awardRecipients, recipients: awardRecipients };
+                                      updateNestedData(['divisionAwards', section.data.categories ? 'categories' : 'awards'], list);
+                                    }}
+                                    placeholder="Year"
+                                    className="w-16 text-xs"
+                                  />
+                                  <Input
+                                    value={recipient.player || ''}
+                                    onChange={(e) => {
+                                      const awardRecipients = [...(award.winners || award.recipients || [])];
+                                      awardRecipients[rIdx] = { ...awardRecipients[rIdx], player: e.target.value };
+                                      const list = [...(section.data.categories || section.data.awards || [])];
+                                      list[awardIdx] = { ...list[awardIdx], winners: awardRecipients, recipients: awardRecipients };
+                                      updateNestedData(['divisionAwards', section.data.categories ? 'categories' : 'awards'], list);
+                                    }}
+                                    placeholder="Player"
+                                    className="flex-1 text-xs"
+                                  />
+                                  <Input
+                                    value={recipient.team || ''}
+                                    onChange={(e) => {
+                                      const awardRecipients = [...(award.winners || award.recipients || [])];
+                                      awardRecipients[rIdx] = { ...awardRecipients[rIdx], team: e.target.value };
+                                      const list = [...(section.data.categories || section.data.awards || [])];
+                                      list[awardIdx] = { ...list[awardIdx], winners: awardRecipients, recipients: awardRecipients };
+                                      updateNestedData(['divisionAwards', section.data.categories ? 'categories' : 'awards'], list);
+                                    }}
+                                    placeholder="Team"
+                                    className="flex-1 text-xs"
+                                  />
+                                  <Button
+                                    onClick={() => {
+                                      const awardRecipients = [...(award.winners || award.recipients || [])];
+                                      awardRecipients.splice(rIdx, 1);
+                                      const list = [...(section.data.categories || section.data.awards || [])];
+                                      list[awardIdx] = { ...list[awardIdx], winners: awardRecipients, recipients: awardRecipients };
+                                      updateNestedData(['divisionAwards', section.data.categories ? 'categories' : 'awards'], list);
+                                    }}
+                                    variant="ghost"
+                                    size="sm"
+                                    className="h-7 w-7 p-0"
+                                  >
+                                    <Trash2 className="w-3 h-3 text-red-600" />
+                                  </Button>
+                                </div>
+                              ))}
+                              {(!award.winners && !award.recipients || award.winners.length === 0 && award.recipients.length === 0) && (
+                                <p className="text-xs text-gray-500 italic">No recipients added yet.</p>
+                              )}
+                            </div>
+                          </CardContent>
+                        </Card>
+                      ))}
+                      {(!section.data.categories && !section.data.awards || (section.data.categories?.length === 0 && section.data.awards?.length === 0)) && (
+                        <p className="text-sm text-gray-500 italic">No award categories added yet. Click "Add Award Category" to add one.</p>
+                      )}
+                    </CardContent>
+                  </Card>
+                )}
+
+              {/* Tournaments - same as standard */}
+              {section.key === 'tournaments' && (
+                <Card>
+                  <CardHeader>
+                    <div className="flex items-center justify-between">
+                      <div>
+                        {editingHeading === 'juniorA-tournaments' ? (
+                          <div className="flex items-center gap-2">
+                            <Input
+                              value={section.data.title || ''}
+                              onChange={(e) => {
+                                const newData = { ...data };
+                                if (!newData.tournaments) newData.tournaments = {};
+                                newData.tournaments.title = e.target.value;
+                                handleDataChange(newData);
+                              }}
+                              className="text-lg font-semibold"
+                              placeholder="Tournaments Title"
+                            />
+                            <Button
+                              onClick={() => setEditingHeading(null)}
+                              size="sm"
+                              variant="ghost"
+                              className="h-7 w-7 p-0"
+                            >
+                              <Check className="w-3 h-3 text-green-600" />
+                            </Button>
+                            <Button
+                              onClick={() => setEditingHeading(null)}
+                              size="sm"
+                              variant="ghost"
+                              className="h-7 w-7 p-0"
+                            >
+                              <X className="w-3 h-3 text-red-600" />
+                            </Button>
+                          </div>
+                        ) : (
+                          <CardTitle className="cursor-pointer hover:text-blue-600" onClick={() => setEditingHeading('juniorA-tournaments')}>
+                            {section.data.title || 'Tournaments'}
+                          </CardTitle>
+                        )}
+                        {section.data.description && (
+                          <CardDescription>{section.data.description}</CardDescription>
+                        )}
+                      </div>
+                      <Button onClick={() => {
+                        const events = [...(section.data.events || [])];
+                        updateNestedData(['tournaments', 'events'], [
+                          { year: '', name: '', trophy: '', result: '' },
+                          ...events
+                        ]);
+                      }} size="sm">
+                        <Plus className="w-4 h-4 mr-2" />
+                        Add Tournament
+                      </Button>
+                      </div>
+                    </CardHeader>
+                    <CardContent className="space-y-2">
+                      {(section.data.events || []).map((event: any, idx: number) => (
+                        <div key={idx} className="bg-gray-50 border rounded p-3 space-y-2">
+                          <div className="flex items-center justify-between">
+                            <Badge>{event.year || 'New Entry'}</Badge>
+                            <div className="flex items-center gap-1">
+                              {idx > 0 && (
+                                <Button onClick={() => {
+                                  const events = [...(section.data.events || [])];
+                                  const temp = events[idx];
+                                  events[idx] = events[idx - 1];
+                                  events[idx - 1] = temp;
+                                  updateNestedData(['tournaments', 'events'], events);
+                                }} variant="ghost" size="sm" className="h-6 w-6 p-0">
+                                  <ChevronUp className="w-3 h-3" />
+                                </Button>
+                              )}
+                              {idx < (section.data.events || []).length - 1 && (
+                                <Button onClick={() => {
+                                  const events = [...(section.data.events || [])];
+                                  const temp = events[idx];
+                                  events[idx] = events[idx + 1];
+                                  events[idx + 1] = temp;
+                                  updateNestedData(['tournaments', 'events'], events);
+                                }} variant="ghost" size="sm" className="h-6 w-6 p-0">
+                                  <ChevronDown className="w-3 h-3" />
+                                </Button>
+                              )}
+                              <Button onClick={() => {
+                                const events = [...(section.data.events || [])];
+                                events.splice(idx, 1);
+                                updateNestedData(['tournaments', 'events'], events);
+                              }} variant="ghost" size="sm">
+                                <Trash2 className="w-4 h-4 text-red-600" />
+                              </Button>
+                            </div>
+                          </div>
+                          <div className="grid grid-cols-2 gap-2">
+                            <div>
+                              <Label className="text-xs">Year</Label>
+                              <Input value={event.year || ''} onChange={(e) => {
+                                const events = [...(section.data.events || [])];
+                                events[idx] = { ...events[idx], year: e.target.value };
+                                updateNestedData(['tournaments', 'events'], events);
+                              }} placeholder="2025" />
+                            </div>
+                            <div>
+                              <Label className="text-xs">Trophy</Label>
+                              <Input value={event.trophy || ''} onChange={(e) => {
+                                const events = [...(section.data.events || [])];
+                                events[idx] = { ...events[idx], trophy: e.target.value };
+                                updateNestedData(['tournaments', 'events'], events);
+                              }} placeholder="Trophy Name" />
+                            </div>
+                          </div>
+                          <div>
+                            <Label className="text-xs">Tournament Name</Label>
+                            <Input value={event.name || ''} onChange={(e) => {
+                              const events = [...(section.data.events || [])];
+                              events[idx] = { ...events[idx], name: e.target.value };
+                              updateNestedData(['tournaments', 'events'], events);
+                            }} placeholder="Tournament Name" />
+                          </div>
+                          <div>
+                            <Label className="text-xs">Result</Label>
+                            <Input value={event.result || ''} onChange={(e) => {
+                              const events = [...(section.data.events || [])];
+                              events[idx] = { ...events[idx], result: e.target.value };
+                              updateNestedData(['tournaments', 'events'], events);
+                            }} placeholder="Result" />
+                          </div>
+                        </div>
+                      ))}
+                      {(!section.data.events || section.data.events.length === 0) && (
+                        <p className="text-sm text-gray-500 italic">No tournaments added yet. Click "Add Tournament" to add one.</p>
+                      )}
+                    </CardContent>
+                  </Card>
+                )}
+              </TabsContent>
+            ))}
+          </Tabs>
+        
       </div>
     );
   }

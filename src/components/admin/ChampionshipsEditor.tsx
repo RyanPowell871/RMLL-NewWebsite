@@ -20,7 +20,7 @@ interface TabConfig {
   key: string;
   label: string;
   description: string;
-  type: 'provincial' | 'national' | 'conference' | 'division-championship';
+  type: 'provincial' | 'national' | 'conference' | 'division-championship' | 'juniorA-provincial' | 'juniorA-national';
   path: string[]; // Path to the data (e.g., ['provincial'] or ['division', 'north'])
 }
 
@@ -145,6 +145,34 @@ export function ChampionshipsEditor({ value, onChange, divisionName }: Champions
   // Determine data structure type and available tabs
   const getTabs = (): TabConfig[] => {
     const tabs: TabConfig[] = [];
+
+    // Check for Junior A format (winners instead of results, and history/jimMcConaghyAward)
+    const isJuniorAFormat = data.provincial?.winners !== undefined || data.national?.history !== undefined;
+
+    if (isJuniorAFormat) {
+      // Junior A Provincial
+      if (data.provincial) {
+        tabs.push({
+          key: 'juniorA-provincial',
+          label: 'Provincial',
+          description: 'ALA Provincial Championship information',
+          type: 'juniorA-provincial',
+          path: ['provincial']
+        });
+      }
+      // Junior A National (Minto Cup)
+      if (data.national) {
+        const isMintoCup = data.national.title?.includes('Minto Cup');
+        tabs.push({
+          key: 'juniorA-national',
+          label: isMintoCup ? 'Minto Cup (National)' : 'National',
+          description: isMintoCup ? 'Minto Cup National Championship information' : 'National Championship information',
+          type: 'juniorA-national',
+          path: ['national']
+        });
+      }
+      return tabs;
+    }
 
     // Check for provincial/national (Tier II style)
     if (data.provincial) {
@@ -428,11 +456,402 @@ export function ChampionshipsEditor({ value, onChange, divisionName }: Champions
           {tabs.map(tab => {
             const sectionData = getNestedValue(tab.path) || {};
             const isProvincialOrNational = tab.type === 'provincial' || tab.type === 'national';
+            const isJuniorAProvincial = tab.type === 'juniorA-provincial';
+            const isJuniorANational = tab.type === 'juniorA-national';
             const isDivisionChampionship = tab.type === 'division-championship';
             const isConference = tab.type === 'conference';
 
             return (
               <TabsContent key={tab.key} value={`tab-${tab.key}`} className="space-y-4">
+                {isJuniorAProvincial && (
+                  <Card>
+                    <CardHeader>
+                      <div className="flex items-center justify-between">
+                        <div>
+                          {editingHeading === tab.key ? (
+                            <div className="flex items-center gap-2">
+                              <Input
+                                value={getNestedValue([...tab.path, 'title']) || ''}
+                                onChange={(e) => updateNestedData([...tab.path, 'title'], e.target.value)}
+                                placeholder="Custom heading (optional)"
+                                className="h-8 w-64"
+                              />
+                              <Button onClick={() => setEditingHeading(null)} size="sm" variant="ghost" className="h-8 w-8 p-0">
+                                <Check className="w-4 h-4 text-green-600" />
+                              </Button>
+                              <Button onClick={() => setEditingHeading(null)} size="sm" variant="ghost" className="h-8 w-8 p-0">
+                                <X className="w-4 h-4 text-red-600" />
+                              </Button>
+                            </div>
+                          ) : (
+                            <>
+                              <CardTitle>{sectionData.title || 'Provincial Championship'}</CardTitle>
+                              <CardDescription>{tab.description}</CardDescription>
+                            </>
+                          )}
+                        </div>
+                        <Button onClick={() => setEditingHeading(tab.key)} size="sm" variant="ghost" className="h-8 w-8 p-0" title="Edit heading">
+                          <Edit2 className="w-4 h-4 text-gray-500" />
+                        </Button>
+                      </div>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                      <TextareaWithLinkInserter
+                        id={`${tab.key}-title`}
+                        label="Title"
+                        value={sectionData.title || ''}
+                        onChange={(value) => updateNestedData([...tab.path, 'title'], value)}
+                        rows={1}
+                        placeholder="Provincial Championships"
+                      />
+
+                      <TextareaWithLinkInserter
+                        id={`${tab.key}-description`}
+                        label="Description"
+                        value={sectionData.description || ''}
+                        onChange={(value) => updateNestedData([...tab.path, 'description'], value)}
+                        rows={3}
+                        placeholder="Optional description..."
+                      />
+
+                      <div className="border-t pt-4 space-y-3">
+                        <Label className="text-base font-semibold">Trophy Information</Label>
+                        <div className="space-y-2">
+                          <Label>Trophy Name</Label>
+                          <Input
+                            value={sectionData.trophy?.name || ''}
+                            onChange={(e) => updateNestedData([...tab.path, 'trophy', 'name'], e.target.value)}
+                            placeholder="e.g., Alberta Junior A Championship Trophy"
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label>Trophy Description</Label>
+                          <TextareaWithLinkInserter
+                            id={`${tab.key}-trophy-desc`}
+                            value={sectionData.trophy?.description || ''}
+                            onChange={(value) => updateNestedData([...tab.path, 'trophy', 'description'], value)}
+                            rows={3}
+                            placeholder="Trophy history and description..."
+                          />
+                        </div>
+                      </div>
+
+                      <div className="border-t pt-4 space-y-3">
+                        <div className="flex items-center justify-between">
+                          <Label className="text-base font-semibold">Champions</Label>
+                          <Button
+                            onClick={() => {
+                              const winners = [...(sectionData.winners || [])];
+                              winners.push({ year: '', title: '', gold: '', silver: '', bronze: '' });
+                              updateNestedData([...tab.path, 'winners'], winners);
+                            }}
+                            size="sm"
+                          >
+                            <Plus className="w-4 h-4 mr-2" />
+                            Add Champion
+                          </Button>
+                        </div>
+                        <div className="space-y-2">
+                          {(sectionData.winners || []).map((winner: any, idx: number) => (
+                            <Card key={idx} className="border-l-4 border-l-[#013fac]">
+                              <CardContent className="p-3 space-y-2">
+                                <div className="flex items-center justify-between">
+                                  <Badge>{winner.year || 'New Entry'}</Badge>
+                                  <div className="flex items-center gap-1">
+                                    {idx > 0 && (
+                                      <Button onClick={() => moveItem(tab.path, 'winners', idx, 'up')} variant="ghost" size="sm" className="h-6 w-6 p-0">
+                                        <ChevronUp className="w-3 h-3" />
+                                      </Button>
+                                    )}
+                                    {idx < (sectionData.winners || []).length - 1 && (
+                                      <Button onClick={() => moveItem(tab.path, 'winners', idx, 'down')} variant="ghost" size="sm" className="h-6 w-6 p-0">
+                                        <ChevronDown className="w-3 h-3" />
+                                      </Button>
+                                    )}
+                                    <Button onClick={() => {
+                                      const winners = [...(sectionData.winners || [])];
+                                      winners.splice(idx, 1);
+                                      updateNestedData([...tab.path, 'winners'], winners);
+                                    }} variant="ghost" size="sm">
+                                      <Trash2 className="w-4 h-4 text-red-600" />
+                                    </Button>
+                                  </div>
+                                </div>
+                                <Input
+                                  value={winner.title || ''}
+                                  onChange={(e) => {
+                                    const winners = [...(sectionData.winners || [])];
+                                    winners[idx] = { ...winners[idx], title: e.target.value };
+                                    updateNestedData([...tab.path, 'winners'], winners);
+                                  }}
+                                  placeholder="Championship title (optional)"
+                                  className="text-sm"
+                                />
+                                <div className="space-y-1">
+                                  <Label className="text-xs">Gold Medalist</Label>
+                                  <Input
+                                    value={winner.gold || ''}
+                                    onChange={(e) => {
+                                      const winners = [...(sectionData.winners || [])];
+                                      winners[idx] = { ...winners[idx], gold: e.target.value };
+                                      updateNestedData([...tab.path, 'winners'], winners);
+                                    }}
+                                    placeholder="Gold team name"
+                                    className="text-sm"
+                                  />
+                                </div>
+                                <div className="grid grid-cols-2 gap-2">
+                                  <div className="space-y-1">
+                                    <Label className="text-xs">Silver</Label>
+                                    <Input
+                                      value={winner.silver || ''}
+                                      onChange={(e) => {
+                                        const winners = [...(sectionData.winners || [])];
+                                        winners[idx] = { ...winners[idx], silver: e.target.value };
+                                        updateNestedData([...tab.path, 'winners'], winners);
+                                      }}
+                                      placeholder="Silver team"
+                                      className="text-sm"
+                                    />
+                                  </div>
+                                  <div className="space-y-1">
+                                    <Label className="text-xs">Bronze</Label>
+                                    <Input
+                                      value={winner.bronze || ''}
+                                      onChange={(e) => {
+                                        const winners = [...(sectionData.winners || [])];
+                                        winners[idx] = { ...winners[idx], bronze: e.target.value };
+                                        updateNestedData([...tab.path, 'winners'], winners);
+                                      }}
+                                      placeholder="Bronze team"
+                                      className="text-sm"
+                                    />
+                                  </div>
+                                </div>
+                              </CardContent>
+                            </Card>
+                          ))}
+                          {(!sectionData.winners || sectionData.winners.length === 0) && (
+                            <p className="text-sm text-gray-500 italic">No champions added yet. Click "Add Champion" to add one.</p>
+                          )}
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                )}
+
+                {isJuniorANational && (
+                  <Card>
+                    <CardHeader>
+                      <div className="flex items-center justify-between">
+                        <div>
+                          {editingHeading === tab.key ? (
+                            <div className="flex items-center gap-2">
+                              <Input
+                                value={getNestedValue([...tab.path, 'title']) || ''}
+                                onChange={(e) => updateNestedData([...tab.path, 'title'], e.target.value)}
+                                placeholder="Custom heading (optional)"
+                                className="h-8 w-64"
+                              />
+                              <Button onClick={() => setEditingHeading(null)} size="sm" variant="ghost" className="h-8 w-8 p-0">
+                                <Check className="w-4 h-4 text-green-600" />
+                              </Button>
+                              <Button onClick={() => setEditingHeading(null)} size="sm" variant="ghost" className="h-8 w-8 p-0">
+                                <X className="w-4 h-4 text-red-600" />
+                              </Button>
+                            </div>
+                          ) : (
+                            <>
+                              <CardTitle>{sectionData.title || tab.label}</CardTitle>
+                              <CardDescription>{tab.description}</CardDescription>
+                            </>
+                          )}
+                        </div>
+                        <Button onClick={() => setEditingHeading(tab.key)} size="sm" variant="ghost" className="h-8 w-8 p-0" title="Edit heading">
+                          <Edit2 className="w-4 h-4 text-gray-500" />
+                        </Button>
+                      </div>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                      <TextareaWithLinkInserter
+                        id={`${tab.key}-title`}
+                        label="Title"
+                        value={sectionData.title || ''}
+                        onChange={(value) => updateNestedData([...tab.path, 'title'], value)}
+                        rows={1}
+                        placeholder={tab.label}
+                      />
+
+                      <TextareaWithLinkInserter
+                        id={`${tab.key}-description`}
+                        label="Description"
+                        value={sectionData.description || ''}
+                        onChange={(value) => updateNestedData([...tab.path, 'description'], value)}
+                        rows={3}
+                        placeholder="Optional description..."
+                      />
+
+                      <div className="border-t pt-4 space-y-3">
+                        <Label className="text-base font-semibold">Jim McConaghy Memorial Award</Label>
+                        <div className="space-y-2">
+                          <Label>Award Title</Label>
+                          <Input
+                            value={sectionData.jimMcConaghyAward?.title || ''}
+                            onChange={(e) => updateNestedData([...tab.path, 'jimMcConaghyAward', 'title'], e.target.value)}
+                            placeholder="Jim McConaghy Memorial Award"
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label>Award Description</Label>
+                          <TextareaWithLinkInserter
+                            id={`${tab.key}-jim-desc`}
+                            value={sectionData.jimMcConaghyAward?.description || ''}
+                            onChange={(value) => updateNestedData([...tab.path, 'jimMcConaghyAward', 'description'], value)}
+                            rows={3}
+                            placeholder="Award description..."
+                          />
+                        </div>
+                      </div>
+
+                      <div className="border-t pt-4 space-y-3">
+                        <div className="flex items-center justify-between">
+                          <Label className="text-base font-semibold">Champions</Label>
+                          <Button
+                            onClick={() => {
+                              const results = [...(sectionData.results || [])];
+                              results.push({ year: '', gold: '', silver: '', bronze: '' });
+                              updateNestedData([...tab.path, 'results'], results);
+                            }}
+                            size="sm"
+                          >
+                            <Plus className="w-4 h-4 mr-2" />
+                            Add Champion
+                          </Button>
+                        </div>
+                        <div className="space-y-2">
+                          {(sectionData.results || []).map((result: any, idx: number) => (
+                            <Card key={idx} className="border-l-4 border-l-[#013fac]">
+                              <CardContent className="p-3 space-y-2">
+                                <div className="flex items-center justify-between">
+                                  <Badge>{result.year || 'New Entry'}</Badge>
+                                  <div className="flex items-center gap-1">
+                                    {idx > 0 && (
+                                      <Button onClick={() => moveItem(tab.path, 'results', idx, 'up')} variant="ghost" size="sm" className="h-6 w-6 p-0">
+                                        <ChevronUp className="w-3 h-3" />
+                                      </Button>
+                                    )}
+                                    {idx < (sectionData.results || []).length - 1 && (
+                                      <Button onClick={() => moveItem(tab.path, 'results', idx, 'down')} variant="ghost" size="sm" className="h-6 w-6 p-0">
+                                        <ChevronDown className="w-3 h-3" />
+                                      </Button>
+                                    )}
+                                    <Button onClick={() => {
+                                      const results = [...(sectionData.results || [])];
+                                      results.splice(idx, 1);
+                                      updateNestedData([...tab.path, 'results'], results);
+                                    }} variant="ghost" size="sm">
+                                      <Trash2 className="w-4 h-4 text-red-600" />
+                                    </Button>
+                                  </div>
+                                </div>
+                                <div className="space-y-1">
+                                  <Label className="text-xs">Gold Medalist</Label>
+                                  <Input
+                                    value={result.gold || ''}
+                                    onChange={(e) => {
+                                      const results = [...(sectionData.results || [])];
+                                      results[idx] = { ...results[idx], gold: e.target.value };
+                                      updateNestedData([...tab.path, 'results'], results);
+                                    }}
+                                    placeholder="Gold team name"
+                                    className="text-sm"
+                                  />
+                                </div>
+                                <div className="grid grid-cols-2 gap-2">
+                                  <div className="space-y-1">
+                                    <Label className="text-xs">Silver</Label>
+                                    <Input
+                                      value={result.silver || ''}
+                                      onChange={(e) => {
+                                        const results = [...(sectionData.results || [])];
+                                        results[idx] = { ...results[idx], silver: e.target.value };
+                                        updateNestedData([...tab.path, 'results'], results);
+                                      }}
+                                      placeholder="Silver team"
+                                      className="text-sm"
+                                    />
+                                  </div>
+                                  <div className="space-y-1">
+                                    <Label className="text-xs">Bronze</Label>
+                                    <Input
+                                      value={result.bronze || ''}
+                                      onChange={(e) => {
+                                        const results = [...(sectionData.results || [])];
+                                        results[idx] = { ...results[idx], bronze: e.target.value };
+                                        updateNestedData([...tab.path, 'results'], results);
+                                      }}
+                                      placeholder="Bronze team"
+                                      className="text-sm"
+                                    />
+                                  </div>
+                                </div>
+                              </CardContent>
+                            </Card>
+                          ))}
+                          {(!sectionData.results || sectionData.results.length === 0) && (
+                            <p className="text-sm text-gray-500 italic">No champions added yet. Click "Add Champion" to add one.</p>
+                          )}
+                        </div>
+                      </div>
+
+                      <div className="border-t pt-4 space-y-3">
+                        <div className="flex items-center justify-between">
+                          <Label className="text-base font-semibold">History</Label>
+                          <Button
+                            onClick={() => {
+                              const history = [...(sectionData.history || [])];
+                              history.push('');
+                              updateNestedData([...tab.path, 'history'], history);
+                            }}
+                            size="sm"
+                          >
+                            <Plus className="w-4 h-4 mr-2" />
+                            Add History Entry
+                          </Button>
+                        </div>
+                        <div className="space-y-2">
+                          {(sectionData.history || []).map((entry: string, idx: number) => (
+                            <div key={idx} className="flex gap-2">
+                              <TextareaWithLinkInserter
+                                id={`${tab.key}-history-${idx}`}
+                                value={entry || ''}
+                                onChange={(value) => {
+                                  const history = [...(sectionData.history || [])];
+                                  history[idx] = value;
+                                  updateNestedData([...tab.path, 'history'], history);
+                                }}
+                                rows={2}
+                                placeholder="Historical note or paragraph..."
+                                className="flex-1"
+                              />
+                              <Button onClick={() => {
+                                const history = [...(sectionData.history || [])];
+                                history.splice(idx, 1);
+                                updateNestedData([...tab.path, 'history'], history);
+                              }} variant="ghost" size="sm" className="mt-auto h-8 w-8 p-0">
+                                <Trash2 className="w-4 h-4 text-red-600" />
+                              </Button>
+                            </div>
+                          ))}
+                          {(!sectionData.history || sectionData.history.length === 0) && (
+                            <p className="text-sm text-gray-500 italic">No history entries added yet.</p>
+                          )}
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                )}
+
                 {isProvincialOrNational && (
                   <Card>
                     <CardHeader>
