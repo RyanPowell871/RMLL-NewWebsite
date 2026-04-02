@@ -261,7 +261,8 @@ export interface Commit {
 // ============================================
 
 async function validateTypeScriptCode(code: string, filePath: string): Promise<{ valid: boolean; errors?: string[] }> {
-  // Basic syntax check
+  // Very basic bracket matching only - skip string checks to avoid false positives
+  // Real TypeScript validation will happen during build anyway
   try {
     const issues: string[] = [];
 
@@ -284,15 +285,8 @@ async function validateTypeScriptCode(code: string, filePath: string): Promise<{
       issues.push(`Unmatched brackets: ${openBrackets} opening, ${closeBrackets} closing`);
     }
 
-    // Check for unterminated strings
-    const singleQuoteCount = (code.match(/'/g) || []).length;
-    const doubleQuoteCount = (code.match(/"/g) || []).length;
-    if (singleQuoteCount % 2 !== 0) {
-      issues.push('Possible unterminated single-quoted string');
-    }
-    if (doubleQuoteCount % 2 !== 0) {
-      issues.push('Possible unterminated double-quoted string');
-    }
+    // Skip string checking - causes false positives with JSX, comments, etc.
+    // Real TypeScript validation will happen during build
 
     return issues.length > 0 ? { valid: false, errors: issues } : { valid: true };
   } catch (e) {
