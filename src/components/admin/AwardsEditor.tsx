@@ -7,6 +7,7 @@ import { Badge } from '../ui/badge';
 import { Plus, Trash2, AlertCircle, Code, Eye, ChevronUp, ChevronDown, Edit2, Check, X } from 'lucide-react';
 import { Textarea } from '../ui/textarea';
 import { TextareaWithLinkInserter } from './TextareaWithLinkInserter';
+import { Alert, AlertDescription } from '../ui/alert';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../ui/tabs';
 
 interface AwardsEditorProps {
