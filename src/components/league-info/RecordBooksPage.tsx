@@ -78,7 +78,7 @@ export function RecordBooksPage() {
       <div className="border-b-2 border-gray-200 bg-white">
         <div className="overflow-x-auto">
           <div className="flex min-w-max px-4 sm:px-6 lg:px-8 gap-1">
-            {recordBookTabs.map((tab) => (
+            {RECORD_BOOK_TABS.map((tab) => (
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
