@@ -96,6 +96,8 @@ export function ChampionshipsEditor({ value, onChange, divisionName }: Champions
   const getTabs = (): TabConfig[] => {
     const tabs: TabConfig[] = [];
 
+    console.log('[ChampionshipsEditor] Data for', divisionName, ':', Object.keys(data));
+
     // Check for provincial/national (Tier II style)
     if (data.provincial) {
       tabs.push({
@@ -227,12 +229,17 @@ export function ChampionshipsEditor({ value, onChange, divisionName }: Champions
       </div>
 
       {tabs.length === 0 && (
-        <Alert>
-          <AlertCircle className="h-4 w-4" />
-          <AlertDescription>
-            No championships data found. Use the JSON Editor to add data.
-          </AlertDescription>
-        </Alert>
+        <>
+          <Alert>
+            <AlertCircle className="h-4 w-4" />
+            <AlertDescription>
+              {data && Object.keys(data).length > 0
+                ? `Championships data is in an unrecognized format. Use the JSON Editor to view and edit the data. Current data keys: ${Object.keys(data).join(', ')}`
+                : 'No championships data found. Use the JSON Editor to add data.'
+              }
+            </AlertDescription>
+          </Alert>
+        </>
       )}
 
       {tabs.length > 0 && (

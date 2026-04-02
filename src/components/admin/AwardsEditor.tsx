@@ -26,18 +26,21 @@ export function AwardsEditor({ value, onChange, divisionName }: AwardsEditorProp
 
   // Parse JSON on mount and when value changes from outside
   useEffect(() => {
+    console.log('[AwardsEditor] Value changed for', divisionName, ':', value);
     try {
       if (value && typeof value === 'string' && value.trim()) {
         const parsed = JSON.parse(value);
+        console.log('[AwardsEditor] Parsed data structure:', Object.keys(parsed), 'isArray:', Array.isArray(parsed));
         setData(parsed);
         setJsonText(JSON.stringify(parsed, null, 2));
         setJsonError(null);
       } else {
+        console.log('[AwardsEditor] No value provided, setting empty data');
         setData({});
         setJsonText('{}');
       }
     } catch (err) {
-      console.error('Error parsing awards JSON:', err);
+      console.error('[AwardsEditor] Error parsing awards JSON:', err);
       setJsonError('Invalid JSON format');
       setJsonText(typeof value === 'string' ? value : '{}');
     }
@@ -91,10 +94,12 @@ export function AwardsEditor({ value, onChange, divisionName }: AwardsEditorProp
     if (data.north || data.south) return 'conference';
     if (data.pointLeaders || data.divisionAwards || data.tournaments) return 'standard';
     if (Array.isArray(data)) return 'array';
+    console.log('[AwardsEditor] Unknown data structure, keys:', Object.keys(data));
     return 'unknown';
   };
 
   const dataStructure = getDataStructure();
+  console.log('[AwardsEditor] Data structure:', dataStructure, 'for', divisionName);
 
   if (mode === 'json') {
     return (
@@ -723,12 +728,15 @@ export function AwardsEditor({ value, onChange, divisionName }: AwardsEditorProp
   }
 
   // Empty or unknown structure
+  const hasData = data && Object.keys(data).length > 0;
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           <Badge variant="outline">Visual Editor</Badge>
           <Badge variant="secondary">{divisionName}</Badge>
+          {!hasData && <Badge variant="destructive">Empty</Badge>}
+          {hasData && <Badge variant="outline">Unknown Format</Badge>}
         </div>
         <Button onClick={() => setMode('json')} variant="outline" size="sm">
           <Code className="w-4 h-4 mr-2" />
@@ -736,12 +744,22 @@ export function AwardsEditor({ value, onChange, divisionName }: AwardsEditorProp
         </Button>
       </div>
 
-      <Alert>
-        <AlertCircle className="h-4 w-4" />
-        <AlertDescription>
-          No awards data found. Use the JSON Editor to add award data.
-        </AlertDescription>
-      </Alert>
+      {!hasData ? (
+        <Alert>
+          <AlertCircle className="h-4 w-4" />
+          <AlertDescription>
+            No awards data found. Use the JSON Editor to add award data.
+          </AlertDescription>
+        </Alert>
+      ) : (
+        <Alert>
+          <AlertTriangle className="h-4 w-4" />
+          <AlertDescription>
+            Awards data is in an unrecognized format. Use the JSON Editor to view and edit the data.
+            Current data keys: {Object.keys(data).join(', ')}
+          </AlertDescription>
+        </Alert>
+      )}
     </div>
   );
 }

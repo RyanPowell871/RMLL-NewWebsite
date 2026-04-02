@@ -527,6 +527,13 @@ export function DivisionManager() {
 
       if (response.ok) {
         const data: DivisionData = await response.json();
+        console.log('[DivisionManager] Loaded data for', selectedDivision, ':', {
+          hasAwards: !!data.awards,
+          awardsType: typeof data.awards,
+          hasChampionships: !!data.championships,
+          hasSectionConfigs: !!data.sectionConfigs,
+          keys: Object.keys(data)
+        });
 
         // Load division description
         setDivisionDescription(data.divisionDescription || '');
@@ -697,8 +704,14 @@ export function DivisionManager() {
         throw new Error('Failed to save division data');
       }
 
+      const savedData = await response.json();
+      console.log('Division data saved successfully:', savedData);
+
       setSuccess(true);
       setTimeout(() => setSuccess(false), 3000);
+
+      // Reload data from server to ensure we have the latest state
+      await loadDivisionData();
     } catch (err) {
       console.error('Error saving division data:', err);
       setError('Failed to save division data');
