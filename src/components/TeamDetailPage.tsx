@@ -1862,7 +1862,7 @@ export function TeamDetailPage({ teamId, teamName, season, teamLogo, divisionId,
 
                 {/* Recent Games & Upcoming Games */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {/* Recent Games - Scrollable */}
+                  {/* Recent Games - Horizontal Scroll */}
                   <Card className="border-2 shadow-lg" style={{ borderColor: `${extractedColors.primary}40}` }}>
                     <CardHeader
                       className="border-b-2 rounded-t-lg py-3"
@@ -1885,13 +1885,9 @@ export function TeamDetailPage({ teamId, teamName, season, teamLogo, divisionId,
 
                         if (completedGames.length === 0) return <div className="text-gray-400 italic text-sm text-center py-4">No completed games yet</div>;
 
-                        // Show up to 5 recent games with scroll if more
-                        const gamesToShow = completedGames.slice(0, 5);
-                        const showScrollHint = completedGames.length > 5;
-
                         return (
-                          <div className={`space-y-2 ${showScrollHint ? 'max-h-[280px] overflow-y-auto pr-1' : ''}`}>
-                            {gamesToShow.map((game, idx) => {
+                          <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100">
+                            {completedGames.map((game, idx) => {
                               const isHome = game.HomeTeamId === currentTeamId;
                               const teamScore = isHome ? game.HomeScore! : game.VisitorScore!;
                               const oppScore = isHome ? game.VisitorScore! : game.HomeScore!;
@@ -1901,43 +1897,32 @@ export function TeamDetailPage({ teamId, teamName, season, teamLogo, divisionId,
                               const tied = teamScore === oppScore;
 
                               return (
-                                <div key={`${game.GameId}-${idx}`} className="flex items-center justify-between p-2 rounded hover:bg-gray-50 transition-colors">
-                                  <div className="flex items-center gap-2">
-                                    <div className={`w-8 h-8 rounded flex items-center justify-center font-black text-white text-xs ${
+                                <div key={`${game.GameId}-${idx}`} className="flex-shrink-0 w-32 p-2 rounded bg-gray-50 hover:bg-gray-100 transition-colors border border-gray-200">
+                                  <div className="text-center">
+                                    <div className="text-[10px] text-gray-500 font-semibold mb-1">
+                                      #{game.GameNumber || ''}
+                                    </div>
+                                    <div className={`w-7 h-7 rounded-full flex items-center justify-center font-black text-white text-xs mx-auto mb-1 ${
                                       won ? 'bg-green-500' : tied ? 'bg-yellow-500' : 'bg-red-500'
                                     }`}>
                                       {won ? 'W' : tied ? 'T' : 'L'}
                                     </div>
-                                    <div className="min-w-0">
-                                      <div className="text-xs text-gray-500 font-semibold">{isHome ? 'vs' : '@'}</div>
-                                      <div className="font-bold text-sm text-gray-900 truncate">{opponent}</div>
-                                    </div>
-                                  </div>
-                                  <div className="text-right flex-shrink-0">
-                                    <div className="text-xs text-gray-400 font-semibold mb-0.5">
-                                      {game.GameNumber ? `#${game.GameNumber}` : ''}
-                                    </div>
-                                    <div className="text-lg font-black" style={{ color: won ? '#16a34a' : tied ? '#ca8a04' : '#dc2626' }}>
+                                    <div className="text-[10px] text-gray-500 mb-1">{isHome ? 'vs' : '@'}</div>
+                                    <div className="text-xs font-bold text-gray-900 truncate mb-1">{opponent}</div>
+                                    <div className="text-sm font-black" style={{ color: won ? '#16a34a' : tied ? '#ca8a04' : '#dc2626' }}>
                                       {teamScore}-{oppScore}
                                     </div>
                                   </div>
                                 </div>
                               );
                             })}
-                            {showScrollHint && (
-                              <div className="text-center pt-1">
-                                <span className="text-xs text-gray-400 italic">
-                                  +{completedGames.length - 5} more game{completedGames.length - 5 > 1 ? 's' : ''}
-                                </span>
-                              </div>
-                            )}
                           </div>
                         );
                       })()}
                     </CardContent>
                   </Card>
 
-                  {/* Upcoming Games - Scrollable */}
+                  {/* Upcoming Games - Horizontal Scroll */}
                   <Card className="border-2 shadow-lg" style={{ borderColor: `${extractedColors.primary}40}` }}>
                     <CardHeader
                       className="border-b-2 rounded-t-lg py-3"
@@ -1960,34 +1945,28 @@ export function TeamDetailPage({ teamId, teamName, season, teamLogo, divisionId,
 
                         if (futureGames.length === 0) return <div className="text-gray-400 italic text-sm text-center py-4">No upcoming games scheduled</div>;
 
-                        // Show up to 5 upcoming games with scroll if more
-                        const gamesToShow = futureGames.slice(0, 5);
-                        const showScrollHint = futureGames.length > 5;
-
                         return (
-                          <div className={`space-y-2 ${showScrollHint ? 'max-h-[280px] overflow-y-auto pr-1' : ''}`}>
-                            {gamesToShow.map((game, idx) => {
+                          <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100">
+                            {futureGames.map((game, idx) => {
                               const isHome = game.HomeTeamId === currentTeamId;
                               const opponentId = isHome ? game.VisitorTeamId : game.HomeTeamId;
                               const opponent = getTeamName(opponentId);
                               const gameDate = parseDateAsLocal(game.GameDate);
                               const daysAway = Math.ceil((gameDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+                              const gameDateStr = formatGameDate(game.GameDate);
 
                               return (
-                                <div key={`${game.GameId}-${idx}`} className="flex items-center justify-between p-2 rounded hover:bg-gray-50 transition-colors">
-                                  <div className="flex items-center gap-2">
-                                    <div className="w-8 h-8 rounded-lg flex items-center justify-center font-black text-white text-xs" style={{ backgroundColor: extractedColors.primary }}>
-                                      {isHome ? 'VS' : '@'}
+                                <div key={`${game.GameId}-${idx}`} className="flex-shrink-0 w-32 p-2 rounded bg-gray-50 hover:bg-gray-100 transition-colors border border-gray-200">
+                                  <div className="text-center">
+                                    <div className="text-[10px] text-gray-500 font-semibold mb-1">
+                                      #{game.GameNumber || ''}
                                     </div>
-                                    <div className="min-w-0">
-                                      <div className="text-xs text-gray-500 font-semibold">{isHome ? 'Home' : 'Away'}</div>
-                                      <div className="font-bold text-sm text-gray-900 truncate">{opponent}</div>
+                                    <div className="w-7 h-7 rounded-full flex items-center justify-center font-black text-white text-xs mx-auto mb-1" style={{ backgroundColor: extractedColors.primary }}>
+                                      {isHome ? 'H' : 'A'}
                                     </div>
-                                  </div>
-                                  <div className="text-right flex-shrink-0">
-                                    <div className="text-xs text-gray-400 font-semibold mb-0.5">
-                                      {game.GameNumber ? `#${game.GameNumber}` : ''}
-                                    </div>
+                                    <div className="text-[10px] text-gray-500 mb-1">{isHome ? 'vs' : '@'}</div>
+                                    <div className="text-xs font-bold text-gray-900 truncate mb-1">{opponent}</div>
+                                    <div className="text-[10px] text-gray-500 mb-1">{gameDateStr}</div>
                                     <div className="text-sm font-black" style={{ color: extractedColors.primary }}>
                                       {daysAway === 0 ? 'TODAY' : daysAway === 1 ? 'TMW' : `${daysAway}d`}
                                     </div>
@@ -1995,13 +1974,6 @@ export function TeamDetailPage({ teamId, teamName, season, teamLogo, divisionId,
                                 </div>
                               );
                             })}
-                            {showScrollHint && (
-                              <div className="text-center pt-1">
-                                <span className="text-xs text-gray-400 italic">
-                                  +{futureGames.length - 5} more game{futureGames.length - 5 > 1 ? 's' : ''}
-                                </span>
-                              </div>
-                            )}
                           </div>
                         );
                       })()}
