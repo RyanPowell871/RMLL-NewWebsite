@@ -183,27 +183,31 @@ export function LinkInserter({ open, onOpenChange, onInsert, trigger }: LinkInse
     <>
       {trigger}
       <Dialog open={open} onOpenChange={handleClose}>
-        <DialogContent className="max-w-2xl max-h-[90vh] flex flex-col">
+        <DialogContent className="w-[95vw] md:w-[800px] max-w-none max-h-[90vh] flex flex-col">
         <DialogHeader>
           <DialogTitle>Insert Link</DialogTitle>
         </DialogHeader>
         <Tabs defaultValue="documents" className="flex-1 overflow-hidden flex flex-col">
-          <TabsList className="grid w-full grid-cols-4">
-            <TabsTrigger value="documents">
-              <FileText className="w-4 h-4 mr-2" />
-              Documents
+          <TabsList className="grid w-full grid-cols-4 h-auto">
+            <TabsTrigger value="documents" className="whitespace-nowrap text-xs md:text-sm py-2.5 px-2">
+              <FileText className="w-4 h-4 mr-1 md:mr-2" />
+              <span className="hidden sm:inline">Documents</span>
+              <span className="sm:hidden">Docs</span>
             </TabsTrigger>
-            <TabsTrigger value="pages">
-              <MenuIcon className="w-4 h-4 mr-2" />
-              Pages
+            <TabsTrigger value="pages" className="whitespace-nowrap text-xs md:text-sm py-2.5 px-2">
+              <MenuIcon className="w-4 h-4 mr-1 md:mr-2" />
+              <span className="hidden sm:inline">Pages</span>
+              <span className="sm:hidden">Pages</span>
             </TabsTrigger>
-            <TabsTrigger value="league-info">
-              <Book className="w-4 h-4 mr-2" />
-              League Info
+            <TabsTrigger value="league-info" className="whitespace-nowrap text-xs md:text-sm py-2.5 px-2">
+              <Book className="w-4 h-4 mr-1 md:mr-2" />
+              <span className="hidden sm:inline">League Info</span>
+              <span className="sm:hidden">Info</span>
             </TabsTrigger>
-            <TabsTrigger value="custom">
-              <ExternalLink className="w-4 h-4 mr-2" />
-              Custom URL
+            <TabsTrigger value="custom" className="whitespace-nowrap text-xs md:text-sm py-2.5 px-2">
+              <ExternalLink className="w-4 h-4 mr-1 md:mr-2" />
+              <span className="hidden sm:inline">Custom URL</span>
+              <span className="sm:hidden">Custom</span>
             </TabsTrigger>
           </TabsList>
 
