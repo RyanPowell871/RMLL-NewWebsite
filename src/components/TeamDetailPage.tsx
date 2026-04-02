@@ -1886,7 +1886,10 @@ export function TeamDetailPage({ teamId, teamName, season, teamLogo, divisionId,
                         if (completedGames.length === 0) return <div className="text-gray-400 italic text-sm text-center py-4">No completed games yet</div>;
 
                         return (
-                          <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100">
+                          <div
+                            className="flex gap-2 overflow-x-auto scrollbar-hide"
+                            style={{ scrollbarWidth: 'none', WebkitOverflowScrolling: 'touch' }}
+                          >
                             {completedGames.map((game, idx) => {
                               const isHome = game.HomeTeamId === currentTeamId;
                               const teamScore = isHome ? game.HomeScore! : game.VisitorScore!;
@@ -1895,12 +1898,13 @@ export function TeamDetailPage({ teamId, teamName, season, teamLogo, divisionId,
                               const opponent = getTeamName(opponentId);
                               const won = teamScore > oppScore;
                               const tied = teamScore === oppScore;
+                              const gameNumber = game.GameNumber || game.gameNumber || '';
 
                               return (
-                                <div key={`${game.GameId}-${idx}`} className="flex-shrink-0 w-32 p-2 rounded bg-gray-50 hover:bg-gray-100 transition-colors border border-gray-200">
+                                <div key={`${game.GameId}-${idx}`} className="flex-shrink-0 w-28 p-2 rounded bg-gray-50 hover:bg-gray-100 transition-colors border border-gray-200">
                                   <div className="text-center">
-                                    <div className="text-[10px] text-gray-500 font-semibold mb-1">
-                                      #{game.GameNumber || ''}
+                                    <div className="text-[10px] text-gray-500 font-bold mb-1">
+                                      #{gameNumber}
                                     </div>
                                     <div className={`w-7 h-7 rounded-full flex items-center justify-center font-black text-white text-xs mx-auto mb-1 ${
                                       won ? 'bg-green-500' : tied ? 'bg-yellow-500' : 'bg-red-500'
@@ -1946,7 +1950,10 @@ export function TeamDetailPage({ teamId, teamName, season, teamLogo, divisionId,
                         if (futureGames.length === 0) return <div className="text-gray-400 italic text-sm text-center py-4">No upcoming games scheduled</div>;
 
                         return (
-                          <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100">
+                          <div
+                            className="flex gap-2 overflow-x-auto scrollbar-hide"
+                            style={{ scrollbarWidth: 'none', WebkitOverflowScrolling: 'touch' }}
+                          >
                             {futureGames.map((game, idx) => {
                               const isHome = game.HomeTeamId === currentTeamId;
                               const opponentId = isHome ? game.VisitorTeamId : game.HomeTeamId;
@@ -1954,12 +1961,13 @@ export function TeamDetailPage({ teamId, teamName, season, teamLogo, divisionId,
                               const gameDate = parseDateAsLocal(game.GameDate);
                               const daysAway = Math.ceil((gameDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
                               const gameDateStr = formatGameDate(game.GameDate);
+                              const gameNumber = game.GameNumber || game.gameNumber || '';
 
                               return (
-                                <div key={`${game.GameId}-${idx}`} className="flex-shrink-0 w-32 p-2 rounded bg-gray-50 hover:bg-gray-100 transition-colors border border-gray-200">
+                                <div key={`${game.GameId}-${idx}`} className="flex-shrink-0 w-28 p-2 rounded bg-gray-50 hover:bg-gray-100 transition-colors border border-gray-200">
                                   <div className="text-center">
-                                    <div className="text-[10px] text-gray-500 font-semibold mb-1">
-                                      #{game.GameNumber || ''}
+                                    <div className="text-[10px] text-gray-500 font-bold mb-1">
+                                      #{gameNumber}
                                     </div>
                                     <div className="w-7 h-7 rounded-full flex items-center justify-center font-black text-white text-xs mx-auto mb-1" style={{ backgroundColor: extractedColors.primary }}>
                                       {isHome ? 'H' : 'A'}
