@@ -462,10 +462,97 @@ export function DirectCodeEditor() {
   };
 
   // AI Assistant handlers
+  // Analyze prompt for potentially complex or dangerous changes
+  const analyzePromptForComplexity = (prompt: string, fileName: string): {
+    warnings: string[];
+    riskLevel: 'low' | 'medium' | 'high';
+  } => {
+    const warnings: string[] = [];
+    const lowerPrompt = prompt.toLowerCase();
+
+    // File-level operations (high risk)
+    const fileOperations = ['create new file', 'new component', 'add file', 'write a new', 'build a component'];
+    if (fileOperations.some(op => lowerPrompt.includes(op))) {
+      warnings.push('You are asking to create a new file/component. This may require multiple files and could impact the site structure.');
+    }
+
+    // Complex structural changes (medium-high risk)
+    const structuralChanges = [
+      'refactor', 'rewrite', 'restructure', 'redesign', 'rebuild', 'reimplement',
+      'major change', 'significant change', 'complete overhaul', 'completely new'
+    ];
+    if (structuralChanges.some(op => lowerPrompt.includes(op))) {
+      warnings.push('This request involves significant structural changes that could affect multiple parts of the code.');
+    }
+
+    // Function/component creation (medium risk)
+    if (lowerPrompt.includes('create') && (lowerPrompt.includes('function') || lowerPrompt.includes('component') || lowerPrompt.includes('hook'))) {
+      warnings.push('You are asking to create new functions or components. Ensure you understand the existing code structure.');
+    }
+
+    // Multiple changes at once (medium risk)
+    const changeCount = (prompt.match(/change|update|modify|add|remove|delete/gi) || []).length;
+    if (changeCount > 3) {
+      warnings.push('This request involves multiple changes. Consider making changes one at a time for easier review.');
+    }
+
+    // Import/export changes (medium risk)
+    if (lowerPrompt.includes('import') || lowerPrompt.includes('export') || lowerPrompt.includes('require')) {
+      warnings.push('You are modifying imports/exports. This could affect dependencies across the application.');
+    }
+
+    // State management changes (medium risk)
+    if (lowerPrompt.includes('state') || lowerPrompt.includes('useeffect') || lowerPrompt.includes('usestate')) {
+      warnings.push('You are modifying React state or effects. Changes here can affect component behavior.');
+    }
+
+    // API/Data fetching changes (medium risk)
+    if (lowerPrompt.includes('fetch') || lowerPrompt.includes('api') || lowerPrompt.includes('endpoint')) {
+      warnings.push('You are modifying API calls or data fetching. This could affect how data loads in the application.');
+    }
+
+    // Routing/navigation changes (high risk)
+    if (lowerPrompt.includes('route') || lowerPrompt.includes('navigate') || lowerPrompt.includes('link') || lowerPrompt.includes('href')) {
+      warnings.push('You are modifying navigation or routing. Changes here can affect user navigation across the site.');
+    }
+
+    // Styling changes (low risk - league info pages are meant for this)
+    const stylingChanges = ['color', 'style', 'css', 'font', 'size', 'align', 'spacing'];
+    const isStylingOnly = stylingChanges.some(s => lowerPrompt.includes(s)) &&
+      !structuralChanges.some(op => lowerPrompt.includes(op)) &&
+      !fileOperations.some(op => lowerPrompt.includes(op));
+
+    // Determine risk level
+    let riskLevel: 'low' | 'medium' | 'high' = 'low';
+    if (warnings.length === 0) {
+      riskLevel = 'low';
+    } else if (warnings.length <= 2 && isStylingOnly) {
+      riskLevel = 'low';
+    } else if (warnings.length >= 3 || structuralChanges.some(op => lowerPrompt.includes(op))) {
+      riskLevel = 'high';
+    } else {
+      riskLevel = 'medium';
+    }
+
+    return { warnings, riskLevel };
+  };
+
   const handleApplyAIChanges = async () => {
     if (!state.selectedFile || !state.aiPrompt.trim()) {
       toast.error('Please enter a prompt for the AI');
       return;
+    }
+
+    const { warnings, riskLevel } = analyzePromptForComplexity(state.aiPrompt, state.selectedFile || '');
+
+    // For high risk, show confirmation dialog
+    if (riskLevel === 'high') {
+      const confirmed = window.confirm(
+        `⚠️ This request involves complex changes that could potentially affect the site.\n\n${warnings.join('\n\n')}\n\nDo you want to continue?`
+      );
+      if (!confirmed) {
+        return;
+      }
     }
 
     setState((prev) => ({
@@ -932,8 +1019,62 @@ export function DirectCodeEditor() {
                 className="mt-2 resize-none"
               />
             </div>
+
+            {/* Dynamic Warnings */}
+            {state.aiPrompt.trim() && (() => {
+              const { warnings, riskLevel } = analyzePromptForComplexity(state.aiPrompt, state.selectedFile || '');
+
+              if (riskLevel === 'low') {
+                return null;
+              }
+
+              const riskColors = {
+                medium: {
+                  bg: 'bg-amber-50 dark:bg-amber-950/30',
+                  border: 'border-amber-200 dark:border-amber-800',
+                  text: 'text-amber-800 dark:text-amber-200',
+                  icon: 'text-amber-500'
+                },
+                high: {
+                  bg: 'bg-red-50 dark:bg-red-950/30',
+                  border: 'border-red-200 dark:border-red-800',
+                  text: 'text-red-800 dark:text-red-200',
+                  icon: 'text-red-500'
+                }
+              };
+              const colors = riskColors[riskLevel];
+
+              return (
+                <div className={`p-3 rounded-lg border ${colors.bg} ${colors.border}`}>
+                  <div className="flex items-start gap-2">
+                    <AlertTriangle className={`w-4 h-4 ${colors.icon} shrink-0 mt-0.5`} />
+                    <div className="flex-1">
+                      <div className={`font-semibold text-sm ${colors.text} mb-1`}>
+                        {riskLevel === 'high' ? '⚠️ Potentially Complex Change' : 'ℹ️ Consider Reviewing'}
+                      </div>
+                      <ul className="text-sm space-y-1">
+                        {warnings.map((warning, idx) => (
+                          <li key={idx} className={`text-gray-700 dark:text-gray-300 pl-2 border-l-2 ${riskLevel === 'high' ? 'border-red-400' : 'border-amber-400'}`}>
+                            {warning}
+                          </li>
+                        ))}
+                      </ul>
+                      {riskLevel === 'high' && (
+                        <div className="mt-2 pt-2 border-t border-gray-300 dark:border-gray-600">
+                          <p className="text-xs text-gray-600 dark:text-gray-400">
+                            💡 Tip: For best results with league info pages, stick to text content, styling, and simple data changes. Avoid structural code changes.
+                          </p>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              );
+            })()}
+
+            {/* Default info message */}
             <div className="flex items-start gap-2 text-sm text-gray-600 dark:text-gray-400">
-              <AlertTriangle className="w-4 h-4 text-amber-500 shrink-0 mt-0.5" />
+              <CheckCheck className="w-4 h-4 text-blue-500 shrink-0 mt-0.5" />
               <p>
                 The AI will show you a side-by-side comparison before applying any changes. You can review and accept or reject the changes.
               </p>
