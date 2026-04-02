@@ -25,9 +25,15 @@ import {
   EyeOff,
   Copy,
   Check,
+  Sparkles,
+  X,
+  CheckCheck,
+  XCircle,
+  Loader2,
 } from 'lucide-react';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
+import { Textarea } from '../ui/textarea';
 import { Badge } from '../ui/badge';
 import { Label } from '../ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../ui/tabs';
@@ -43,6 +49,14 @@ import {
 } from './CommitHistory';
 import { DiffViewer } from './DiffViewer';
 import { LinkInserter, type LinkInsertOptions } from './LinkInserter';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '../ui/dialog';
 
 const EDGE_FUNCTION_BASE_URL = `https://${projectId}.supabase.co/functions/v1/make-server-9a1ba23f`;
 
@@ -72,6 +86,14 @@ interface EditorState {
   rightPanelOpen: boolean;
   showLivePreview: boolean;
   linkInserterOpen: boolean;
+  // AI Assistant states
+  aiPromptOpen: boolean;
+  aiPrompt: string;
+  aiGenerating: boolean;
+  aiResultOpen: boolean;
+  aiOriginalContent: string;
+  aiNewContent: string;
+  aiFileName: string;
 }
 
 export function DirectCodeEditor() {
@@ -95,6 +117,14 @@ export function DirectCodeEditor() {
     rightPanelOpen: false,
     showLivePreview: false,
     linkInserterOpen: false,
+    // AI Assistant states
+    aiPromptOpen: false,
+    aiPrompt: '',
+    aiGenerating: false,
+    aiResultOpen: false,
+    aiOriginalContent: '',
+    aiNewContent: '',
+    aiFileName: '',
   });
 
   const [copyStatus, setCopyStatus] = useState<'idle' | 'copied'>('idle');
@@ -418,6 +448,77 @@ export function DirectCodeEditor() {
     }
   };
 
+  // AI Assistant handlers
+  const handleApplyAIChanges = async () => {
+    if (!state.selectedFile || !state.aiPrompt.trim()) {
+      toast.error('Please enter a prompt for the AI');
+      return;
+    }
+
+    setState((prev) => ({
+      ...prev,
+      aiGenerating: true,
+      aiPromptOpen: false,
+    }));
+
+    try {
+      const response = await fetch(`${EDGE_FUNCTION_BASE_URL}/code-editor/ai/apply-changes`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${await getAccessToken()}`,
+        },
+        body: JSON.stringify({
+          filePath: state.selectedFile,
+          currentContent: state.fileContent,
+          prompt: state.aiPrompt,
+        }),
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || 'Failed to apply AI changes');
+      }
+
+      const result = await response.json();
+
+      setState((prev) => ({
+        ...prev,
+        aiGenerating: false,
+        aiResultOpen: true,
+        aiOriginalContent: state.fileContent,
+        aiNewContent: result.data.newContent,
+        aiFileName: result.data.fileName,
+        aiPrompt: '',
+      }));
+    } catch (error) {
+      console.error('Error applying AI changes:', error);
+      toast.error(error instanceof Error ? error.message : 'Failed to apply AI changes');
+      setState((prev) => ({
+        ...prev,
+        aiGenerating: false,
+      }));
+    }
+  };
+
+  const handleAcceptAIChanges = () => {
+    setState((prev) => ({
+      ...prev,
+      fileContent: state.aiNewContent,
+      originalContent: state.aiNewContent,
+      isDirty: true,
+      aiResultOpen: false,
+    }));
+    toast.success('AI changes applied to editor');
+  };
+
+  const handleRejectAIChanges = () => {
+    setState((prev) => ({
+      ...prev,
+      aiResultOpen: false,
+    }));
+  };
+
   const getFileName = (path: string) => {
     const parts = path.split('/');
     return parts[parts.length - 1];
@@ -448,6 +549,17 @@ export function DirectCodeEditor() {
         </div>
 
         <div className="flex items-center gap-2">
+          {state.selectedFile && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setState((prev) => ({ ...prev, aiPromptOpen: true }))}
+              title="AI Assistant - Ask to make changes"
+              className="text-purple-600 dark:text-purple-400 hover:text-purple-700 dark:hover:text-purple-300"
+            >
+              <Sparkles className="w-4 h-4" />
+            </Button>
+          )}
           <LinkInserter
             open={state.linkInserterOpen}
             onOpenChange={(open) => setState((prev) => ({ ...prev, linkInserterOpen: open }))}
@@ -585,7 +697,7 @@ export function DirectCodeEditor() {
         )}
 
         {/* Center - Editor */}
-        <div className="flex-1 flex flex-col overflow-hidden min-w-0">
+        <div className="flex-1 flex flex-col overflow-hidden min-w-0 relative">
           {state.isLoading ? (
             <div className="flex-1 flex items-center justify-center text-gray-500">
               <div className="w-8 h-8 border-3 border-[#013fac] border-t-transparent rounded-full animate-spin mr-3" />
@@ -667,6 +779,18 @@ export function DirectCodeEditor() {
                   lightbulb: { enabled: false },
                 }}
               />
+            </div>
+          )}
+          {/* AI Loading Overlay */}
+          {state.aiGenerating && (
+            <div className="absolute inset-0 bg-white/80 dark:bg-gray-900/80 backdrop-blur-sm flex items-center justify-center z-10">
+              <div className="flex flex-col items-center gap-4 text-center p-8">
+                <div className="w-16 h-16 border-4 border-purple-200 border-t-purple-600 rounded-full animate-spin" />
+                <div>
+                  <p className="text-lg font-semibold text-gray-900 dark:text-white">AI is working...</p>
+                  <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">Analyzing code and applying your changes</p>
+                </div>
+              </div>
             </div>
           )}
         </div>
@@ -752,6 +876,115 @@ export function DirectCodeEditor() {
           </div>
         )}
       </div>
+
+      {/* AI Prompt Dialog */}
+      <Dialog open={state.aiPromptOpen} onOpenChange={(open) => setState((prev) => ({ ...prev, aiPromptOpen: open }))}>
+        <DialogContent className="sm:max-w-[600px]">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Sparkles className="w-5 h-5 text-purple-600" />
+              AI Assistant
+            </DialogTitle>
+            <DialogDescription>
+              Describe the changes you want to make to the code. The AI will analyze the current file and apply your changes.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <Label htmlFor="ai-prompt">Your Request</Label>
+              <Textarea
+                id="ai-prompt"
+                placeholder="e.g., Change the welcome message to be more welcoming, update the colors to match the new brand, add a new section for..."
+                value={state.aiPrompt}
+                onChange={(e) => setState((prev) => ({ ...prev, aiPrompt: e.target.value }))}
+                rows={5}
+                className="mt-2 resize-none"
+              />
+            </div>
+            <div className="flex items-start gap-2 text-sm text-gray-600 dark:text-gray-400">
+              <AlertTriangle className="w-4 h-4 text-amber-500 shrink-0 mt-0.5" />
+              <p>
+                The AI will show you a side-by-side comparison before applying any changes. You can review and accept or reject the changes.
+              </p>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setState((prev) => ({ ...prev, aiPromptOpen: false }))}
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={handleApplyAIChanges}
+              disabled={!state.aiPrompt.trim() || state.aiGenerating}
+              className="bg-purple-600 hover:bg-purple-700"
+            >
+              {state.aiGenerating ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  Generating...
+                </>
+              ) : (
+                <>
+                  <Sparkles className="w-4 h-4 mr-2" />
+                  Generate Changes
+                </>
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* AI Result Dialog - Diff Viewer */}
+      <Dialog open={state.aiResultOpen} onOpenChange={(open) => !open && handleRejectAIChanges()}>
+        <DialogContent className="sm:max-w-[90vw] max-h-[90vh] p-0 overflow-hidden">
+          <div className="flex flex-col h-[85vh]">
+            <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800">
+              <div>
+                <DialogTitle className="flex items-center gap-2 text-lg">
+                  <Sparkles className="w-5 h-5 text-purple-600" />
+                  Review AI Changes
+                </DialogTitle>
+                <DialogDescription className="mt-1">
+                  Review the changes below. Accept to apply them to the editor, or reject to cancel.
+                </DialogDescription>
+              </div>
+            </div>
+            <div className="flex-1 overflow-hidden">
+              <DiffViewer
+                oldContent={state.aiOriginalContent}
+                newContent={state.aiNewContent}
+                fileName={state.aiFileName}
+              />
+            </div>
+            <div className="flex items-center justify-between px-6 py-4 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800">
+              <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
+                <Badge variant="outline" className="text-xs">
+                  {state.aiFileName}
+                </Badge>
+              </div>
+              <div className="flex items-center gap-3">
+                <Button
+                  variant="outline"
+                  onClick={handleRejectAIChanges}
+                  className="border-red-300 text-red-700 hover:bg-red-50 hover:text-red-800"
+                >
+                  <XCircle className="w-4 h-4 mr-2" />
+                  Reject
+                </Button>
+                <Button
+                  onClick={handleAcceptAIChanges}
+                  className="bg-green-600 hover:bg-green-700"
+                >
+                  <CheckCheck className="w-4 h-4 mr-2" />
+                  Accept Changes
+                </Button>
+              </div>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

@@ -776,4 +776,125 @@ app.post('/code-editor/discard', async (c) => {
   });
 });
 
+// ============================================
+// AI Assistant Routes
+// ============================================
+
+/**
+ * POST /code-editor/ai/apply-changes
+ * Use AI to apply changes to code based on a prompt
+ */
+app.post('/code-editor/ai/apply-changes', async (c) => {
+  try {
+    const { filePath, currentContent, prompt } = await c.req.json();
+
+    if (!filePath) {
+      return c.json({ success: false, error: 'filePath is required' }, 400);
+    }
+    if (!currentContent) {
+      return c.json({ success: false, error: 'currentContent is required' }, 400);
+    }
+    if (!prompt || typeof prompt !== 'string') {
+      return c.json({ success: false, error: 'prompt is required' }, 400);
+    }
+
+    const apiKey = Deno.env.get('OPENAI_API_KEY');
+    if (!apiKey) {
+      return c.json({ success: false, error: 'OpenAI API key not configured' }, 500);
+    }
+
+    // Get file name for context
+    const fileName = filePath.split('/').pop() || 'file.tsx';
+
+    // Build the AI prompt
+    const systemPrompt = `You are an expert React/TypeScript developer. You will be given the content of a React component file and a request for changes.
+
+Your task:
+1. Analyze the current code
+2. Apply the requested changes
+3. Return ONLY the complete, updated file content - no explanations, no Markdown code blocks, just the raw code
+
+Important rules:
+- Preserve all imports unless they need to be added/removed
+- Maintain the existing code structure and style
+- Keep TypeScript types intact
+- Ensure JSX is valid
+- Return ONLY the file content as a string, nothing else
+- Do not include \`\`\`typescript or \`\`\`tsx markers
+- Do not include any conversational text
+- Do not include "Here is the updated code" or similar phrases`;
+
+    const userPrompt = `File: ${fileName}
+
+Current code:
+${currentContent}
+
+Requested changes:
+${prompt}
+
+Return ONLY the complete updated file content:`;
+
+    console.log('[CodeEditor AI] Processing request for file:', fileName);
+
+    // Call OpenAI API (using GPT-4.1 for better quality)
+    const response = await fetch('https://api.openai.com/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${apiKey}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        model: 'gpt-4.1', // Upgraded from gpt-4o-mini for better quality
+        messages: [
+          { role: 'system', content: systemPrompt },
+          { role: 'user', content: userPrompt },
+        ],
+        temperature: 0.2, // Lower temperature for more consistent code
+        max_tokens: 16000, // Allow for longer files
+      }),
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error('[CodeEditor AI] OpenAI API error:', errorText);
+      return c.json({ success: false, error: 'Failed to process AI request: ' + errorText }, 500);
+    }
+
+    const result = await response.json();
+    const newContent = result.choices?.[0]?.message?.content?.trim();
+
+    if (!newContent) {
+      return c.json({ success: false, error: 'AI returned no content' }, 500);
+    }
+
+    // Clean up any accidental markdown code blocks
+    let cleanedContent = newContent;
+    if (cleanedContent.startsWith('```')) {
+      // Remove first code block marker
+      cleanedContent = cleanedContent.replace(/^```[\w]*\n/, '');
+      // Remove closing code block marker if present
+      if (cleanedContent.endsWith('```')) {
+        cleanedContent = cleanedContent.slice(0, -3).trim();
+      }
+    }
+
+    console.log('[CodeEditor AI] Successfully generated new content');
+
+    return c.json({
+      success: true,
+      data: {
+        originalContent: currentContent,
+        newContent: cleanedContent,
+        fileName,
+      },
+    });
+  } catch (error) {
+    console.error('[CodeEditor AI] Error:', error);
+    return c.json({
+      success: false,
+      error: error instanceof Error ? error.message : 'Failed to process AI request',
+    }, 500);
+  }
+});
+
 export default app;
