@@ -1627,25 +1627,28 @@ export function TeamDetailPage({ teamId, teamName, season, teamLogo, divisionId,
       <div className="bg-white border-b-2 border-gray-200 py-3 overflow-hidden">
         <div className="max-w-[1600px] mx-auto px-4 sm:px-6">
           <div className="flex gap-6 overflow-x-auto scrollbar-hide">
-            {upcomingGames.map((game, i) => {
+            {apiGames.map((game, i) => {
               const isHomeTeam = game.HomeTeamId === currentTeamId;
               const opponentId = isHomeTeam ? game.VisitorTeamId : game.HomeTeamId;
               const opponent = getTeamName(opponentId);
               const gameDate = parseDateAsLocal(game.GameDate);
-              const gameResult = game.HomeScore !== null ? 
-                (isHomeTeam ? `${game.HomeScore}-${game.VisitorScore}` : `${game.VisitorScore}-${game.HomeScore}`) : 
+              const gameResult = game.HomeScore !== null ?
+                (isHomeTeam ? `${game.HomeScore}-${game.VisitorScore}` : `${game.VisitorScore}-${game.HomeScore}`) :
                 null;
               const isExhibitionGame = game.StandingCategoryCode?.toLowerCase() === 'exhb';
-              
+
               return (
-                <div 
-                  key={i} 
+                <div
+                  key={i}
                   className={`flex items-center gap-4 min-w-[280px] px-4 py-2 rounded-lg border cursor-pointer hover:shadow-md transition-all ${
                     isExhibitionGame ? 'bg-amber-50 border-amber-300' : 'bg-gray-50 border-gray-200'
                   }`}
                   onClick={() => handleGameClick(game)}
                 >
                   <div className="text-center">
+                    <div className="text-[10px] font-bold text-gray-400 mb-0.5">
+                      Game #{game.GameNumber || '-'}
+                    </div>
                     <div className="text-xs font-bold text-gray-500">
                       {gameDate.toLocaleDateString('en-US', { month: 'short' }).toUpperCase()}
                     </div>
@@ -2465,8 +2468,7 @@ export function TeamDetailPage({ teamId, teamName, season, teamLogo, divisionId,
                                   <th className="text-center py-2.5 px-3 font-bold text-white">#</th>
                                   <th className="text-left py-2.5 px-3 font-bold text-white">Date</th>
                                   <th className="text-left py-2.5 px-3 font-bold text-white">Type</th>
-                                  <th className="text-left py-2.5 px-3 font-bold text-white">Opponent</th>
-                                  <th className="text-left py-2.5 px-3 font-bold text-white hidden md:table-cell">Location</th>
+                                  <th className="text-left py-2.5 px-3 font-bold text-white">Location</th>
                                   <th className="text-center py-2.5 px-3 font-bold text-white">Time</th>
                                   <th className="text-center py-2.5 px-3 font-bold text-white">Result</th>
                                 </tr>
@@ -2490,7 +2492,7 @@ export function TeamDetailPage({ teamId, teamName, season, teamLogo, divisionId,
                                         <td className="py-2 px-3 text-center text-sm text-gray-500 font-mono">{game.GameNumber || '-'}</td>
                                         <td className="py-2 px-3 font-semibold">{formatGameDate(game.GameDate)}</td>
                                         <td className="py-2 px-3">
-                                          <div className="flex items-center gap-2">
+                                          <div className="flex items-center gap-2 flex-wrap">
                                             <Badge variant={isHomeTeam ? 'default' : 'outline'} className="text-xs">
                                               {isHomeTeam ? 'vs' : '@'}
                                             </Badge>
@@ -2503,7 +2505,7 @@ export function TeamDetailPage({ teamId, teamName, season, teamLogo, divisionId,
                                             )}
                                           </div>
                                         </td>
-                                        <td className="py-2 px-3 hidden md:table-cell">
+                                        <td className="py-2 px-3 text-sm">
                                           <FacilityMapLink venueName={game.FacilityName} className="text-sm" />
                                         </td>
                                         <td className="py-2 px-3 text-center text-sm">{parseGameTime(game.StartTime)}</td>
@@ -2511,7 +2513,7 @@ export function TeamDetailPage({ teamId, teamName, season, teamLogo, divisionId,
                                       </tr>
                                       {((isTeamScheduleInProgress && game.SchedulingComments?.trim()) || game.GameComments?.trim()) && (
                                         <tr className="border-b border-gray-200">
-                                          <td colSpan={7} className="py-1 px-3 pb-2">
+                                          <td colSpan={6} className="py-1 px-3 pb-2">
                                             <div className="flex flex-col gap-0.5">
                                               {isTeamScheduleInProgress && game.SchedulingComments?.trim() && (
                                                 <div className="flex items-center gap-1.5">
