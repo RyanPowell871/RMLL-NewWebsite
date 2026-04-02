@@ -1,11 +1,7 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { Palette, Download, Check, Copy, X, AlertTriangle, CheckCircle, Type, Image, Layers, Shield } from 'lucide-react';
-import { createClient } from '@supabase/supabase-js';
-import { projectId, publicAnonKey } from '../../utils/supabase/info';
-
-const supabase = createClient(`https://${projectId}.supabase.co`, publicAnonKey);
 
 // ---------------------------------------------------------------------------
 // Colour palette
@@ -19,7 +15,7 @@ interface ColorSwatch {
   textClassName?: string;       // override text colour on swatch
 }
 
-const DEFAULT_BRAND_COLORS: ColorSwatch[] = [
+const BRAND_COLORS: ColorSwatch[] = [
   {
     name: 'RMLL Navy',
     hex: '#001741',
@@ -78,7 +74,7 @@ interface LogoVariant {
   downloads: { label: string; size: string }[];
 }
 
-const DEFAULT_LOGO_VARIANTS: LogoVariant[] = [
+const LOGO_VARIANTS: LogoVariant[] = [
   {
     id: 'shield',
     name: 'Shield Logo (Primary)',
@@ -150,7 +146,7 @@ interface UsageRule {
   text: string;
 }
 
-const DEFAULT_USAGE_RULES: UsageRule[] = [
+const USAGE_RULES: UsageRule[] = [
   { allowed: true, text: 'Use on a clean, uncluttered background with adequate clear space' },
   { allowed: true, text: 'Maintain the original aspect ratio when scaling' },
   { allowed: true, text: 'Use approved colour combinations (full colour, white, or navy)' },
@@ -247,58 +243,9 @@ function CopyButton({ text }: { text: string }) {
 // Component
 // ---------------------------------------------------------------------------
 export function BrandGuidelinesPage() {
-  const [loading, setLoading] = useState(true);
-  const [data, setData] = useState({
-    brandColors: DEFAULT_BRAND_COLORS,
-    logoVariants: DEFAULT_LOGO_VARIANTS,
-    usageRules: DEFAULT_USAGE_RULES,
-  });
-  const [logos, setLogos] = useState({ shield: '', horizontal: '' });
-
-  useEffect(() => {
-    async function fetchData() {
-      try {
-        const { data: result, error } = await supabase
-          .from('rmll_component_content')
-          .select('extracted_data')
-          .eq('page_id', 'brand-guidelines')
-          .maybeSingle();
-
-        if (!error && result && result.extracted_data) {
-          const extracted = result.extracted_data as Record<string, unknown>;
-          setData({
-            brandColors: (extracted.BRAND_COLORS as typeof DEFAULT_BRAND_COLORS) || DEFAULT_BRAND_COLORS,
-            logoVariants: (extracted.LOGO_VARIANTS as typeof DEFAULT_LOGO_VARIANTS) || DEFAULT_LOGO_VARIANTS,
-            usageRules: (extracted.USAGE_RULES as typeof DEFAULT_USAGE_RULES) || DEFAULT_USAGE_RULES,
-          });
-
-          // Set logo URLs for inline references
-          const logoVariants = (extracted.LOGO_VARIANTS as typeof DEFAULT_LOGO_VARIANTS) || DEFAULT_LOGO_VARIANTS;
-          const shield = logoVariants.find(v => v.id === 'shield')?.src || '';
-          const horizontal = logoVariants.find(v => v.id === 'horizontal')?.src || '';
-          setLogos({ shield, horizontal });
-        } else {
-          // Use defaults
-          const shield = DEFAULT_LOGO_VARIANTS.find(v => v.id === 'shield')?.src || '';
-          const horizontal = DEFAULT_LOGO_VARIANTS.find(v => v.id === 'horizontal')?.src || '';
-          setLogos({ shield, horizontal });
-        }
-      } catch (error) {
-        console.error('[BrandGuidelinesPage] Error fetching data:', error);
-      } finally {
-        setLoading(false);
-      }
-    }
-
-    fetchData();
-  }, []);
-
-  if (loading) {
-    return <div className="p-8 text-center text-gray-500">Loading...</div>;
-  }
-
-  const { brandColors, logoVariants, usageRules } = data;
-  const { shield: shieldLogo, horizontal: horizontalLogo } = logos;
+  // Get logo URLs for inline references
+  const shieldLogo = LOGO_VARIANTS.find(v => v.id === 'shield')?.src || '';
+  const horizontalLogo = LOGO_VARIANTS.find(v => v.id === 'horizontal')?.src || '';
 
   return (
     <div className="space-y-10">
@@ -332,7 +279,7 @@ export function BrandGuidelinesPage() {
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-          {logoVariants.map((variant) => (
+          {LOGO_VARIANTS.map((variant) => (
             <div
               key={variant.id}
               className="border border-gray-200 rounded-xl overflow-hidden hover:shadow-md transition-shadow"
@@ -468,7 +415,7 @@ export function BrandGuidelinesPage() {
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          {brandColors.map((color) => (
+          {BRAND_COLORS.map((color) => (
             <div key={color.hex} className="border border-gray-200 rounded-xl overflow-hidden hover:shadow-md transition-shadow">
               {/* Swatch */}
               <div className={`${color.className} h-24 sm:h-28 flex items-end p-3`}>
@@ -569,7 +516,7 @@ export function BrandGuidelinesPage() {
               <CheckCircle className="w-4 h-4" /> Do
             </h4>
             <ul className="space-y-2">
-              {usageRules.filter((r) => r.allowed).map((rule, idx) => (
+              {USAGE_RULES.filter((r) => r.allowed).map((rule, idx) => (
                 <li key={idx} className="flex items-start gap-2 text-sm text-green-900">
                   <Check className="w-4 h-4 text-green-600 shrink-0 mt-0.5" />
                   {rule.text}
@@ -584,7 +531,7 @@ export function BrandGuidelinesPage() {
               <X className="w-4 h-4" /> Don't
             </h4>
             <ul className="space-y-2">
-              {usageRules.filter((r) => !r.allowed).map((rule, idx) => (
+              {USAGE_RULES.filter((r) => !r.allowed).map((rule, idx) => (
                 <li key={idx} className="flex items-start gap-2 text-sm text-red-900">
                   <X className="w-4 h-4 text-red-500 shrink-0 mt-0.5" />
                   {rule.text}

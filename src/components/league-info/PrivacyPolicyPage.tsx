@@ -1,11 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
 import { Shield, Lock, Eye, UserCheck, FileCheck, Mail, LucideIcon } from 'lucide-react';
-import { createClient } from '@supabase/supabase-js';
-import { projectId, publicAnonKey } from '../../utils/supabase/info';
-
-const supabase = createClient(`https://${projectId}.supabase.co`, publicAnonKey);
 
 // Icon mapping
 const iconMap: Record<string, LucideIcon> = {
@@ -22,8 +17,7 @@ function IconComponent({ iconName }: { iconName: string }) {
   return <Icon className="w-5 h-5" />;
 }
 
-// Default data
-const DEFAULT_POLICY_POINTS = [
+const POLICY_POINTS = [
   {
     icon: 'Eye',
     title: 'Purpose of Collection',
@@ -63,39 +57,6 @@ const DEFAULT_POLICY_POINTS = [
 ];
 
 export function PrivacyPolicyPage() {
-  const [policyPoints, setPolicyPoints] = useState(DEFAULT_POLICY_POINTS);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    async function fetchData() {
-      try {
-        const { data: result, error } = await supabase
-          .from('rmll_component_content')
-          .select('extracted_data')
-          .eq('page_id', 'privacy-policy')
-          .maybeSingle();
-
-        if (!error && result && result.extracted_data) {
-          const extracted = result.extracted_data as Record<string, unknown>;
-          const items = extracted.POLICY_POINTS as typeof DEFAULT_POLICY_POINTS;
-          if (items && Array.isArray(items) && items.length > 0) {
-            setPolicyPoints(items);
-          }
-        }
-      } catch (error) {
-        console.error('[PrivacyPolicyPage] Error fetching data:', error);
-      } finally {
-        setLoading(false);
-      }
-    }
-
-    fetchData();
-  }, []);
-
-  if (loading) {
-    return <div className="p-8 text-center text-gray-500">Loading...</div>;
-  }
-
   return (
     <div className="space-y-8">
       {/* Header */}
@@ -117,7 +78,7 @@ export function PrivacyPolicyPage() {
 
       {/* Policy Points */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        {policyPoints.map((point, idx) => (
+        {POLICY_POINTS.map((point, idx) => (
           <div
             key={idx}
             className="bg-white border border-gray-200 rounded-lg p-5 hover:shadow-md transition-shadow"

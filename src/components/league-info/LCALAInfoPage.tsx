@@ -1,14 +1,10 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import {
   ChevronDown, ChevronRight, ExternalLink,
   Globe, FileText, Shield, Scale, BookOpen, Heart, Megaphone, ClipboardList, LucideIcon
 } from 'lucide-react';
-import { createClient } from '@supabase/supabase-js';
-import { projectId, publicAnonKey } from '../../utils/supabase/info';
-
-const supabase = createClient(`https://${projectId}.supabase.co`, publicAnonKey);
 
 /* ─── Collapsible Section ─── */
 interface CollapsibleSectionProps {
@@ -91,7 +87,7 @@ function LinkCard({ item }: { item: LinkItem }) {
 }
 
 /* ─── Data ─── */
-const DEFAULT_LC_LINKS: LinkItem[] = [
+const LC_LINKS: LinkItem[] = [
   {
     label: 'Lacrosse Canada Bylaws',
     url: 'https://lacrosse.ca/bylaws/',
@@ -115,7 +111,7 @@ const DEFAULT_LC_LINKS: LinkItem[] = [
   },
 ];
 
-const DEFAULT_ALA_LINKS: LinkItem[] = [
+const ALA_LINKS: LinkItem[] = [
   {
     label: 'ALA Governance',
     url: 'https://www.albertalacrosse.com/content/governance',
@@ -162,37 +158,6 @@ const DEFAULT_ALA_LINKS: LinkItem[] = [
 
 /* ─── Main Page ─── */
 export function LCALAInfoPage() {
-  const [loading, setLoading] = useState(true);
-  const [lcLinks, setLcLinks] = useState<LinkItem[]>(DEFAULT_LC_LINKS);
-  const [alaLinks, setAlaLinks] = useState<LinkItem[]>(DEFAULT_ALA_LINKS);
-
-  useEffect(() => {
-    async function fetchData() {
-      try {
-        const { data: result, error } = await supabase
-          .from('rmll_component_content')
-          .select('extracted_data')
-          .eq('page_id', 'lc-ala-info')
-          .maybeSingle();
-
-        if (!error && result && result.extracted_data) {
-          const extracted = result.extracted_data as Record<string, unknown>;
-          setLcLinks((extracted.LC_LINKS as typeof DEFAULT_LC_LINKS) || DEFAULT_LC_LINKS);
-          setAlaLinks((extracted.ALA_LINKS as typeof DEFAULT_ALA_LINKS) || DEFAULT_ALA_LINKS);
-        }
-      } catch (error) {
-        console.error('[LCALAInfoPage] Error fetching data:', error);
-      } finally {
-        setLoading(false);
-      }
-    }
-
-    fetchData();
-  }, []);
-
-  if (loading) {
-    return <div className="p-8 text-center text-gray-500">Loading...</div>;
-  }
 
   return (
     <div className="w-full">
@@ -224,7 +189,7 @@ export function LCALAInfoPage() {
             <p className="text-sm text-gray-600 leading-relaxed mb-4">
               Lacrosse Canada is the national governing body for lacrosse. Below are key resources and documents from the national level.
             </p>
-            {lcLinks.map((item, i) => (
+            {LC_LINKS.map((item, i) => (
               <LinkCard key={i} item={item} />
             ))}
           </div>
@@ -241,7 +206,7 @@ export function LCALAInfoPage() {
             <p className="text-sm text-gray-600 leading-relaxed mb-4">
               The Alberta Lacrosse Association oversees lacrosse in Alberta. Below are governance documents, insurance information, forms, and policies.
             </p>
-            {alaLinks.map((item, i) => (
+            {ALA_LINKS.map((item, i) => (
               <LinkCard key={i} item={item} />
             ))}
           </div>

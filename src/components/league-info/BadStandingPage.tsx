@@ -1,11 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
 import { AlertTriangle, Calendar, DollarSign } from 'lucide-react';
-import { createClient } from '@supabase/supabase-js';
-import { projectId, publicAnonKey } from '../../utils/supabase/info';
-
-const supabase = createClient(`https://${projectId}.supabase.co`, publicAnonKey);
 
 interface BadStandingEntry {
   date: string;
@@ -15,8 +10,7 @@ interface BadStandingEntry {
   feesOwed: string;
 }
 
-// Default data
-const DEFAULT_BAD_STANDING_LIST: BadStandingEntry[] = [
+const BAD_STANDING_LIST: BadStandingEntry[] = [
   { date: '20-Jan-26', sortDate: '2026-01-20', player: 'Sarah Peever', team: 'Capital Region Saints', feesOwed: '2025 Season' },
   { date: '11-Jan-26', sortDate: '2026-01-11', player: 'Tyler Johnson', team: 'Irish Sr. C', feesOwed: '2025 Season' },
   { date: '11-Jan-26', sortDate: '2026-01-11', player: 'Cole Pederson', team: 'Irish Sr. C', feesOwed: '2025 Season' },
@@ -42,46 +36,9 @@ const DEFAULT_BAD_STANDING_LIST: BadStandingEntry[] = [
   { date: '29-Jul-13', sortDate: '2013-07-29', player: 'Yasmin Dhanoo', team: 'Saints', feesOwed: '2013 Season' },
 ];
 
-const DEFAULT_LAST_UPDATED = 'March 13, 2026';
+const LAST_UPDATED = 'March 13, 2026';
 
 export function BadStandingPage() {
-  const [data, setData] = useState({
-    BAD_STANDING_LIST: DEFAULT_BAD_STANDING_LIST,
-    LAST_UPDATED: DEFAULT_LAST_UPDATED,
-  });
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    async function fetchData() {
-      try {
-        const { data: result, error } = await supabase
-          .from('rmll_component_content')
-          .select('extracted_data')
-          .eq('page_id', 'bad-standing')
-          .maybeSingle();
-
-        if (!error && result && result.extracted_data) {
-          const extracted = result.extracted_data as Record<string, unknown>;
-          setData({
-            BAD_STANDING_LIST: (extracted.BAD_STANDING_LIST as typeof DEFAULT_BAD_STANDING_LIST) || DEFAULT_BAD_STANDING_LIST,
-            LAST_UPDATED: (extracted.LAST_UPDATED as string) || DEFAULT_LAST_UPDATED,
-          });
-        }
-      } catch (error) {
-        console.error('[BadStandingPage] Error fetching data:', error);
-      } finally {
-        setLoading(false);
-      }
-    }
-
-    fetchData();
-  }, []);
-
-  const { BAD_STANDING_LIST, LAST_UPDATED } = data;
-
-  if (loading) {
-    return <div className="p-8 text-center text-gray-500">Loading...</div>;
-  }
 
   return (
     <div>

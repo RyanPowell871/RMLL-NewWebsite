@@ -1,14 +1,8 @@
 'use client';
 
-import { useState, useEffect } from 'react';
 import { Shield, CheckCircle } from 'lucide-react';
-import { createClient } from '@supabase/supabase-js';
-import { projectId, publicAnonKey } from '../../utils/supabase/info';
 
-const supabase = createClient(`https://${projectId}.supabase.co`, publicAnonKey);
-
-// Default data
-const DEFAULT_CONDUCT_ITEMS = [
+const CONDUCT_ITEMS = [
   {
     letter: 'A',
     text: 'Attempt at all times to work toward the goals and Mission Statement of the RMLL and the game of Lacrosse, and towards the betterment of its Members;',
@@ -40,39 +34,6 @@ const DEFAULT_CONDUCT_ITEMS = [
 ];
 
 export function CodeOfConductPage() {
-  const [conductItems, setConductItems] = useState(DEFAULT_CONDUCT_ITEMS);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    async function fetchData() {
-      try {
-        const { data: result, error } = await supabase
-          .from('rmll_component_content')
-          .select('extracted_data')
-          .eq('page_id', 'code-of-conduct')
-          .maybeSingle();
-
-        if (!error && result && result.extracted_data) {
-          const extracted = result.extracted_data as Record<string, unknown>;
-          const items = extracted.CONDUCT_ITEMS as typeof DEFAULT_CONDUCT_ITEMS;
-          if (items && Array.isArray(items) && items.length > 0) {
-            setConductItems(items);
-          }
-        }
-      } catch (error) {
-        console.error('[CodeOfConductPage] Error fetching data:', error);
-      } finally {
-        setLoading(false);
-      }
-    }
-
-    fetchData();
-  }, []);
-
-  if (loading) {
-    return <div className="p-8 text-center text-gray-500">Loading...</div>;
-  }
-
   return (
     <div className="space-y-8">
       {/* Header */}
@@ -94,7 +55,7 @@ export function CodeOfConductPage() {
 
       {/* Conduct Items */}
       <div className="space-y-3">
-        {conductItems.map((item) => (
+        {CONDUCT_ITEMS.map((item) => (
           <div
             key={item.letter}
             className="flex items-start gap-4 bg-white border border-gray-200 rounded-lg p-4 sm:p-5 hover:shadow-md transition-shadow"

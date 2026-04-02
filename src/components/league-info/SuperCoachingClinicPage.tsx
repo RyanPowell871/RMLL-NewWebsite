@@ -1,15 +1,11 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import {
   GraduationCap, Calendar, MapPin, Users, BookOpen, Award,
   DollarSign, Hotel, ChevronDown, ChevronRight, ExternalLink, AlertTriangle,
   ClipboardCheck, Info, CheckCircle, HelpCircle, XCircle, Mail
 } from 'lucide-react';
-import { createClient } from '@supabase/supabase-js';
-import { projectId, publicAnonKey } from '../../utils/supabase/info';
-
-const supabase = createClient(`https://${projectId}.supabase.co`, publicAnonKey);
 
 interface Instructor {
   name: string;
@@ -28,7 +24,7 @@ interface Topic {
 }
 
 // Default data
-const DEFAULT_INSTRUCTORS: Instructor[] = [
+const INSTRUCTORS: Instructor[] = [
   {
     name: 'Walt Christianson',
     credentials: 'Former Assistant Coach Calgary Roughnecks, Colorado Mammoth; former Head Coach Victoria Shamrocks Sr A, and Victoria Shamrocks Jr A.',
@@ -62,7 +58,7 @@ const DEFAULT_INSTRUCTORS: Instructor[] = [
   },
 ];
 
-const DEFAULT_TOPICS: Topic[] = [
+const TOPICS: Topic[] = [
   { topic: 'Fast Break Systems' },
   { topic: 'Stick Skills' },
   { topic: 'Team Offence' },
@@ -76,27 +72,27 @@ const DEFAULT_TOPICS: Topic[] = [
   { topic: 'Scouting and Statistics' },
 ];
 
-const DEFAULT_SCHEDULE: ScheduleItem[] = [
+const SCHEDULE: ScheduleItem[] = [
   { day: 'Friday, April 11th, 2025', time: '7:00 PM to 10:00 PM', label: 'Evening Session' },
   { day: 'Saturday, April 12th, 2025', time: '8:00 AM to 8:30 PM', label: 'Full Day' },
   { day: 'Sunday, April 13th, 2025', time: '8:00 AM to 4:00 PM', label: 'Full Day' },
 ];
 
-const DEFAULT_INCLUDED_ITEMS = [
+const INCLUDED_ITEMS = [
   "Passcode to the LC's coaching database",
   'Breakfast on Saturday & Sunday',
   'Lunch on Saturday & Sunday',
   'Dinner on Saturday',
 ];
 
-const DEFAULT_REQUIRED_INFO = [
+const REQUIRED_INFO = [
   'Participant Name',
   'Participant Email',
   'Participant Club/Team',
   'Participant Cell Number',
 ];
 
-const DEFAULT_CERT_REQUIRED_INFO = [
+const CERT_REQUIRED_INFO = [
   "Coach's name and contact information",
   "Coach's team or club name",
   "Coach's NCCP Certification Number or 'CC Number'",
@@ -105,12 +101,12 @@ const DEFAULT_CERT_REQUIRED_INFO = [
   "Lacrosse.ca account \u2014 if you have taken a course in the last 4 years, you would have been issued a 'code' which you would have used to create an account at nccp.lacrosse.ca. If you already have an account, you don't need a new one. If you don't have an account, we will issue you a code so you can set one up.",
 ];
 
-const DEFAULT_SPORTZSOFT_REG_URL = 'https://www.sportzsoft.com/regApp/Login?OrgId=4023';
-const DEFAULT_LOCKER_REG_URL = 'https://thelocker.coach.ca/event/public/5740859';
-const DEFAULT_COMP_INTRO_LOCKER_URL = 'https://thelocker.coach.ca/event/public/5876592';
+const SPORTZSOFT_REG_URL = 'https://www.sportzsoft.com/regApp/Login?OrgId=4023';
+const LOCKER_REG_URL = 'https://thelocker.coach.ca/event/public/5740859';
+const COMP_INTRO_LOCKER_URL = 'https://thelocker.coach.ca/event/public/5876592';
 
-const DEFAULT_CERTIFICATION_TEXT = 'All Community Development coaches attending will receive their Competitive-Introduction "In-training" status. Coaches who already have taken Competitive-Introduction are encouraged to attend — they will receive more advanced on-floor material.';
-const DEFAULT_PD_POINTS_TEXT = 'Competitive Introduction Certified Coaches may receive eleven (11) PD points based on unique modules included in the Super Coaching Clinic.';
+const CERTIFICATION_TEXT = 'All Community Development coaches attending will receive their Competitive-Introduction "In-training" status. Coaches who already have taken Competitive-Introduction are encouraged to attend — they will receive more advanced on-floor material.';
+const PD_POINTS_TEXT = 'Competitive Introduction Certified Coaches may receive eleven (11) PD points based on unique modules included in the Super Coaching Clinic.';
 
 function InfoRow({ icon, label, children }: { icon: React.ReactNode; label: string; children: React.ReactNode }) {
   return (
@@ -124,74 +120,10 @@ function InfoRow({ icon, label, children }: { icon: React.ReactNode; label: stri
   );
 }
 
-// Helper to normalize TOPICS data - handles both old (strings) and new (objects) formats
-function normalizeTopics(topics: unknown): Topic[] {
-  if (!Array.isArray(topics)) return DEFAULT_TOPICS;
-
-  // Check if already in new format (array of objects with topic property)
-  if (topics.length > 0 && typeof topics[0] === 'object' && topics[0] !== null && 'topic' in topics[0]) {
-    return topics as Topic[];
-  }
-
-  // Convert old format (array of strings) to new format
-  return (topics as string[]).map(t => ({ topic: t }));
-}
-
 export function SuperCoachingClinicPage() {
   const [showRegistration, setShowRegistration] = useState(false);
   const [regPath, setRegPath] = useState<'none' | 'certification' | 'interest'>('none');
   const [certSubPath, setCertSubPath] = useState<'choose' | 'have-cc' | 'no-cc' | 'no-commdev'>('choose');
-  const [loading, setLoading] = useState(true);
-  const [data, setData] = useState({
-    INSTRUCTORS: DEFAULT_INSTRUCTORS,
-    TOPICS: DEFAULT_TOPICS,
-    SCHEDULE: DEFAULT_SCHEDULE,
-    INCLUDED_ITEMS: DEFAULT_INCLUDED_ITEMS,
-    REQUIRED_INFO: DEFAULT_REQUIRED_INFO,
-    CERT_REQUIRED_INFO: DEFAULT_CERT_REQUIRED_INFO,
-    SPORTZSOFT_REG_URL: DEFAULT_SPORTZSOFT_REG_URL,
-    LOCKER_REG_URL: DEFAULT_LOCKER_REG_URL,
-    COMP_INTRO_LOCKER_URL: DEFAULT_COMP_INTRO_LOCKER_URL,
-    CERTIFICATION_TEXT: DEFAULT_CERTIFICATION_TEXT,
-    PD_POINTS_TEXT: DEFAULT_PD_POINTS_TEXT,
-  });
-
-  useEffect(() => {
-    async function fetchData() {
-      try {
-        const { data: result, error } = await supabase
-          .from('rmll_component_content')
-          .select('extracted_data')
-          .eq('page_id', 'super-coaching-clinic')
-          .maybeSingle();
-
-        if (!error && result && result.extracted_data) {
-          const extracted = result.extracted_data as Record<string, unknown>;
-          setData({
-            INSTRUCTORS: (extracted.INSTRUCTORS as typeof DEFAULT_INSTRUCTORS) || DEFAULT_INSTRUCTORS,
-            TOPICS: extracted.TOPICS ? normalizeTopics(extracted.TOPICS) : DEFAULT_TOPICS,
-            SCHEDULE: (extracted.SCHEDULE as typeof DEFAULT_SCHEDULE) || DEFAULT_SCHEDULE,
-            INCLUDED_ITEMS: (extracted.INCLUDED_ITEMS as typeof DEFAULT_INCLUDED_ITEMS) || DEFAULT_INCLUDED_ITEMS,
-            REQUIRED_INFO: (extracted.REQUIRED_INFO as typeof DEFAULT_REQUIRED_INFO) || DEFAULT_REQUIRED_INFO,
-            CERT_REQUIRED_INFO: (extracted.CERT_REQUIRED_INFO as typeof DEFAULT_CERT_REQUIRED_INFO) || DEFAULT_CERT_REQUIRED_INFO,
-            SPORTZSOFT_REG_URL: (extracted.SPORTZSOFT_REG_URL as string) || DEFAULT_SPORTZSOFT_REG_URL,
-            LOCKER_REG_URL: (extracted.LOCKER_REG_URL as string) || DEFAULT_LOCKER_REG_URL,
-            COMP_INTRO_LOCKER_URL: (extracted.COMP_INTRO_LOCKER_URL as string) || DEFAULT_COMP_INTRO_LOCKER_URL,
-            CERTIFICATION_TEXT: (extracted.CERTIFICATION_TEXT as string) || DEFAULT_CERTIFICATION_TEXT,
-            PD_POINTS_TEXT: (extracted.PD_POINTS_TEXT as string) || DEFAULT_PD_POINTS_TEXT,
-          });
-        }
-      } catch (error) {
-        console.error('[SuperCoachingClinicPage] Error fetching data:', error);
-      } finally {
-        setLoading(false);
-      }
-    }
-
-    fetchData();
-  }, []);
-
-  const { INSTRUCTORS, TOPICS, SCHEDULE, INCLUDED_ITEMS, REQUIRED_INFO, CERT_REQUIRED_INFO, SPORTZSOFT_REG_URL, LOCKER_REG_URL, COMP_INTRO_LOCKER_URL, CERTIFICATION_TEXT, PD_POINTS_TEXT } = data;
 
   // Extract date range from SCHEDULE for display
   const dateRange = SCHEDULE.length > 0
@@ -210,7 +142,6 @@ export function SuperCoachingClinicPage() {
       })()
     : 'April 11-13, 2025';
 
-  if (loading) {
     return <div className="p-8 text-center text-gray-500">Loading...</div>;
   }
 

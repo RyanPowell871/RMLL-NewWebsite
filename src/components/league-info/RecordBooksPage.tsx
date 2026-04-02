@@ -1,13 +1,9 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { BookOpen } from 'lucide-react';
-import { createClient } from '@supabase/supabase-js';
-import { projectId, publicAnonKey } from '../../utils/supabase/info';
 
-const supabase = createClient(`https://${projectId}.supabase.co`, publicAnonKey);
-
-const DEFAULT_RECORD_BOOK_TABS = [
+const RECORD_BOOK_TABS = [
   {
     id: 'sr-b',
     label: 'Sr. B',
@@ -61,42 +57,9 @@ const DEFAULT_RECORD_BOOK_TABS = [
 ];
 
 export function RecordBooksPage() {
-  const [loading, setLoading] = useState(true);
-  const [recordBookTabs, setRecordBookTabs] = useState(DEFAULT_RECORD_BOOK_TABS);
-  const [activeTab, setActiveTab] = useState(DEFAULT_RECORD_BOOK_TABS[0].id);
+  const [activeTab, setActiveTab] = useState(RECORD_BOOK_TABS[0].id);
 
-  useEffect(() => {
-    async function fetchData() {
-      try {
-        const { data: result, error } = await supabase
-          .from('rmll_component_content')
-          .select('extracted_data')
-          .eq('page_id', 'record-books')
-          .maybeSingle();
-
-        if (!error && result && result.extracted_data) {
-          const extracted = result.extracted_data as Record<string, unknown>;
-          const tabs = (extracted.RECORD_BOOK_TABS as typeof DEFAULT_RECORD_BOOK_TABS);
-          if (tabs && Array.isArray(tabs) && tabs.length > 0) {
-            setRecordBookTabs(tabs);
-            setActiveTab(tabs[0].id);
-          }
-        }
-      } catch (error) {
-        console.error('[RecordBooksPage] Error fetching data:', error);
-      } finally {
-        setLoading(false);
-      }
-    }
-
-    fetchData();
-  }, []);
-
-  const activeRecord = recordBookTabs.find(t => t.id === activeTab)!;
-
-  if (loading) {
-    return <div className="p-8 text-center text-gray-500">Loading...</div>;
-  }
+  const activeRecord = RECORD_BOOK_TABS.find(t => t.id === activeTab)!;
 
   return (
     <div className="-mx-4 sm:-mx-6 lg:-mx-8 -mt-4 sm:-mt-6">

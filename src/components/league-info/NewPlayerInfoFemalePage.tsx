@@ -1,15 +1,11 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import {
   GraduationCap, MapPin, Calendar, Clock, DollarSign, Users, Shield, ArrowRight,
   ChevronDown, ChevronUp, ExternalLink, Mail, Info, AlertTriangle,
   ClipboardList, Repeat, Truck, CalendarDays, TrendingUp, Globe
 } from 'lucide-react';
-import { createClient } from '@supabase/supabase-js';
-import { projectId, publicAnonKey } from '../../utils/supabase/info';
-
-const supabase = createClient(`https://${projectId}.supabase.co`, publicAnonKey);
 
 /* ─── helpers ─── */
 interface CollapsibleSectionProps {
@@ -38,7 +34,7 @@ function CollapsibleSection({ title, icon, children, defaultOpen = false, accent
 }
 
 /* ─── data ─── */
-const DEFAULT_DIFFERENCES = [
+const DIFFERENCES = [
   'Games are 3 × twenty-minute stop time periods, with 10-minute intermissions and a minimum 30-minute warmup.',
   'Season is usually longer than minor lacrosse (16 games) and playoffs run into mid/late June.',
   'Nets are bigger (4\'×4\'6″ instead of 4\'×4\'4″).',
@@ -52,7 +48,7 @@ const DEFAULT_DIFFERENCES = [
   'Modified playing rules.',
 ];
 
-const DEFAULT_DIVISIONS = [
+const DIVISIONS = [
   { name: 'Alberta Series Lacrosse (Senior B)', teams: 5 },
   { name: 'Senior C', teams: 13 },
   { name: 'Junior A', teams: 5, note: 'includes a team from Saskatoon and a team from Winnipeg' },
@@ -70,7 +66,7 @@ interface FranchiseInfo {
   boundaryDescription?: string;
 }
 
-const DEFAULT_NORTH_FRANCHISES: FranchiseInfo[] = [
+const NORTH_FRANCHISES: FranchiseInfo[] = [
   {
     name: 'Saint Albert Drillers',
     region: 'north',
@@ -110,7 +106,7 @@ const DEFAULT_NORTH_FRANCHISES: FranchiseInfo[] = [
   },
 ];
 
-const DEFAULT_SOUTH_FRANCHISES: FranchiseInfo[] = [
+const SOUTH_FRANCHISES: FranchiseInfo[] = [
   {
     name: 'Silvertips Major Female',
     region: 'south',
@@ -138,7 +134,7 @@ const DEFAULT_SOUTH_FRANCHISES: FranchiseInfo[] = [
   },
 ];
 
-const DEFAULT_KEY_CONTACTS = [
+const KEY_CONTACTS = [
   { role: 'Major Female Division Commissioner', name: 'Alex Traboulay', email: 'abladieslaxcomish@gmail.com' },
   { role: 'Executive Director', name: 'Christine Thielen', email: 'christinethielen@hotmail.com' },
   { role: 'President', name: 'Duane Bratt', email: 'dbratt@mtroyal.ca' },
@@ -197,48 +193,6 @@ function FranchiseCard({ franchise }: { franchise: FranchiseInfo }) {
 
 /* ─── main component ─── */
 export function NewPlayerInfoFemalePage() {
-  const [loading, setLoading] = useState(true);
-  const [data, setData] = useState({
-    DIFFERENCES: DEFAULT_DIFFERENCES,
-    DIVISIONS: DEFAULT_DIVISIONS,
-    NORTH_FRANCHISES: DEFAULT_NORTH_FRANCHISES,
-    SOUTH_FRANCHISES: DEFAULT_SOUTH_FRANCHISES,
-    KEY_CONTACTS: DEFAULT_KEY_CONTACTS,
-  });
-
-  useEffect(() => {
-    async function fetchData() {
-      try {
-        const { data: result, error } = await supabase
-          .from('rmll_component_content')
-          .select('extracted_data')
-          .eq('page_id', 'new-player-info-female')
-          .maybeSingle();
-
-        if (!error && result && result.extracted_data) {
-          const extracted = result.extracted_data as Record<string, unknown>;
-          setData({
-            DIFFERENCES: (extracted.DIFFERENCES as typeof DEFAULT_DIFFERENCES) || DEFAULT_DIFFERENCES,
-            DIVISIONS: (extracted.DIVISIONS as typeof DEFAULT_DIVISIONS) || DEFAULT_DIVISIONS,
-            NORTH_FRANCHISES: (extracted.NORTH_FRANCHISES as typeof DEFAULT_NORTH_FRANCHISES) || DEFAULT_NORTH_FRANCHISES,
-            SOUTH_FRANCHISES: (extracted.SOUTH_FRANCHISES as typeof DEFAULT_SOUTH_FRANCHISES) || DEFAULT_SOUTH_FRANCHISES,
-            KEY_CONTACTS: (extracted.KEY_CONTACTS as typeof DEFAULT_KEY_CONTACTS) || DEFAULT_KEY_CONTACTS,
-          });
-        }
-      } catch (error) {
-        console.error('[NewPlayerInfoFemalePage] Error fetching data:', error);
-      } finally {
-        setLoading(false);
-      }
-    }
-
-    fetchData();
-  }, []);
-
-  if (loading) {
-    return <div className="p-8 text-center text-gray-500">Loading...</div>;
-  }
-
   return (
     <div>
       {/* Hero welcome */}
@@ -273,7 +227,7 @@ export function NewPlayerInfoFemalePage() {
         <div className="mt-3">
           <p className="text-sm text-gray-700 mb-3">Some of the significant differences between Minor and Major Lacrosse:</p>
           <div className="space-y-1.5">
-            {data.DIFFERENCES.map((item, i) => (
+            {DIFFERENCES.map((item, i) => (
               <div key={i} className="flex items-start gap-2 text-sm">
                 <ArrowRight className="w-4 h-4 text-[#9b2d86] mt-0.5 flex-shrink-0" />
                 <span className="text-gray-700">{item}</span>
@@ -306,7 +260,7 @@ export function NewPlayerInfoFemalePage() {
           <div className="bg-gray-50 border border-gray-200 rounded-lg p-3">
             <p className="font-semibold text-gray-800 mb-2">There are 7 Divisions and 63 teams in the RMLL:</p>
             <div className="space-y-1">
-              {data.DIVISIONS.map((div, i) => {
+              {DIVISIONS.map((div, i) => {
                 const isFemale = div.name.includes('Female');
                 return (
                   <div key={i} className={`flex items-start gap-2 ${isFemale ? 'bg-purple-50 rounded px-2 py-0.5 -mx-2' : ''}`}>
@@ -362,7 +316,7 @@ export function NewPlayerInfoFemalePage() {
             First playing rights for Graduating U17 players are determined by the boundaries below.
           </p>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            {data.NORTH_FRANCHISES.map((f) => (
+            {NORTH_FRANCHISES.map((f) => (
               <FranchiseCard key={f.name} franchise={f} />
             ))}
           </div>
@@ -377,7 +331,7 @@ export function NewPlayerInfoFemalePage() {
             by one of the following clubs:
           </p>
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-            {data.SOUTH_FRANCHISES.map((f) => (
+            {SOUTH_FRANCHISES.map((f) => (
               <FranchiseCard key={f.name} franchise={f} />
             ))}
           </div>
@@ -571,7 +525,7 @@ export function NewPlayerInfoFemalePage() {
             Major Female Division, the RMLL, player rights, etc., please feel free to contact:
           </p>
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-            {data.KEY_CONTACTS.map((c) => (
+            {KEY_CONTACTS.map((c) => (
               <div key={c.email} className="bg-white border border-gray-200 rounded-lg p-3">
                 <p className="text-xs text-gray-500 font-semibold uppercase">{c.role}</p>
                 <p className="text-sm font-bold text-gray-900">{c.name}</p>

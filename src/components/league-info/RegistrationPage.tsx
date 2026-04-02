@@ -1,21 +1,15 @@
 'use client';
 
-import { useState, useEffect } from 'react';
 import { ExternalLink, ClipboardCheck, AlertTriangle, ChevronRight, Users, DollarSign, ShieldCheck } from 'lucide-react';
-import { createClient } from '@supabase/supabase-js';
-import { projectId, publicAnonKey } from '../../utils/supabase/info';
 
-const supabase = createClient(`https://${projectId}.supabase.co`, publicAnonKey);
-
-// Default data
-const DEFAULT_DIVISIONS = [
+const DIVISIONS = [
   { name: 'Female Junior', dob: 'DOB 2009, 2008, 2007, 2006, 2005', color: 'bg-pink-50 border-pink-300' },
   { name: 'Female Senior', dob: 'DOB 2004 or earlier', color: 'bg-pink-50 border-pink-300' },
   { name: 'Senior', dob: 'DOB 2004 or earlier', note: 'Sr. B (ASL) or Sr. C', color: 'bg-blue-50 border-blue-300' },
   { name: 'Junior', dob: 'DOB 2009, 2008, 2007, 2006, 2005', note: 'Jr. A, Tier I or Tier II', color: 'bg-blue-50 border-blue-300' },
 ];
 
-const DEFAULT_STEPS = [
+const STEPS = [
   {
     step: 1,
     title: 'Log in to RAMP',
@@ -58,49 +52,10 @@ const DEFAULT_STEPS = [
   },
 ];
 
+const REGISTRATION_FEE = '$87.00';
+const REGISTRATION_URL = 'http://rmll.rampregistrations.com';
+
 export function RegistrationPage() {
-  const [data, setData] = useState({
-    DIVISIONS: DEFAULT_DIVISIONS,
-    STEPS: DEFAULT_STEPS,
-    REGISTRATION_FEE: '$87.00',
-    REGISTRATION_URL: 'http://rmll.rampregistrations.com',
-  });
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    async function fetchData() {
-      try {
-        const { data: result, error } = await supabase
-          .from('rmll_component_content')
-          .select('extracted_data')
-          .eq('page_id', 'registration')
-          .maybeSingle();
-
-        if (!error && result && result.extracted_data) {
-          const extracted = result.extracted_data as Record<string, unknown>;
-          setData({
-            DIVISIONS: (extracted.DIVISIONS as typeof DEFAULT_DIVISIONS) || DEFAULT_DIVISIONS,
-            STEPS: (extracted.STEPS as typeof DEFAULT_STEPS) || DEFAULT_STEPS,
-            REGISTRATION_FEE: (extracted.REGISTRATION_FEE as string) || '$87.00',
-            REGISTRATION_URL: (extracted.REGISTRATION_URL as string) || 'http://rmll.rampregistrations.com',
-          });
-        }
-      } catch (error) {
-        console.error('[RegistrationPage] Error fetching data:', error);
-      } finally {
-        setLoading(false);
-      }
-    }
-
-    fetchData();
-  }, []);
-
-  const { DIVISIONS, STEPS, REGISTRATION_FEE, REGISTRATION_URL } = data;
-
-  if (loading) {
-    return <div className="p-8 text-center text-gray-500">Loading...</div>;
-  }
-
   return (
     <div className="space-y-6">
       {/* Welcome Banner */}

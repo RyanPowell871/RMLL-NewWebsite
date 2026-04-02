@@ -1,11 +1,7 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { Trophy, Filter } from 'lucide-react';
-import { createClient } from '@supabase/supabase-js';
-import { projectId, publicAnonKey } from '../../utils/supabase/info';
-
-const supabase = createClient(`https://${projectId}.supabase.co`, publicAnonKey);
 
 /* ─── Types ─── */
 
@@ -29,7 +25,7 @@ interface DivisionAward {
 
 /* ─── Data ─── */
 
-const DEFAULT_DIVISION_AWARDS: DivisionAward[] = [
+const DIVISION_AWARDS: DivisionAward[] = [
   {
     id: 'south',
     awardName: 'Kelly Mitchell Award',
@@ -249,44 +245,15 @@ function AwardTable({ award }: { award: DivisionAward }) {
 
 export function PointLeaderAwards() {
   const [activeFilter, setActiveFilter] = useState<FilterId>('all');
-  const [loading, setLoading] = useState(true);
-  const [divisionAwards, setDivisionAwards] = useState(DEFAULT_DIVISION_AWARDS);
-
-  useEffect(() => {
-    async function fetchData() {
-      try {
-        const { data: result, error } = await supabase
-          .from('rmll_component_content')
-          .select('extracted_data')
-          .eq('page_id', 'point-leader-awards')
-          .maybeSingle();
-
-        if (!error && result && result.extracted_data) {
-          const extracted = result.extracted_data as Record<string, unknown>;
-          setDivisionAwards((extracted.DIVISION_AWARDS as typeof DEFAULT_DIVISION_AWARDS) || DEFAULT_DIVISION_AWARDS);
-        }
-      } catch (error) {
-        console.error('[PointLeaderAwards] Error fetching data:', error);
-      } finally {
-        setLoading(false);
-      }
-    }
-
-    fetchData();
-  }, []);
 
   const filteredAwards = activeFilter === 'all'
-    ? [...divisionAwards].sort((a, b) => {
+    ? [...DIVISION_AWARDS].sort((a, b) => {
         // When showing all, move central to the end
         if (a.id === 'central') return 1;
         if (b.id === 'central') return -1;
         return 0;
       })
-    : divisionAwards.filter(a => a.id === activeFilter);
-
-  if (loading) {
-    return <div className="p-8 text-center text-gray-500">Loading...</div>;
-  }
+    : DIVISION_AWARDS.filter(a => a.id === activeFilter);
 
   return (
     <div className="space-y-5">

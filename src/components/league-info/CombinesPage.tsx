@@ -1,14 +1,10 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import {
   Users, Calendar, MapPin, DollarSign, Clock, ChevronDown, ChevronRight,
   ExternalLink, AlertTriangle, FileText, Info, UserCheck
 } from 'lucide-react';
-import { createClient } from '@supabase/supabase-js';
-import { projectId, publicAnonKey } from '../../utils/supabase/info';
-
-const supabase = createClient(`https://${projectId}.supabase.co`, publicAnonKey);
 
 interface CombineInfo {
   name: string;
@@ -27,8 +23,7 @@ interface CombineInfo {
   capacityNote?: string;
 }
 
-// Default data (URLs expanded for CMS editing)
-const DEFAULT_COMBINES: CombineInfo[] = [
+const COMBINES: CombineInfo[] = [
   {
     name: 'North Junior Combine',
     region: 'north',
@@ -58,9 +53,6 @@ const DEFAULT_COMBINES: CombineInfo[] = [
     capacityNote: 'Registration for the South Combine is limited to 72 players and 12 goalies, so please register early.',
   },
 ];
-
-// Renamed from COMBINES for component internal use
-let COMBINES: CombineInfo[] = DEFAULT_COMBINES;
 
 function InfoRow({ icon, label, children }: { icon: React.ReactNode; label: string; children: React.ReactNode }) {
   return (
@@ -188,42 +180,6 @@ function CombineCard({ combine }: { combine: CombineInfo }) {
 }
 
 export function CombinesPage() {
-  const [combines, setCombines] = useState(DEFAULT_COMBINES);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    async function fetchData() {
-      try {
-        const { data: result, error } = await supabase
-          .from('rmll_component_content')
-          .select('extracted_data')
-          .eq('page_id', 'combines')
-          .maybeSingle();
-
-        if (!error && result && result.extracted_data) {
-          const extracted = result.extracted_data as Record<string, unknown>;
-          const items = extracted.COMBINES as typeof DEFAULT_COMBINES;
-          if (items && Array.isArray(items) && items.length > 0) {
-            setCombines(items);
-          }
-        }
-      } catch (error) {
-        console.error('[CombinesPage] Error fetching data:', error);
-      } finally {
-        setLoading(false);
-      }
-    }
-
-    fetchData();
-  }, []);
-
-  // Update global COMBINES for CombineCard components
-  COMBINES = combines;
-
-  if (loading) {
-    return <div className="p-8 text-center text-gray-500">Loading...</div>;
-  }
-
   return (
     <div className="space-y-6">
       {/* Hero Banner */}
@@ -276,7 +232,7 @@ export function CombinesPage() {
       </div>
 
       {/* Combine Cards */}
-      {combines.map((combine) => (
+      {COMBINES.map((combine) => (
         <CombineCard key={combine.name} combine={combine} />
       ))}
     </div>

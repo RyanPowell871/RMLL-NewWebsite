@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import {
   ArrowRight,
   Calendar,
@@ -24,10 +24,6 @@ import {
   AlertTriangle,
 } from 'lucide-react';
 import { ClipboardList } from 'lucide-react';
-import { createClient } from '@supabase/supabase-js';
-import { projectId, publicAnonKey } from '../../utils/supabase/info';
-
-const supabase = createClient(`https://${projectId}.supabase.co`, publicAnonKey);
 
 /* ─── helpers ─── */
 
@@ -157,7 +153,7 @@ function DraftCard({ title, teams, eligiblePlayers, date, time, location, draftO
 }
 
 /* ─── divisions data ─── */
-const DEFAULT_DIVISIONS = [
+const DIVISIONS = [
   { name: 'Alberta Series Lacrosse (Senior B)', teams: 5 },
   { name: 'Senior C', teams: 13 },
   { name: 'Junior A', teams: 5, note: 'includes a team from Saskatoon and a team from Winnipeg' },
@@ -167,7 +163,7 @@ const DEFAULT_DIVISIONS = [
   { name: 'Alberta Jr. Major Female', teams: 7 },
 ];
 
-const DEFAULT_MINOR_VS_JUNIOR = [
+const MINOR_VS_JUNIOR = [
   'All games are 3 twenty-minute stop time periods, with 10-minute intermissions and a minimum 30-minute warmup.',
   'Season is usually longer, depending upon how deep you go in the playoffs.',
   'Nets are bigger (4\'×4\'6″ instead of 4\'×4\').',
@@ -180,7 +176,7 @@ const DEFAULT_MINOR_VS_JUNIOR = [
   'Different tactics are introduced and developed.',
 ];
 
-const DEFAULT_CONTACTS = [
+const CONTACTS = [
   { role: 'President', name: 'Duane Bratt', email: 'dbratt@mtroyal.ca' },
   { role: 'Jr. A Commissioner', name: 'Darrel Knight', email: 'darrelk1@me.com' },
   { role: 'Jr. B Tier I Commissioner', name: 'Ian Stewart', email: 'rmlljrbtierone@gmail.com' },
@@ -189,44 +185,6 @@ const DEFAULT_CONTACTS = [
 
 /* ─── main component ─── */
 export function NewPlayerInfoPage() {
-  const [loading, setLoading] = useState(true);
-  const [data, setData] = useState({
-    DIVISIONS: DEFAULT_DIVISIONS,
-    MINOR_VS_JUNIOR: DEFAULT_MINOR_VS_JUNIOR,
-    CONTACTS: DEFAULT_CONTACTS,
-  });
-
-  useEffect(() => {
-    async function fetchData() {
-      try {
-        const { data: result, error } = await supabase
-          .from('rmll_component_content')
-          .select('extracted_data')
-          .eq('page_id', 'new-player-info')
-          .maybeSingle();
-
-        if (!error && result && result.extracted_data) {
-          const extracted = result.extracted_data as Record<string, unknown>;
-          setData({
-            DIVISIONS: (extracted.DIVISIONS as typeof DEFAULT_DIVISIONS) || DEFAULT_DIVISIONS,
-            MINOR_VS_JUNIOR: (extracted.MINOR_VS_JUNIOR as typeof DEFAULT_MINOR_VS_JUNIOR) || DEFAULT_MINOR_VS_JUNIOR,
-            CONTACTS: (extracted.CONTACTS as typeof DEFAULT_CONTACTS) || DEFAULT_CONTACTS,
-          });
-        }
-      } catch (error) {
-        console.error('[NewPlayerInfoPage] Error fetching data:', error);
-      } finally {
-        setLoading(false);
-      }
-    }
-
-    fetchData();
-  }, []);
-
-  if (loading) {
-    return <div className="p-8 text-center text-gray-500">Loading...</div>;
-  }
-
   return (
     <div>
       {/* Hero welcome */}
@@ -291,7 +249,7 @@ export function NewPlayerInfoPage() {
           <div className="bg-gray-50 border border-gray-200 rounded-lg p-3">
             <p className="font-semibold text-gray-800 mb-2">There are 7 Divisions and 63 teams in the RMLL:</p>
             <div className="space-y-1">
-              {data.DIVISIONS.map((div, i) => (
+              {DIVISIONS.map((div, i) => (
                 <div key={i} className="flex items-start gap-2">
                   <span className="bg-[#013fac] text-white text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center flex-shrink-0 mt-0.5">{div.teams}</span>
                   <span>
@@ -319,7 +277,7 @@ export function NewPlayerInfoPage() {
         <div className="mt-3">
           <p className="text-sm text-gray-700 mb-3">Some significant differences between Minor and Junior Lacrosse are:</p>
           <div className="space-y-1.5">
-            {data.MINOR_VS_JUNIOR.map((item, i) => (
+            {MINOR_VS_JUNIOR.map((item, i) => (
               <div key={i} className="flex items-start gap-2 text-sm">
                 <ArrowRight className="w-4 h-4 text-[#8B4513] mt-0.5 flex-shrink-0" />
                 <span className="text-gray-700">{item}</span>
