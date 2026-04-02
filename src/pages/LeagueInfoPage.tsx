@@ -491,6 +491,8 @@ const loadPageContent = async (pageId: string) => {
   useEffect(() => {
     if (activePage) {
       loadPageContent(activePage);
+      // Scroll to top when page changes
+      window.scrollTo({ top: 0, behavior: 'smooth' });
     }
   }, [activePage]);
 
