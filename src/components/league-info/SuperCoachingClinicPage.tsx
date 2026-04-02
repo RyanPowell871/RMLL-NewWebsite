@@ -142,9 +142,6 @@ export function SuperCoachingClinicPage() {
       })()
     : 'April 11-13, 2025';
 
-    return <div className="p-8 text-center text-gray-500">Loading...</div>;
-  }
-
   return (
     <div className="space-y-6">
       {/* Hero Banner */}
