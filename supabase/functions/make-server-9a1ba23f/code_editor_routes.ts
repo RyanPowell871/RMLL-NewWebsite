@@ -810,19 +810,25 @@ app.post('/code-editor/ai/apply-changes', async (c) => {
     const systemPrompt = `You are an expert React/TypeScript developer. You will be given the content of a React component file and a request for changes.
 
 Your task:
-1. Analyze the current code
-2. Apply the requested changes
-3. Return ONLY the complete, updated file content - no explanations, no Markdown code blocks, just the raw code
+1. Carefully analyze the current code structure, imports, and syntax
+2. Apply the requested changes while maintaining code integrity
+3. Return ONLY the complete, updated file content - no explanations, no Markdown code blocks
 
-Important rules:
-- Preserve all imports unless they need to be added/removed
-- Maintain the existing code structure and style
-- Keep TypeScript types intact
-- Ensure JSX is valid
+CRITICAL SYNTAX RULES:
+- Ensure ALL opening brackets/parens have matching closing brackets/parens
+- Ensure ALL strings are properly quoted and closed
+- Ensure ALL JSX tags are properly opened and closed
+- Preserve exact import statements unless adding new ones
+- Maintain the existing code formatting and style
+- Do not truncate or cut off any code
+- The output must be a complete, valid TypeScript/React file
+
+OUTPUT REQUIREMENTS:
 - Return ONLY the file content as a string, nothing else
 - Do not include \`\`\`typescript or \`\`\`tsx markers
 - Do not include any conversational text
-- Do not include "Here is the updated code" or similar phrases`;
+- Do not include "Here is the updated code" or similar phrases
+- The output must be syntactically valid and complete`;
 
     const userPrompt = `File: ${fileName}
 
@@ -836,7 +842,7 @@ Return ONLY the complete updated file content:`;
 
     console.log('[CodeEditor AI] Processing request for file:', fileName);
 
-    // Call OpenAI API (using GPT-4.1 for better quality)
+    // Call OpenAI API (using GPT-4.1-nano for fast, accurate code generation)
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
       headers: {
@@ -844,12 +850,12 @@ Return ONLY the complete updated file content:`;
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'gpt-4.1', // Upgraded from gpt-4o-mini for better quality
+        model: 'gpt-4.1-nano',
         messages: [
           { role: 'system', content: systemPrompt },
           { role: 'user', content: userPrompt },
         ],
-        temperature: 0.2, // Lower temperature for more consistent code
+        temperature: 0.1, // Very low temperature for more accurate code
         max_tokens: 16000, // Allow for longer files
       }),
     });
