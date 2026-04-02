@@ -857,7 +857,7 @@ Return ONLY the complete updated file content:`;
           { role: 'user', content: userPrompt },
         ],
         temperature: 0.1, // Very low temperature for more accurate code
-        max_tokens: 16000, // Allow for longer files
+        max_completion_tokens: 16000, // Allow for longer files
       }),
     });
 
