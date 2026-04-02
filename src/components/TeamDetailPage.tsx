@@ -1887,7 +1887,7 @@ export function TeamDetailPage({ teamId, teamName, season, teamLogo, divisionId,
 
                         return (
                           <div
-                            className="flex gap-2 overflow-x-auto scrollbar-hide"
+                            className="flex gap-3 overflow-x-auto pb-2 scrollbar-hide"
                             style={{ scrollbarWidth: 'none', WebkitOverflowScrolling: 'touch' }}
                           >
                             {completedGames.map((game, idx) => {
@@ -1901,19 +1901,19 @@ export function TeamDetailPage({ teamId, teamName, season, teamLogo, divisionId,
                               const gameNumber = game.GameNumber || game.gameNumber || '';
 
                               return (
-                                <div key={`${game.GameId}-${idx}`} className="flex-shrink-0 w-28 p-2 rounded bg-gray-50 hover:bg-gray-100 transition-colors border border-gray-200">
+                                <div key={`${game.GameId}-${idx}`} className="flex-shrink-0 min-w-[160px] p-3 rounded-lg bg-gray-50 hover:bg-gray-100 transition-colors border-2 border-gray-200">
                                   <div className="text-center">
-                                    <div className="text-[10px] text-gray-500 font-bold mb-1">
-                                      #{gameNumber}
+                                    <div className="text-xs text-gray-500 font-bold mb-2 whitespace-nowrap">
+                                      Game #{gameNumber}
                                     </div>
-                                    <div className={`w-7 h-7 rounded-full flex items-center justify-center font-black text-white text-xs mx-auto mb-1 ${
+                                    <div className={`w-10 h-10 rounded-full flex items-center justify-center font-black text-white text-sm mx-auto mb-2 ${
                                       won ? 'bg-green-500' : tied ? 'bg-yellow-500' : 'bg-red-500'
                                     }`}>
                                       {won ? 'W' : tied ? 'T' : 'L'}
                                     </div>
-                                    <div className="text-[10px] text-gray-500 mb-1">{isHome ? 'vs' : '@'}</div>
-                                    <div className="text-xs font-bold text-gray-900 truncate mb-1">{opponent}</div>
-                                    <div className="text-sm font-black" style={{ color: won ? '#16a34a' : tied ? '#ca8a04' : '#dc2626' }}>
+                                    <div className="text-xs text-gray-500 mb-1 font-semibold">{isHome ? 'vs' : '@'}</div>
+                                    <div className="text-sm font-bold text-gray-900 truncate mb-2 whitespace-nowrap">{opponent}</div>
+                                    <div className="text-lg font-black" style={{ color: won ? '#16a34a' : tied ? '#ca8a04' : '#dc2626' }}>
                                       {teamScore}-{oppScore}
                                     </div>
                                   </div>
@@ -1951,7 +1951,7 @@ export function TeamDetailPage({ teamId, teamName, season, teamLogo, divisionId,
 
                         return (
                           <div
-                            className="flex gap-2 overflow-x-auto scrollbar-hide"
+                            className="flex gap-3 overflow-x-auto pb-2 scrollbar-hide"
                             style={{ scrollbarWidth: 'none', WebkitOverflowScrolling: 'touch' }}
                           >
                             {futureGames.map((game, idx) => {
@@ -1964,17 +1964,17 @@ export function TeamDetailPage({ teamId, teamName, season, teamLogo, divisionId,
                               const gameNumber = game.GameNumber || game.gameNumber || '';
 
                               return (
-                                <div key={`${game.GameId}-${idx}`} className="flex-shrink-0 w-28 p-2 rounded bg-gray-50 hover:bg-gray-100 transition-colors border border-gray-200">
+                                <div key={`${game.GameId}-${idx}`} className="flex-shrink-0 min-w-[160px] p-3 rounded-lg bg-gray-50 hover:bg-gray-100 transition-colors border-2 border-gray-200">
                                   <div className="text-center">
-                                    <div className="text-[10px] text-gray-500 font-bold mb-1">
-                                      #{gameNumber}
+                                    <div className="text-xs text-gray-500 font-bold mb-2 whitespace-nowrap">
+                                      Game #{gameNumber}
                                     </div>
-                                    <div className="w-7 h-7 rounded-full flex items-center justify-center font-black text-white text-xs mx-auto mb-1" style={{ backgroundColor: extractedColors.primary }}>
+                                    <div className="w-10 h-10 rounded-full flex items-center justify-center font-black text-white text-sm mx-auto mb-2" style={{ backgroundColor: extractedColors.primary }}>
                                       {isHome ? 'H' : 'A'}
                                     </div>
-                                    <div className="text-[10px] text-gray-500 mb-1">{isHome ? 'vs' : '@'}</div>
-                                    <div className="text-xs font-bold text-gray-900 truncate mb-1">{opponent}</div>
-                                    <div className="text-[10px] text-gray-500 mb-1">{gameDateStr}</div>
+                                    <div className="text-xs text-gray-500 mb-1 font-semibold">{isHome ? 'Home' : 'Away'}</div>
+                                    <div className="text-sm font-bold text-gray-900 truncate mb-1 whitespace-nowrap">{opponent}</div>
+                                    <div className="text-xs text-gray-500 mb-1">{gameDateStr}</div>
                                     <div className="text-sm font-black" style={{ color: extractedColors.primary }}>
                                       {daysAway === 0 ? 'TODAY' : daysAway === 1 ? 'TMW' : `${daysAway}d`}
                                     </div>
@@ -2563,20 +2563,33 @@ export function TeamDetailPage({ teamId, teamName, season, teamLogo, divisionId,
                         });
 
                         const combinedSchedule = [
-                          ...filteredGames.map(g => ({
-                            type: 'game' as const,
-                            id: g.GameId,
-                            gameNumber: g.GameNumber,
-                            date: g.GameDate,
-                            time: g.StartTime || '',
-                            displayTime: parseGameTime(g.StartTime || ''),
-                            homeTeamId: g.HomeTeamId,
-                            visitorTeamId: g.VisitorTeamId,
-                            homeScore: g.HomeScore,
-                            visitorScore: g.VisitorScore,
-                            homeTeamDivisionId: g.HomeTeamDivisionId,
-                            visitorTeamDivisionId: g.VisitorTeamDivisionId,
-                          })),
+                          ...filteredGames.map(g => {
+                            const isHome = g.HomeTeamId === currentTeamId;
+                            const teamScore = isHome ? g.HomeScore : g.VisitorScore;
+                            const oppScore = isHome ? g.VisitorScore : g.HomeScore;
+                            const result = teamScore !== null && oppScore !== null ? teamScore - oppScore : null;
+                            return {
+                              type: 'game' as const,
+                              id: g.GameId,
+                              gameNumber: g.GameNumber,
+                              date: g.GameDate,
+                              time: g.StartTime || '',
+                              displayTime: parseGameTime(g.StartTime || ''),
+                              homeTeamId: g.HomeTeamId,
+                              visitorTeamId: g.VisitorTeamId,
+                              homeScore: g.HomeScore,
+                              visitorScore: g.VisitorScore,
+                              homeTeamDivisionId: g.HomeTeamDivisionId,
+                              visitorTeamDivisionId: g.VisitorTeamDivisionId,
+                              isHome,
+                              homeTeam: getTeamName(g.HomeTeamId),
+                              awayTeam: getTeamName(g.VisitorTeamId),
+                              standingCategoryCode: g.StandingCategoryCode,
+                              venue: g.FacilityName,
+                              result,
+                              isExhibition: g.StandingCategoryCode?.toLowerCase() === 'exhb',
+                            };
+                          }),
                           ...apiPractices.map(p => ({
                             type: 'practice' as const,
                             id: p.PracticeId,
