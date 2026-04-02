@@ -851,7 +851,7 @@ Return ONLY the complete updated file content:`;
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'gpt-4.1-nano',
+        model: 'gpt-5.4-nano-2026-03-17',
         messages: [
           { role: 'system', content: systemPrompt },
           { role: 'user', content: userPrompt },
