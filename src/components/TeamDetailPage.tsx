@@ -2580,6 +2580,21 @@ export function TeamDetailPage({ teamId, teamName, season, teamLogo, divisionId,
                             }
                           }
                           return true;
+                        });
+
+                        const combinedSchedule = [
+                          ...filteredGames.map(g => ({
+                            type: 'game' as const,
+                            id: g.GameId,
+                            gameNumber: g.GameNumber,
+                            date: g.GameDate,
+                            time: g.StartTime || '',
+                            displayTime: parseGameTime(g.StartTime || ''),
+                            homeTeamId: g.HomeTeamId,
+                            visitorTeamId: g.VisitorTeamId,
+                            homeScore: g.HomeScore,
+                            visitorScore: g.VisitorScore,
+                            homeTeamDivisionId: g.HomeTeamDivisionId,
                             visitorTeamDivisionId: g.VisitorTeamDivisionId,
                           })),
                           ...apiPractices.map(p => ({
