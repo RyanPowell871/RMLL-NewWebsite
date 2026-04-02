@@ -5,6 +5,8 @@ import * as kv from "./kv_store.ts"; // Keep for division data and structured co
 import { proxyDownload } from './proxy.ts';
 import { tier2AwardsData } from "./tier2_awards_data.ts";
 import { tier2ChampionshipsData } from "./tier2_championships_data.ts";
+import { tier1ChampionshipsData } from "./tier1_championships_data.ts";
+import { tier3ChampionshipsData } from "./tier3_championships_data.ts";
 import { seniorBAwardsData } from "./seniorb_awards_data.ts";
 import { seniorBChampionshipsData } from "./seniorb_championships_data.ts";
 import { albertaMajorFemaleChampionshipsData } from "./albertamajorfemale_championships_data.ts";
@@ -762,6 +764,29 @@ At the end of every season, ASL teams battle it out in the provincial playoffs. 
       }
     }
 
+    // Inject defaults for Junior B Tier I
+    if (decodedName === 'Junior B Tier I') {
+      if (!data) {
+        data = {};
+      }
+
+      if (!hasRealContent(data.championships)) {
+        data.championships = JSON.stringify(tier1ChampionshipsData);
+      }
+
+      // Inject default description if not set via CMS
+      if (!data.divisionDescription) {
+        data.divisionDescription = `RMLL Junior B Tier I
+The Junior B Tier I Division of the Rocky Mountain Lacrosse League (RMLL) represents the highest level of Junior B lacrosse in Alberta. This competitive division serves as a crucial stepping stone for players aspiring to advance to Junior A or Senior levels of play.
+
+Tier I teams feature athletes who have developed their skills through the Tier III and Tier II programs and are ready to compete at an elevated level. The division emphasizes skill development, competitive play, and sportsmanship while preparing players for the next stages of their lacrosse careers.
+
+The RMLL's structured progression system allows players and teams to move between divisions based on performance and development, ensuring that every athlete has the opportunity to compete at an appropriate level. Many Tier I players have gone on to successful careers in Junior A, Senior B, and even professional lacrosse.
+
+At the conclusion of the season, the Tier I champion earns the opportunity to represent Alberta at the Founders Cup, the National Junior B Tier I Championship.`;
+      }
+    }
+
     // Inject defaults for Junior A
     if (decodedName === 'Junior A') {
       if (!data) {
@@ -809,6 +834,10 @@ Junior "B" Tier I is where commitment meets opportunity, and where the next gene
     if (decodedName === 'Junior B Tier III') {
       if (!data) {
         data = {};
+      }
+
+      if (!hasRealContent(data.championships)) {
+        data.championships = JSON.stringify(tier3ChampionshipsData);
       }
 
       // Inject default description if not set via CMS
@@ -873,6 +902,27 @@ Each season, the Stacey Dziwenko Award is presented to the player who finishes t
 National Competition
 Each year, the Alberta Lacrosse Association (ALA) selects players to form a team to represent the ALA at Lacrosse Canada's National Championship for Major Female athletes, where competitors battle for the prestigious Carol Patterson Trophy.
 The RMLL Major Female Lacrosse Program continues to be a cornerstone of female box lacrosse development in Alberta, offering elite competition, meaningful progression opportunities, and a pathway to provincial and national success.`;
+      }
+    }
+
+    // Inject defaults for Senior C
+    if (decodedName === 'Senior C') {
+      if (!data) {
+        data = {};
+      }
+
+      if (!hasRealContent(data.championships)) {
+        data.championships = JSON.stringify(tier3ChampionshipsData);
+      }
+
+      // Inject default description if not set via CMS
+      if (!data.divisionDescription) {
+        data.divisionDescription = `RMLL Senior C Division
+The Senior C Division of the Rocky Mountain Lacrosse League (RMLL) offers a competitive lacrosse environment for players aged 21 and older who wish to continue playing the sport at a high level.
+
+This division emphasizes skill development, sportsmanship, and community. Players in Senior C often have extensive lacrosse experience and are looking to maintain their competitive edge while balancing work and family commitments.
+
+The regular season typically runs from April through June, followed by playoffs to determine the division champion.`;
       }
     }
 
