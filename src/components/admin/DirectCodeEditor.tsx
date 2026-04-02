@@ -95,6 +95,8 @@ interface EditorState {
   aiNewContent: string;
   aiFileName: string;
   aiLinkInserterOpen: boolean;
+  aiRiskLevel: 'low' | 'medium' | 'high';
+  aiWarnings: string[];
 }
 
 export function DirectCodeEditor() {
@@ -127,6 +129,8 @@ export function DirectCodeEditor() {
     aiNewContent: '',
     aiFileName: '',
     aiLinkInserterOpen: false,
+    aiRiskLevel: 'low',
+    aiWarnings: [],
   });
 
   const [copyStatus, setCopyStatus] = useState<'idle' | 'copied'>('idle');
@@ -555,10 +559,13 @@ export function DirectCodeEditor() {
       }
     }
 
+    // Store risk level and warnings before generating
     setState((prev) => ({
       ...prev,
       aiGenerating: true,
       aiPromptOpen: false,
+      aiRiskLevel: riskLevel,
+      aiWarnings: warnings,
     }));
 
     try {
@@ -1112,23 +1119,58 @@ export function DirectCodeEditor() {
       <Dialog open={state.aiResultOpen} onOpenChange={(open) => !open && handleRejectAIChanges()}>
         <DialogContent className="sm:max-w-[90vw] max-h-[90vh] p-0 overflow-hidden flex flex-col">
           {/* Header */}
-          <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 shrink-0">
-            <div>
-              <DialogTitle className="flex items-center gap-2 text-lg mb-1">
-                <Sparkles className="w-5 h-5 text-purple-600" />
-                Review AI Changes
-              </DialogTitle>
-              <DialogDescription>
-                Review the changes below. Accept to apply them to the editor, or reject to cancel.
-              </DialogDescription>
+          <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 shrink-0">
+            <div className="flex items-center justify-between mb-3">
+              <div>
+                <DialogTitle className="flex items-center gap-2 text-lg mb-1">
+                  <Sparkles className="w-5 h-5 text-purple-600" />
+                  Review AI Changes
+                </DialogTitle>
+                <DialogDescription>
+                  Review the changes below. Accept to apply them to the editor, or reject to cancel.
+                </DialogDescription>
+              </div>
+              <button
+                onClick={handleRejectAIChanges}
+                className="rounded-sm opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none"
+              >
+                <X className="h-4 w-4" />
+                <span className="sr-only">Close</span>
+              </button>
             </div>
-            <button
-              onClick={handleRejectAIChanges}
-              className="rounded-sm opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none"
-            >
-              <X className="h-4 w-4" />
-              <span className="sr-only">Close</span>
-            </button>
+
+            {/* Risk Level Display */}
+            {state.aiRiskLevel !== 'low' && (
+              <div className={`p-3 rounded-lg border ${
+                state.aiRiskLevel === 'high'
+                  ? 'bg-red-50 dark:bg-red-950/30 border-red-200 dark:border-red-800'
+                  : 'bg-amber-50 dark:bg-amber-950/30 border-amber-200 dark:border-amber-800'
+              }`}>
+                <div className="flex items-start gap-2">
+                  <AlertTriangle className={`w-4 h-4 shrink-0 mt-0.5 ${
+                    state.aiRiskLevel === 'high' ? 'text-red-500' : 'text-amber-500'
+                  }`} />
+                  <div className="flex-1">
+                    <div className={`font-semibold text-sm mb-1 ${
+                      state.aiRiskLevel === 'high'
+                        ? 'text-red-800 dark:text-red-200'
+                        : 'text-amber-800 dark:text-amber-200'
+                    }`}>
+                      {state.aiRiskLevel === 'high' ? '⚠️ High Risk Change' : 'ℹ️ Medium Risk Change'}
+                    </div>
+                    {state.aiWarnings.length > 0 && (
+                      <ul className="text-sm space-y-1">
+                        {state.aiWarnings.map((warning, idx) => (
+                          <li key={idx} className="text-gray-700 dark:text-gray-300 pl-2 border-l-2">
+                            {warning}
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Diff content */}
