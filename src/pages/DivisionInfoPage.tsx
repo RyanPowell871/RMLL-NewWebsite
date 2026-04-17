@@ -90,9 +90,9 @@ export function DivisionInfoPage() {
   const INACTIVE_DIVISIONS = ['Junior B Tier III'];
   const HIDDEN_TABS_FOR_INACTIVE = ['drafts', 'protected-list', 'transactions'];
   
-  const initialDivision = navigationParams?.divisionName || (favoriteDivision !== 'All Divisions' ? favoriteDivision : 'Senior B');
-
-  const [selectedDivision, setSelectedDivision] = useState(initialDivision);
+  const [selectedDivision, setSelectedDivision] = useState(() =>
+    navigationParams?.divisionName || (favoriteDivision !== 'All Divisions' ? favoriteDivision : 'Senior B')
+  );
   const [activeTab, setActiveTab] = useState('division-info');
   const [activeSubdivision, setActiveSubdivision] = useState<string | null>(null);
   const [divisionData, setDivisionData] = useState<DivisionData>({});
