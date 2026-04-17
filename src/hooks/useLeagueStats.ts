@@ -1,11 +1,10 @@
 import { useState, useEffect } from 'react';
-import { 
-  fetchTeams, 
+import {
+  fetchTeams,
   fetchPlayerStats,
   fetchTeamRoster,
   fetchStandings,
-  getPlayerPhotoUrl, 
-  SEASON_IDS 
+  getPlayerPhotoUrl,
 } from '../services/sportzsoft';
 
 export interface LeaguePlayerStat {
@@ -78,7 +77,9 @@ interface UseLeagueStatsReturn {
 }
 
 // Cache outside the hook to persist data across filter changes
-const statsCache = new Map<string, { players: LeaguePlayerStat[], goalies: LeagueGoalieStat[] }>();
+// Added TTL for 2026 season freshness - data expires after 5 minutes
+const statsCache = new Map<string, { players: LeaguePlayerStat[], goalies: LeagueGoalieStat[], timestamp: number }>();
+const STATS_CACHE_TTL = 5 * 60 * 1000; // 5 minutes
 
 // Universal field resolver for API response field name variations
 function resolveNum(obj: any, ...fieldNames: string[]): number {
@@ -133,17 +134,35 @@ export function useLeagueStats(seasonId: number | null, divisionIds?: number[] |
       return;
     }
 
-    const cacheKey = `${seasonId || 0}-${divisionGroupId || 0}-${divisionIds ? divisionIds.join(',') : 'all'}-${gameType}`;
+    // Include season year in cache key to prevent cross-season data mixing
+    // If seasonId is null, use 'null' to distinguish from seasonId=0
+    const seasonKey = seasonId === null ? 'null' : String(seasonId);
+    const cacheKey = `${seasonKey}-${divisionGroupId || 0}-${divisionIds ? divisionIds.join(',') : 'all'}-${gameType}`;
 
-    // Check cache first
+    // Check cache first (with TTL)
     if (statsCache.has(cacheKey)) {
       const cached = statsCache.get(cacheKey)!;
+      const isExpired = (Date.now() - cached.timestamp) > STATS_CACHE_TTL;
 
-      setPlayers(cached.players);
-      setGoalies(cached.goalies);
-      setProgress(100);
-      setLoading(false);
-      return;
+      if (!isExpired) {
+        setPlayers(cached.players);
+        setGoalies(cached.goalies);
+        setProgress(100);
+        setLoading(false);
+        return;
+      }
+      // Cache expired, remove it
+      statsCache.delete(cacheKey);
+    }
+
+    // If seasonId is null, clear any cached entries that might have been created
+    // with a null seasonId to prevent stale data from being returned
+    if (!seasonId) {
+      for (const [key] of statsCache.entries()) {
+        if (key.startsWith('null-')) {
+          statsCache.delete(key);
+        }
+      }
     }
 
     const loadStats = async () => {
@@ -681,7 +700,7 @@ export function useLeagueStats(seasonId: number | null, divisionIds?: number[] |
 
         // Data quality summary
         // Update Cache
-        statsCache.set(cacheKey, { players: allPlayers, goalies: allGoalies });
+        statsCache.set(cacheKey, { players: allPlayers, goalies: allGoalies, timestamp: Date.now() });
 
         setPlayers(allPlayers);
         setGoalies(allGoalies);

@@ -1,6 +1,6 @@
-import logoImage from 'figma:asset/fdfcb8e6c2b97967b54febaebf3bb794e8d4e2db.png';
-import alteredDigitalLogo from 'figma:asset/2baddf2baa86c01b420e9c6124b17e6328e17b9c.png';
-import sportzSoftLogo from 'figma:asset/2683bb8a16900fe245c5e5fa594ec0686367ca0e.png';
+import logoImage from '../assets/mainlogo.png';
+import alteredDigitalLogo from '../assets/2baddf2baa86c01b420e9c6124b17e6328e17b9c.png';
+import sportzSoftLogo from '../assets/2683bb8a16900fe245c5e5fa594ec0686367ca0e.png';
 
 // X (Twitter) logo as inline SVG component
 function XLogo({ className }: { className?: string }) {

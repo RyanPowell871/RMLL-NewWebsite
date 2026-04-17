@@ -1,5 +1,5 @@
 import { Trophy, Users, Calendar } from 'lucide-react';
-import heroImage from 'figma:asset/fdfcb8e6c2b97967b54febaebf3bb794e8d4e2db.png';
+import heroImage from '../assets/mainlogo.png';
 import { useState, useEffect, useRef } from 'react';
 import { fetchTeams, fetchSchedule, SEASON_IDS, detectActiveDivisions, buildDivisionGroups, buildDynamicSubDivisionIds, isApiKeyReady } from '../services/sportzsoft';
 import { useSeasons } from '../hooks/useSeasons';
@@ -57,11 +57,6 @@ export function Hero() {
         // Fallback: use any season from useSeasons
         if (seasonIdsToTry.length === 0 && seasons.length > 0) {
           seasonIdsToTry.push({ seasonId: seasons[0].SeasonId, year: seasons[0].StartYear });
-        }
-        
-        // Fallback: hardcoded 2025
-        if (seasonIdsToTry.length === 0) {
-          seasonIdsToTry.push({ seasonId: SEASON_IDS['2025'], year: 2025 });
         }
 
 
@@ -193,7 +188,19 @@ export function Hero() {
     const year = today.getFullYear();
     const currentMonth = today.getMonth(); // 0-11
 
-    // Assuming season runs approximately May-August
+    // 2026 season is now live - update season dates
+    if (year === 2026) {
+      // 2026 season runs April through August
+      if (currentMonth >= 3 && currentMonth <= 8) {
+        return { year, status: 'LIVE', statusColor: 'bg-red-600', animate: true };
+      } else if (currentMonth >= 0 && currentMonth <= 2) {
+        return { year, status: 'UPCOMING', statusColor: 'bg-blue-600', animate: false };
+      } else {
+        return { year, status: 'COMPLETED', statusColor: 'bg-green-600', animate: false };
+      }
+    }
+
+    // Default season logic for other years
     if (currentMonth >= 0 && currentMonth <= 3) {
       return { year, status: 'UPCOMING', statusColor: 'bg-blue-600', animate: false };
     } else if (currentMonth >= 4 && currentMonth <= 7) {

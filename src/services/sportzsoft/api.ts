@@ -214,7 +214,7 @@ export async function fetchSeasons(
     throw new Error('API key not initialized. Cannot make API call.');
   }
 
-  // Seasons data rarely changes — use a longer 15-minute TTL
+  // Seasons data - use very short cache for live 2026 season updates
   const url = `${BASE_URL}/Organization/${organizationId}/Seasons?LimiterCode=${limiterCode}&ChildCodes=GDC&IncludeInActive=${includeInactive}`;
 
   try {
@@ -223,7 +223,7 @@ export async function fetchSeasons(
       headers: getHeaders(),
       mode: 'cors',
       credentials: 'omit',
-    }, 15 * 60 * 1000);
+    }, 30 * 1000); // 30 seconds TTL - force fresh data
     return data;
   } catch (error) {
     console.error('Error fetching seasons:', error);
@@ -253,8 +253,6 @@ export async function fetchStandings(
     // Season-level fallback
     url = `${BASE_URL}/Season/${seasonId}?LimiterCode=${limiterCode}&ChildCodes=${childCodes}&StandingsCode=${standingsCode}`;
   }
-  console.log(`[fetchStandings] URL: ${url}`);
-
   try {
     const data = await cachedFetch(url, {
       method: 'GET',
@@ -265,11 +263,8 @@ export async function fetchStandings(
     
     // Log raw response shape for SportsDivision calls to debug structure issues
     if (divisionId) {
-      const topKeys = data ? Object.keys(data) : 'null';
-      console.log(`[fetchStandings] SportsDivision ${divisionId} raw response keys: ${JSON.stringify(topKeys)}, Success=${data?.Success}, hasResponse=${!!data?.Response}`);
       // If the API doesn't wrap in Success/Response, normalize it
       if (data && data.Success === undefined) {
-        console.log(`[fetchStandings] SportsDivision ${divisionId} NOT wrapped in Success/Response — normalizing`);
         return { Success: true, Response: data } as any;
       }
     }
@@ -813,12 +808,6 @@ export async function fetchDivisionScheduleStatus(
       return null;
     }
 
-    // Log first fetch for diagnostics
-    console.log(`%c[DivScheduleStatus] Div ${divisionId} keys: ${JSON.stringify(Object.keys(raw))}`, 'color: cyan; font-weight: bold');
-    console.log(`%c[DivScheduleStatus] Div ${divisionId} FULL RAW DATA:`, 'color: cyan; font-weight: bold');
-    console.log(raw);
-    console.log(`%c[DivScheduleStatus] Div ${divisionId} GameScheduleReady=${raw.GameScheduleReady} (${typeof raw.GameScheduleReady}), GameScheduleFinal=${raw.GameScheduleFinal} (${typeof raw.GameScheduleFinal})`, 'color: cyan; font-weight: bold');
-
     // Robust boolean parsing — API may return true, "true", "True", 1, "1", "Y", "Yes", etc.
     const parseBool = (val: any): boolean => {
       if (val === true || val === 1) return true;
@@ -862,26 +851,6 @@ export async function fetchTeamConstraints(
       credentials: 'omit',
     }, 10 * 60 * 1000); // 10-minute TTL
 
-    // Enhanced diagnostic logging — dump full structure to find constraint fields
-    const team = data?.Response?.Team;
-    if (team) {
-      console.log(`[fetchTeamConstraints] Team ${teamId} top-level keys:`, Object.keys(team));
-      // Look for any key that might contain constraints
-      Object.keys(team).forEach(key => {
-        const val = team[key];
-        if (Array.isArray(val)) {
-          console.log(`[fetchTeamConstraints] Team ${teamId} array field "${key}": ${val.length} items`, val.length > 0 ? Object.keys(val[0]) : '(empty)');
-        } else if (val && typeof val === 'object') {
-          console.log(`[fetchTeamConstraints] Team ${teamId} object field "${key}":`, Object.keys(val));
-        }
-      });
-    } else {
-      // Maybe the response is unwrapped
-      console.log(`[fetchTeamConstraints] Team ${teamId} — no Response.Team. Top keys:`, data ? Object.keys(data) : 'null');
-      if (data?.Team) {
-        console.log(`[fetchTeamConstraints] Team ${teamId} data.Team keys:`, Object.keys(data.Team));
-      }
-    }
     return data;
   } catch (error) {
     console.error(`[fetchTeamConstraints] Error for team ${teamId}:`, error);

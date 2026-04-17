@@ -11,10 +11,10 @@ import { FacilityMapLink } from './FacilityMapLink';
 import { useScheduleData } from '../hooks/useScheduleData';
 import { useSeasons } from '../hooks/useSeasons';
 import { useDivisionScheduleStatus } from '../hooks/useDivisionScheduleStatus';
-import { 
-  parseGameTime, 
-  parseGameTimeCompact, 
-  formatGameDate, 
+import {
+  parseGameTime,
+  parseGameTimeCompact,
+  formatGameDate,
   formatGameDateLong,
   buildDivisionGroups,
   getSubDivisions,
@@ -26,7 +26,8 @@ import {
   detectGameDateRange,
   buildStandingsCategoryMappingFromGames,
   getUniqueGameTypesFromGames,
-  mapStandingCategoryCodeToName
+  mapStandingCategoryCodeToName,
+  parseDateAsLocal
 } from '../services/sportzsoft';
 import type { EnhancedGame } from '../services/sportzsoft';
 import { exportGamesToCalendar, type GameForCalendar } from '../utils/calendar';
@@ -982,12 +983,12 @@ const convertedAllGames = allSeasonGames.map((apiGame) => ({
 
   const availableTeams = useMemo(() => {
     const teamSet = new Set<string>();
-    apiGames.forEach(game => {
+    filteredGames.forEach(game => {
       if (game.HomeTeamName) teamSet.add(game.HomeTeamName);
       if (game.VisitorTeamName) teamSet.add(game.VisitorTeamName);
     });
     return ['All Teams', ...Array.from(teamSet).sort()];
-  }, [apiGames]);
+  }, [filteredGames]);
 
   // Support resolving multiple division names for crossover games
   const getDivisionNamesForGame = (game: Game) => {

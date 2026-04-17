@@ -320,7 +320,13 @@ export const LeagueInfoPage = memo(function LeagueInfoPage() {
           if (item.id === pageId) {
             setActiveSection(section.title);
             setActivePage(pageId);
-            setExpandedSections(new Set([section.title]));
+            // Ensure the section is expanded (preserving any other expanded sections)
+            setExpandedSections(prev => {
+              if (!prev.has(section.title)) {
+                return new Set([...prev, section.title]);
+              }
+              return prev;
+            });
             return;
           }
         }
@@ -346,15 +352,18 @@ export const LeagueInfoPage = memo(function LeagueInfoPage() {
   const handleNavClick = useCallback((sectionTitle: string, item: NavItem) => {
     setActiveSection(sectionTitle);
     setActivePage(item.id);
-    
+
+    // Update URL hash for shareable links and browser history
+    window.history.pushState(null, '', `/league-info#${item.id}`);
+
     // Close mobile nav when an item is selected
     setIsMobileNavOpen(false);
-    
+
     // Auto-collapse sidebar when Documents Library is selected
     if (item.id === 'documents') {
       setIsSidebarCollapsed(true);
     }
-    
+
     // Ensure the section is expanded
     setExpandedSections(prev => {
       if (!prev.has(sectionTitle)) {

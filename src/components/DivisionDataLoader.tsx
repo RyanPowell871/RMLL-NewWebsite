@@ -61,16 +61,11 @@ export function DivisionDataLoader() {
         
         // Fallback to any loaded season
         if (seasonIdsToTry.length === 0 && seasons.length > 0) {
-          seasonIdsToTry.push({ 
-            seasonId: seasons[0].SeasonId, 
-            season: seasons[0], 
-            year: seasons[0].StartYear 
+          seasonIdsToTry.push({
+            seasonId: seasons[0].SeasonId,
+            season: seasons[0],
+            year: seasons[0].StartYear
           });
-        }
-        
-        // Final fallback: hardcoded 2025
-        if (seasonIdsToTry.length === 0) {
-          seasonIdsToTry.push({ seasonId: SEASON_IDS['2025'], year: 2025 });
         }
 
         for (const entry of seasonIdsToTry) {

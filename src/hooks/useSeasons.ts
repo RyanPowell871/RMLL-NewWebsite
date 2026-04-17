@@ -35,17 +35,17 @@ export function useSeasons(): UseSeasonsResult {
       if (!apiKeyReady) {
         console.error('[useSeasons] API key not ready after waiting. Using fallback.');
         setError('API key not available');
-        // Use fallback immediately
+        // Use fallback immediately - now 2026
         const fallbackSeason: Season = {
           SeasonId: 7235,
-          StartYear: 2025,
+          StartYear: 2026,
           IsActive: true,
           PublicWebViewing: true,
-          SeasonName: '2025 Season',
+          SeasonName: '2026 Season',
           StartDate: '2025-01-01',
-          EndDate: '2025-12-31',
-          DisplayString: '2025',
-          StartEnd: '2025',
+          EndDate: '2026-12-31',
+          DisplayString: '2026',
+          StartEnd: '2026',
           OrganizationId: 0,
           ProgramId: 0,
           SeasonTypeCodeId: 0,
@@ -90,7 +90,6 @@ export function useSeasons(): UseSeasonsResult {
           }
           
 
-          
           // Filter and sort seasons
           // Include both active and inactive seasons — only require valid IDs
           // (older seasons may not have PublicWebViewing set but still have valid data)
@@ -108,22 +107,22 @@ export function useSeasons(): UseSeasonsResult {
               return hasValidIds;
             })
             .sort((a, b) => b.StartYear - a.StartYear);
-          
+
           if (validSeasons.length > 0) {
             setSeasons(validSeasons);
           } else {
             console.warn('[useSeasons] No valid seasons found in API response, using fallback');
-            // Use fallback only if we truly got no seasons
+            // Use fallback only if we truly got no seasons - now 2026
             const fallbackSeason: Season = {
               SeasonId: 7235,
-              StartYear: 2025,
+              StartYear: 2026,
               IsActive: true,
               PublicWebViewing: true,
-              SeasonName: '2025 Season',
+              SeasonName: '2026 Season',
               StartDate: '2025-01-01',
-              EndDate: '2025-12-31',
-              DisplayString: '2025',
-              StartEnd: '2025',
+              EndDate: '2026-12-31',
+              DisplayString: '2026',
+              StartEnd: '2026',
               OrganizationId: 0,
               ProgramId: 0,
               SeasonTypeCodeId: 0,
@@ -148,17 +147,17 @@ export function useSeasons(): UseSeasonsResult {
       } catch (err) {
         console.error('[useSeasons] Error fetching seasons:', err);
         setError(err instanceof Error ? err.message : 'Failed to fetch seasons');
-        // Use hardcoded season as fallback even on error
+        // Use hardcoded season as fallback even on error - now 2026
         const fallbackSeason: Season = {
           SeasonId: 7235,
-          StartYear: 2025,
+          StartYear: 2026,
           IsActive: true,
           PublicWebViewing: true,
-          SeasonName: '2025 Season',
+          SeasonName: '2026 Season',
           StartDate: '2025-01-01',
-          EndDate: '2025-12-31',
-          DisplayString: '2025',
-          StartEnd: '2025',
+          EndDate: '2026-12-31',
+          DisplayString: '2026',
+          StartEnd: '2026',
           OrganizationId: 0,
           ProgramId: 0,
           SeasonTypeCodeId: 0,
@@ -201,12 +200,14 @@ export function useSeasons(): UseSeasonsResult {
   // Get the current season year (most recent)
   const getCurrentSeasonYear = useCallback(() => {
     if (seasons.length === 0) return new Date().getFullYear().toString();
+    // Use the most recent season (seasons are sorted by StartYear descending)
     return seasons[0].StartYear.toString();
   }, [seasons]);
 
   // Get the current season ID (most recent)
   const getCurrentSeasonId = useCallback(() => {
     if (seasons.length === 0) return null;
+    // Use the most recent season (seasons are sorted by StartYear descending)
     return seasons[0].SeasonId;
   }, [seasons]);
 

@@ -175,7 +175,7 @@ export function ScoreTicker() {
   
   // Filter games for the ticker:
   // 1. Remove exhibition games that are FINAL and have no scores
-  // 2. Keep regular season games from current or future weeks (display current week games even if final)
+  // 2. Keep games from today or future (drop games at midnight of the day they took place)
   // 3. Sort by date ascending
   const apiGames = useMemo(() => {
     if (divisionFilteredGames.length === 0) return [];
@@ -198,13 +198,8 @@ export function ScoreTicker() {
         return false;
       }
 
-      // For regular season games, only show current or future week games
-      if (!isExhibition) {
-        return isCurrentOrFutureGameWeek(game.GameDate);
-      }
-
-      // Exhibition games with scores (non-zero) or not final can be shown
-      return true;
+      // Only show games from today or future (drop games at midnight of the day they took place)
+      return gameDate >= now;
     });
 
     // Sort by date ascending
@@ -218,7 +213,7 @@ export function ScoreTicker() {
     const now = new Date();
     now.setHours(0, 0, 0, 0);
     const idx = apiGames.findIndex(g => new Date(g.GameDate) >= now);
-    // If found, back up a couple so user can see recent results too
+    // If found, back up a couple so user can see upcoming games too
     return idx > 0 ? Math.max(0, idx - 2) : 0;
   }, [apiGames]);
 
@@ -297,7 +292,7 @@ export function ScoreTicker() {
       awayLogo: apiGame.VisitorTeamLogoURL || shamrocksLogo, // Use API logo URL or fallback to default
       division: apiGame.DivisionName || 'Unknown',
       divisionId: apiGame.DivisionId,
-      location: apiGame.FacilityName,
+      location: apiGame.FacilityCode || apiGame.FacilityName,
       conference: undefined, // Would need to extract from DivisionName if needed
     };
   });
@@ -450,7 +445,12 @@ export function ScoreTicker() {
             className="flex overflow-x-auto scrollbar-hide gap-2 sm:gap-3 px-2 sm:px-4 lg:px-12 py-3 sm:py-4 snap-x snap-mandatory touch-pan-x"
             style={{ scrollbarWidth: 'none', WebkitOverflowScrolling: 'touch' }}
           >
-            {games.length === 0 ? (
+            {loading ? (
+              <div className="w-full flex items-center justify-center py-8 gap-2 text-gray-500">
+                <div className="w-4 h-4 border-2 border-gray-300 border-t-red-600 rounded-full animate-spin" />
+                <span className="text-sm font-semibold">Loading games...</span>
+              </div>
+            ) : games.length === 0 ? (
               <div className="w-full text-center py-8 text-gray-500">
                 No games scheduled for this division
               </div>

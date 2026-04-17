@@ -1,6 +1,6 @@
 import { Menu, Search, User, ChevronDown, Star, Calendar, Trophy, BarChart3, FileText, ChevronRight } from 'lucide-react';
 import { useState, useCallback, useEffect, memo } from 'react';
-import logoImage from 'figma:asset/fb3af3c32172bf2cdae204929a43046aace488d6.png';
+import logoImage from '../assets/horizontallogo.png';
 import { useDivision } from '../contexts/DivisionContext';
 import { useNavigation } from '../contexts/NavigationContext';
 import {

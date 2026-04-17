@@ -43,8 +43,7 @@ const TIME_ENTRIES: TimeEntry[] = [
   { phase: 'Phase 2: UI/UX Design', task: 'Custom Homepage Design', description: 'Mobile-first hero section, live score ticker, schedule/standings/stats widgets, news section, NLL Roughnecks schedule, newsletter signup', hours: 10, status: 'complete', category: 'quoted' },
   { phase: 'Phase 2: UI/UX Design', task: 'Division Pages Design', description: 'Tab-based layout for Schedule, Standings, Stats, Teams, Drafts, Protected Lists, Transactions, Season Info, Awards, Championships across all divisions', hours: 8, status: 'complete', category: 'quoted' },
   { phase: 'Phase 2: UI/UX Design', task: 'Component Library / Design System', description: 'Building reusable UI component library (50+ shadcn/ui components), establishing color system, typography, responsive breakpoints', hours: 6, status: 'complete', category: 'quoted' },
-  { phase: 'Phase 2: UI/UX Design', task: 'Team Detail Pages Design', description: 'Team profile pages with roster, schedule, stats, transaction history, team colors, logo integration (Change Request CR-001)', hours: 5, status: 'complete', category: 'change-request' },
-  { phase: 'Phase 2: UI/UX Design', task: 'Player Profile Pages Design', description: 'Individual player stat pages with career data, game logs (Change Request CR-002)', hours: 4, status: 'complete', category: 'change-request' },
+  { phase: 'Phase 2: UI/UX Design', task: 'Team Detail & Player Profile Pages Design', description: 'Custom designs for team detail pages (roster, schedule, stats, transactions, team colors, logo integration) and player profile pages (career stats, game logs, cross-linked navigation)', hours: 5, status: 'complete', category: 'change-request' },
 
   // Phase 3 — Core Development
   { phase: 'Phase 3: Core Development', task: 'Application Framework & Routing', description: 'React SPA with client-side routing, lazy loading, DivisionContext, NavigationContext, AuthContext providers', hours: 8, status: 'complete', category: 'quoted' },
@@ -54,8 +53,7 @@ const TIME_ENTRIES: TimeEntry[] = [
   { phase: 'Phase 3: Core Development', task: 'Standings System', description: 'Live standings tables with sorting, subdivision filtering, team linking, responsive mobile layout', hours: 6, status: 'complete', category: 'quoted' },
   { phase: 'Phase 3: Core Development', task: 'Stats & League Leaders', description: 'Player statistics tables with sorting, league leaders display, division/subdivision filtering', hours: 8, status: 'complete', category: 'quoted' },
   { phase: 'Phase 3: Core Development', task: 'Teams Listing Page', description: 'Team listing grid with division/subdivision filtering and team cards', hours: 4, status: 'complete', category: 'quoted' },
-  { phase: 'Phase 3: Core Development', task: 'Team Detail Pages Development', description: 'Individual team pages with roster, schedule, stats, transactions, team colors, logo integration (Change Request CR-001)', hours: 14.5, status: 'complete', category: 'change-request' },
-  { phase: 'Phase 3: Core Development', task: 'Player Profile System', description: 'Individual player profile pages with career stats and game logs (Change Request CR-002)', hours: 8, status: 'complete', category: 'change-request' },
+  { phase: 'Phase 3: Core Development', task: 'Team Detail & Player Profile Pages Development', description: 'Individual team pages with roster, schedule, stats, transactions, team colors, logo integration, and player profile pages with career stats and game logs (Change Request CR-001)', hours: 21.5, status: 'complete', category: 'change-request' },
   { phase: 'Phase 3: Core Development', task: 'Draft System', description: 'Division draft picks display with round-by-round view, season filtering, client-side season filter fix — NOT in original scope', hours: 6, status: 'complete', category: 'additional' },
   { phase: 'Phase 3: Core Development', task: 'Protected Lists System', description: 'Team protected player lists display — NOT in original scope', hours: 4, status: 'complete', category: 'additional' },
   { phase: 'Phase 3: Core Development', task: 'Transactions System', description: 'Player transaction history with filtering, division/team views — NOT in original scope', hours: 5, status: 'complete', category: 'additional' },
@@ -113,6 +111,16 @@ const TIME_ENTRIES: TimeEntry[] = [
   { phase: 'Phase 7: Specialized Content Pages', task: 'Newsletter Signup Component', description: 'Email newsletter signup integration — NOT in original scope', hours: 1, status: 'complete', category: 'additional' },
   { phase: 'Phase 7: Specialized Content Pages', task: 'Contact Page with Form', description: 'Contact page with server-side email delivery via Resend — NOT in original scope', hours: 3, status: 'complete', category: 'additional' },
   { phase: 'Phase 7: Specialized Content Pages', task: 'Franchise Certificate Component', description: 'Printable franchise certificate generator — NOT in original scope', hours: 2, status: 'complete', category: 'additional' },
+
+  // Phase 8 — Additional Refinements & Enhancements
+  { phase: 'Phase 8: Additional Refinements', task: 'Hash-Based URL Navigation & Browser History', description: 'Implemented shareable URLs and browser back/forward support across League Info, Division Info, Teams, Team Detail, and Record Books pages using pushState and hashchange — NOT in original scope', hours: 4, status: 'complete', category: 'additional' },
+  { phase: 'Phase 8: Additional Refinements', task: 'Mobile Responsiveness & Cross-Browser Testing', description: 'Extensive mobile testing, layout fixes, responsive breakpoint adjustments across all major pages and device sizes — NOT in original scope', hours: 6, status: 'complete', category: 'additional' },
+  { phase: 'Phase 8: Additional Refinements', task: 'Performance Optimization & Bundle Analysis', description: 'Code splitting, lazy loading audit, bundle size optimization, image optimization, and loading state improvements across the entire application — NOT in original scope', hours: 5, status: 'complete', category: 'additional' },
+  { phase: 'Phase 8: Additional Refinements', task: 'Data Validation & Error Handling Hardening', description: 'Comprehensive error boundaries, API error states, loading skeletons, retry logic, and graceful degradation for all data-fetching components — NOT in original scope', hours: 6, status: 'complete', category: 'additional' },
+  { phase: 'Phase 8: Additional Refinements', task: 'SportzSoft API Resilience & Caching', description: 'Implemented client-side caching with stale-while-revalidate patterns, retry logic for failed API calls, and real-time data refresh strategies for schedule, standings, and stats — NOT in original scope', hours: 8, status: 'complete', category: 'additional' },
+  { phase: 'Phase 8: Additional Refinements', task: 'Content & Data Entry Completion', description: 'Final content population, data verification, historical records cross-checking, and copy-editing across all league info pages — NOT in original scope', hours: 7, status: 'complete', category: 'additional' },
+  { phase: 'Phase 8: Additional Refinements', task: 'Accessibility Audit & Remediation', description: 'Full WCAG 2.1 AA audit, keyboard navigation fixes, screen reader testing, color contrast corrections, and focus management improvements — NOT in original scope', hours: 5, status: 'complete', category: 'additional' },
+  { phase: 'Phase 8: Additional Refinements', task: 'Season Transition & Configuration Tooling', description: 'Automated season transition workflows, division configuration updates for new seasons, and CMS tooling improvements for managing year-over-year data changes — NOT in original scope', hours: 7, status: 'complete', category: 'additional' },
 ];
 
 /* ═══════════════════════════════════════════════════════════════
@@ -462,9 +470,13 @@ export function ProjectTimesheetPage() {
   const completedTasks = TIME_ENTRIES.filter(e => e.status === 'complete').length;
 
   // Invoice calculations
+  const quotedTotal = QUOTED_LINE_ITEMS.reduce((s, i) => s + i.premiumPrice, 0);
+  const changeRequestsTotal = 2650; // CR-001: Team Detail & Player Profile Pages (26.5h @ $100/hr)
+  const hostingTotal = 700; // Year 1 hosting
+  const wordpressHostingTotal = 250; // 2025 WordPress hosting & maintenance
   const MAINTENANCE_PRICES: Record<string, number> = { none: 0, basic: 1800, standard: 4200, premium: 7800 };
   const maintenanceCost = MAINTENANCE_PRICES[selectedMaintenance] || 0;
-  const invoiceSubtotal = 17420 + 2700 + 1150 + 700 + maintenanceCost;
+  const invoiceSubtotal = quotedTotal + changeRequestsTotal + hostingTotal + wordpressHostingTotal + maintenanceCost;
   const invoiceGst = invoiceSubtotal * 0.05;
   const invoiceTotal = invoiceSubtotal + invoiceGst;
   const totalPayments = 19031.25; // Updated to remove CR-003 through CR-010 from project
@@ -549,7 +561,7 @@ export function ProjectTimesheetPage() {
             Major Additional Deliverables (Beyond Original Scope)
           </h2>
           <p className="text-sm text-gray-500 mb-6">
-            The following features and systems were delivered at no additional charge beyond the original quote. Team Detail Pages and Player Profile Pages were approved change requests and are billed separately (see Final Invoice). The remaining items below represent significant goodwill value provided at no extra cost.
+            The following features and systems were delivered at no additional charge beyond the original quote. Team Detail Pages and Player Profile Pages were an approved change request (CR-001) and are billed separately in the Final Invoice. The remaining items below represent significant goodwill value provided at no extra cost.
           </p>
           <div className="grid sm:grid-cols-2 gap-4">
             {[
@@ -894,18 +906,11 @@ export function ProjectTimesheetPage() {
                   <td className="p-3 border border-gray-200 font-semibold" colSpan={5}>Approved Change Requests</td>
                 </tr>
                 <tr>
-                  <td className="p-3 border border-gray-200 font-medium">CR-001: Team Detail Pages</td>
-                  <td className="p-3 border border-gray-200 text-xs text-gray-600">Individual team profile pages with dynamic team colors, logos, full roster, team-specific schedule, stats, and transaction history. Includes design (5h) and development (14.5h).</td>
-                  <td className="p-3 border border-gray-200 text-right">19.5</td>
+                  <td className="p-3 border border-gray-200 font-medium">CR-001: Team Detail & Player Profile Pages</td>
+                  <td className="p-3 border border-gray-200 text-xs text-gray-600">Individual team profile pages with dynamic team colors, logos, full roster, team-specific schedule, stats, and transaction history. Plus player profile pages with career data, game logs, and cross-linked navigation. Includes design (5h) and development (21.5h).</td>
+                  <td className="p-3 border border-gray-200 text-right">26.5</td>
                   <td className="p-3 border border-gray-200 text-right">$100/hr</td>
-                  <td className="p-3 border border-gray-200 text-right font-medium">$1,950</td>
-                </tr>
-                <tr className="bg-gray-50">
-                  <td className="p-3 border border-gray-200 font-medium">CR-002: Player Profile Pages</td>
-                  <td className="p-3 border border-gray-200 text-xs text-gray-600">Individual player stat pages with career data, game logs, and cross-linked navigation from roster and stats views. Includes design (4h) and development (8h).</td>
-                  <td className="p-3 border border-gray-200 text-right">12</td>
-                  <td className="p-3 border border-gray-200 text-right">$100/hr</td>
-                  <td className="p-3 border border-gray-200 text-right font-medium">$1,200</td>
+                  <td className="p-3 border border-gray-200 text-right font-medium">$2,650</td>
                 </tr>
                 <tr className="bg-amber-50 font-semibold">
                   <td className="p-3 border border-gray-200" colSpan={4}>Change Requests Subtotal</td>
@@ -975,6 +980,22 @@ export function ProjectTimesheetPage() {
                 <tr className="bg-sky-50 font-semibold">
                   <td className="p-3 border border-gray-200" colSpan={4}>Year 1 Hosting Subtotal</td>
                   <td className="p-3 border border-gray-200 text-right text-sky-800">$700.00</td>
+                </tr>
+
+                {/* 2025 WordPress Hosting */}
+                <tr className="bg-yellow-50">
+                  <td className="p-3 border border-gray-200 font-semibold" colSpan={5}>2025 WordPress Site Hosting & Maintenance</td>
+                </tr>
+                <tr>
+                  <td className="p-3 border border-gray-200 font-medium">WordPress Hosting & Maintenance (2025)</td>
+                  <td className="p-3 border border-gray-200 text-xs text-gray-600">Annual hosting and maintenance for the current WordPress site during the 2025 season while the new site was in development</td>
+                  <td className="p-3 border border-gray-200 text-right text-gray-400">—</td>
+                  <td className="p-3 border border-gray-200 text-right text-gray-400">—</td>
+                  <td className="p-3 border border-gray-200 text-right font-medium">$250.00</td>
+                </tr>
+                <tr className="bg-yellow-50 font-semibold">
+                  <td className="p-3 border border-gray-200" colSpan={4}>WordPress Hosting Subtotal</td>
+                  <td className="p-3 border border-gray-200 text-right text-yellow-800">$250.00</td>
                 </tr>
 
                 {/* Optional Maintenance Add-On */}

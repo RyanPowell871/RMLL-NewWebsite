@@ -7,67 +7,13 @@ import {
 } from '../services/sportzsoft';
 import { useSeasons } from './useSeasons';
 import { useDivisionMapping } from './useDivisionMapping';
+import { mapToBroadDivision, extractSubDivision } from '../utils/division-mapping';
 
 export interface EnhancedTeam extends ApiTeam {
   DivisionName: string;
   SubDivisionName?: string;  // Store the original subdivision name for filtering
   SubDivision?: string;      // Extracted subdivision (e.g., 'North', 'South')
 }
-
-// Map API subdivision names to broader division categories for Teams page
-const mapToBroadDivision = (divisionName: string): string => {
-  // Alberta Major Female divisions
-  if (divisionName === 'Alberta Major Female') return 'Alberta Major Female';
-  
-  // Alberta Major Senior Female divisions
-  if (divisionName === 'Alberta Major Senior Female') return 'Alberta Major Senior Female';
-  
-  // Junior A
-  if (divisionName === 'Jr. A') return 'Junior A';
-  
-  // IMPORTANT: Check Tier III and Tier II BEFORE Tier I since they contain "Tier I" as a substring!
-  
-  // Junior B Tier III
-  if (divisionName.includes('Jr. Tier III')) return 'Junior B Tier III';
-  
-  // Junior B Tier II (consolidate all subdivisions)
-  if (divisionName.includes('Jr. B Tier II')) return 'Junior B Tier II';
-  
-  // Junior B Tier I (consolidate all subdivisions)
-  if (divisionName.includes('Jr. B Tier I')) return 'Junior B Tier I';
-  
-  // Senior B
-  if (divisionName === 'Sr. B') return 'Senior B';
-  
-  // Senior C (consolidate all subdivisions)
-  if (divisionName.includes('Sr. C')) return 'Senior C';
-  
-  // Default: return as-is
-  return divisionName;
-};
-
-// Extract subdivision from API division name
-const extractSubDivision = (apiDivisionName: string): string | undefined => {
-  // Junior B Tier I subdivisions
-  if (apiDivisionName === 'Jr. B Tier I North') return 'North';
-  if (apiDivisionName === 'Jr. B Tier I South') return 'South';
-  if (apiDivisionName === 'Jr. B Tier I Central') return 'Central';
-  if (apiDivisionName === 'Jr. B Tier I East') return 'East';
-  
-  // Junior B Tier II subdivisions - includes all the specific regions
-  if (apiDivisionName === 'Jr. B Tier II North') return 'North';
-  if (apiDivisionName === 'Jr. B Tier II North Central') return 'North';
-  if (apiDivisionName === 'Jr. B Tier II North East') return 'North';
-  if (apiDivisionName === 'Jr. B Tier II South') return 'South';
-  if (apiDivisionName === 'Jr. B Tier II South Central') return 'South';
-  if (apiDivisionName === 'Jr. B Tier II South West') return 'South';
-  
-  // Senior C subdivisions
-  if (apiDivisionName === 'Sr. C North') return 'North';
-  if (apiDivisionName === 'Sr. C South') return 'South';
-  
-  return undefined;
-};
 
 interface UseTeamsDataOptions {
   season?: string;

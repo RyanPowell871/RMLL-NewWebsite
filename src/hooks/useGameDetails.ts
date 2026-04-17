@@ -64,38 +64,8 @@ export function useGameDetails({
         // But our component expects them at the top level of the response object
         const rawResponse = response.Response as any;
         
-        // Log raw response structure for debugging coaching/staff data
-        console.log(`[useGameDetails] Raw response keys:`, Object.keys(rawResponse));
         const gameObj = rawResponse.Game || rawResponse;
-        console.log(`[useGameDetails] Game object keys:`, Object.keys(gameObj));
-        
-        // Log time-related fields for debugging the 1:00 AM issue
-        const timeRelated = Object.keys(gameObj).filter(k => 
-          /time|date|start|end|clock|schedule/i.test(k)
-        );
-        if (timeRelated.length > 0) {
-          console.log(`[useGameDetails] Time-related fields:`, 
-            Object.fromEntries(timeRelated.map(k => [k, gameObj[k]])));
-        }
-        
-        // Check for any coaching/bench-related data in the response
-        const benchRelated = Object.keys(gameObj).filter(k => 
-          /coach|bench|staff|trainer|manager|personnel|head|asst/i.test(k)
-        );
-        if (benchRelated.length > 0) {
-          console.log(`[useGameDetails] Coaching-related fields found:`, 
-            Object.fromEntries(benchRelated.map(k => [k, gameObj[k]])));
-        }
-        
-        // Also check top-level rawResponse for bench data
-        const topBench = Object.keys(rawResponse).filter(k => 
-          /coach|bench|staff|trainer|manager|personnel/i.test(k)
-        );
-        if (topBench.length > 0) {
-          console.log(`[useGameDetails] Top-level coaching data:`, 
-            Object.fromEntries(topBench.map(k => [k, rawResponse[k]])));
-        }
-        
+
         const normalizedDetails: GameDetailResponse = {
           Game: gameObj,
           // Extract arrays from Game object if they exist there, otherwise use top-level or empty array

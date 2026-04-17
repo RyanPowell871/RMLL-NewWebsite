@@ -515,13 +515,6 @@ export function usePlayerProfile(playerId: number, teamId?: number, seasonId?: n
         const playerIdSet = new Set<number>([playerId, playerPersonId, goaliePersonId].filter(id => id > 0));
 
         
-        // Log child code data availability
-        const childSummary = ['PlayerStats', 'GoalieStats', 'GamesPlayedStats', 'PenaltyStats', 'ScoringStats']
-            .filter(k => Array.isArray(playerObj[k]) && playerObj[k].length > 0)
-            .map(k => `${k}(${playerObj[k].length})`)
-            .join(', ');
-
-        
         // ================================================================
         // STEP 2: Parse Career Stats from P (PlayerStats) and G (GoalieStats)
         // ================================================================

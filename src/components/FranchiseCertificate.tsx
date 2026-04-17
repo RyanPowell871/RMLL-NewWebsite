@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Shield, Award, MapPin, Mail, Phone, User, Building2, Calendar, Loader2, AlertCircle, Users, Hash, CheckCircle2, XCircle, Clock, FileCheck, Landmark, ScrollText } from 'lucide-react';
 import { fetchTeamFranchiseProtectedList, fetchFranchiseDetails, fetchTeamRaw } from '../services/sportzsoft/api';
-import rmllShieldLogo from 'figma:asset/fdfcb8e6c2b97967b54febaebf3bb794e8d4e2db.png';
+import rmllShieldLogo from '../assets/mainlogo.png';
 
 // Universal field resolver
 function resolveStr(obj: any, ...fieldNames: string[]): string {

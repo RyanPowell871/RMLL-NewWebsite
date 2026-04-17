@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Header } from '../components/Header';
 import { ChevronRight, ChevronDown, Info, Calendar, Users, Award, Trophy, FileText, ArrowRightLeft, Loader2, Edit, File, Flag, AlertTriangle, Zap, Star } from 'lucide-react';
 import { allPossibleDivisions } from '../contexts/DivisionContext';
@@ -91,12 +91,64 @@ export function DivisionInfoPage() {
   const HIDDEN_TABS_FOR_INACTIVE = ['drafts', 'protected-list', 'transactions'];
   
   const initialDivision = navigationParams?.divisionName || (favoriteDivision !== 'All Divisions' ? favoriteDivision : 'Senior B');
-  const [selectedDivision, setSelectedDivision] = useState(initialDivision);
-  const [activeTab, setActiveTab] = useState('division-info');
+
+  // Read initial hash for division and tab
+  const getInitialState = () => {
+    const hash = window.location.hash.substring(1);
+    const parts = hash.split('&');
+    let hashDivision = '';
+    let hashTab = '';
+    for (const part of parts) {
+      if (part.startsWith('tab=')) {
+        hashTab = part.substring(4);
+      } else if (part) {
+        hashDivision = decodeURIComponent(part);
+      }
+    }
+    return {
+      division: (hashDivision && allPossibleDivisions.includes(hashDivision)) ? hashDivision : (navigationParams?.divisionName || (favoriteDivision !== 'All Divisions' ? favoriteDivision : 'Senior B')),
+      tab: hashTab || 'division-info',
+    };
+  };
+
+  const [selectedDivision, setSelectedDivision] = useState(getInitialState().division);
+  const [activeTab, setActiveTab] = useState(getInitialState().tab);
   const [activeSubdivision, setActiveSubdivision] = useState<string | null>(null);
   const [divisionData, setDivisionData] = useState<DivisionData>({});
   const [sectionConfigs, setSectionConfigs] = useState<SectionConfig[]>([]);
   const [loading, setLoading] = useState(false);
+
+  // Push hash to URL when division or tab changes
+  useEffect(() => {
+    const tabPart = activeTab !== 'division-info' ? `&tab=${activeTab}` : '';
+    window.history.pushState(null, '', `/division-info#${encodeURIComponent(selectedDivision)}${tabPart}`);
+  }, [selectedDivision, activeTab]);
+
+  // Listen for browser back/forward
+  useEffect(() => {
+    const handleHashChange = () => {
+      const hash = window.location.hash.substring(1);
+      if (!hash) return;
+      const parts = hash.split('&');
+      let hashDivision = '';
+      let hashTab = '';
+      for (const part of parts) {
+        if (part.startsWith('tab=')) {
+          hashTab = part.substring(4);
+        } else if (part) {
+          hashDivision = decodeURIComponent(part);
+        }
+      }
+      if (hashDivision && allPossibleDivisions.includes(hashDivision)) {
+        setSelectedDivision(hashDivision);
+      }
+      if (hashTab) {
+        setActiveTab(hashTab);
+      }
+    };
+    window.addEventListener('hashchange', handleHashChange);
+    return () => window.removeEventListener('hashchange', handleHashChange);
+  }, []);
 
   // Default section configurations for different divisions
   const getDefaultSectionConfigs = (divisionName: string): SectionConfig[] => {

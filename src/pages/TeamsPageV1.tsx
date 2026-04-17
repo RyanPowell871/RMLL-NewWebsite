@@ -1,6 +1,6 @@
 import { ChevronRight } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../components/ui/select';
-import { useState, useEffect, useMemo, useRef } from 'react';
+import { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import { useDivision } from '../contexts/DivisionContext';
 import { allPossibleDivisions } from '../contexts/DivisionContext';
 import { Card, CardContent } from '../components/ui/card';
@@ -197,19 +197,102 @@ export function TeamsPageV1() {
   const { selectedDivision: favoriteDivision, selectedSubDivision: favoriteSubDivision, divisions, subDivisions } = useDivision();
   const { navigationParams } = useNavigation();
   
+  // Read initial hash for division, subdivision, team, and tab
+  const getInitialHashState = () => {
+    const hash = window.location.hash.substring(1);
+    const parts = hash.split('&');
+    let hashDivision = '';
+    let hashSub = '';
+    let hashTeamId = '';
+    let hashTeamName = '';
+    let hashTeamLogo = '';
+    let hashTeamDivId = '';
+    let hashTab = '';
+    for (const part of parts) {
+      if (part.startsWith('sub=')) hashSub = decodeURIComponent(part.substring(4));
+      else if (part.startsWith('team=')) hashTeamId = part.substring(5);
+      else if (part.startsWith('name=')) hashTeamName = decodeURIComponent(part.substring(5));
+      else if (part.startsWith('logo=')) hashTeamLogo = decodeURIComponent(part.substring(5));
+      else if (part.startsWith('divid=')) hashTeamDivId = part.substring(6);
+      else if (part.startsWith('tab=')) hashTab = part.substring(4);
+      else if (part) hashDivision = decodeURIComponent(part);
+    }
+    return { hashDivision, hashSub, hashTeamId, hashTeamName, hashTeamLogo, hashTeamDivId, hashTab };
+  };
+
+  const hashState = getInitialHashState();
+
   // Initialize from favorite division, falling back to 'Senior B'
-  const [selectedDivision, setSelectedDivision] = useState(() => 
-    favoriteDivision && favoriteDivision !== 'All Divisions' ? favoriteDivision : 'Senior B'
+  const [selectedDivision, setSelectedDivision] = useState(() =>
+    hashState.hashDivision || (favoriteDivision && favoriteDivision !== 'All Divisions' ? favoriteDivision : 'Senior B')
   );
   const [selectedSubDivision, setSelectedSubDivision] = useState(() =>
-    favoriteDivision && favoriteDivision !== 'All Divisions' ? (favoriteSubDivision || 'All') : 'All'
+    hashState.hashSub || (favoriteDivision && favoriteDivision !== 'All Divisions' ? (favoriteSubDivision || 'All') : 'All')
   );
-  const [selectedTeamId, setSelectedTeamId] = useState<string | null>(null);
-  const [selectedTeamName, setSelectedTeamName] = useState<string | null>(null);
-  const [selectedTeamLogo, setSelectedTeamLogo] = useState<string | null>(null);
-  const [selectedTeamDivisionId, setSelectedTeamDivisionId] = useState<number | null>(null);
-  const [selectedTeamTab, setSelectedTeamTab] = useState<string | undefined>(undefined);
+  const [selectedTeamId, setSelectedTeamId] = useState<string | null>(hashState.hashTeamId || null);
+  const [selectedTeamName, setSelectedTeamName] = useState<string | null>(hashState.hashTeamName || null);
+  const [selectedTeamLogo, setSelectedTeamLogo] = useState<string | null>(hashState.hashTeamLogo || null);
+  const [selectedTeamDivisionId, setSelectedTeamDivisionId] = useState<number | null>(hashState.hashTeamDivId ? Number(hashState.hashTeamDivId) : null);
+  const [selectedTeamTab, setSelectedTeamTab] = useState<string | undefined>(hashState.hashTab || undefined);
   const [selectedTeamSeason, setSelectedTeamSeason] = useState<string | undefined>(undefined);
+
+  // Push hash to URL when division/subdivision/team changes
+  useEffect(() => {
+    const parts: string[] = [encodeURIComponent(selectedDivision)];
+    if (selectedSubDivision && selectedSubDivision !== 'All') {
+      parts.push(`sub=${encodeURIComponent(selectedSubDivision)}`);
+    }
+    if (selectedTeamId && selectedTeamName) {
+      parts.push(`team=${selectedTeamId}`);
+      parts.push(`name=${encodeURIComponent(selectedTeamName)}`);
+      if (selectedTeamLogo) parts.push(`logo=${encodeURIComponent(selectedTeamLogo)}`);
+      if (selectedTeamDivisionId) parts.push(`divid=${selectedTeamDivisionId}`);
+      if (selectedTeamTab) parts.push(`tab=${selectedTeamTab}`);
+    }
+    window.history.pushState(null, '', `/teams#${parts.join('&')}`);
+  }, [selectedDivision, selectedSubDivision, selectedTeamId, selectedTeamName, selectedTeamLogo, selectedTeamDivisionId, selectedTeamTab]);
+
+  // Listen for browser back/forward
+  useEffect(() => {
+    const handleHashChange = () => {
+      const hash = window.location.hash.substring(1);
+      if (!hash) return;
+      const parts = hash.split('&');
+      let hashDivision = '';
+      let hashSub = '';
+      let hashTeamId = '';
+      let hashTeamName = '';
+      let hashTeamLogo = '';
+      let hashTeamDivId = '';
+      let hashTab = '';
+      for (const part of parts) {
+        if (part.startsWith('sub=')) hashSub = decodeURIComponent(part.substring(4));
+        else if (part.startsWith('team=')) hashTeamId = part.substring(5);
+        else if (part.startsWith('name=')) hashTeamName = decodeURIComponent(part.substring(5));
+        else if (part.startsWith('logo=')) hashTeamLogo = decodeURIComponent(part.substring(5));
+        else if (part.startsWith('divid=')) hashTeamDivId = part.substring(6);
+        else if (part.startsWith('tab=')) hashTab = part.substring(4);
+        else if (part) hashDivision = decodeURIComponent(part);
+      }
+      if (hashDivision) setSelectedDivision(hashDivision);
+      if (hashSub) setSelectedSubDivision(hashSub);
+      if (hashTeamId && hashTeamName) {
+        setSelectedTeamId(hashTeamId);
+        setSelectedTeamName(hashTeamName);
+        setSelectedTeamLogo(hashTeamLogo || null);
+        setSelectedTeamDivisionId(hashTeamDivId ? Number(hashTeamDivId) : null);
+        if (hashTab) setSelectedTeamTab(hashTab);
+      } else {
+        setSelectedTeamId(null);
+        setSelectedTeamName(null);
+        setSelectedTeamLogo(null);
+        setSelectedTeamDivisionId(null);
+        setSelectedTeamTab(undefined);
+      }
+    };
+    window.addEventListener('hashchange', handleHashChange);
+    return () => window.removeEventListener('hashchange', handleHashChange);
+  }, []);
 
   // Auto-select team when navigating back from player profile
   useEffect(() => {
@@ -279,6 +362,7 @@ export function TeamsPageV1() {
       if (!selectedSubDivision || selectedSubDivision === 'All') return true;
       return apiTeam.SubDivision === selectedSubDivision;
     })
+    .sort((a, b) => a.TeamName.localeCompare(b.TeamName))
     .map((apiTeam) => ({
       id: apiTeam.TeamId.toString(),
       teamIdNum: apiTeam.TeamId,
@@ -447,6 +531,7 @@ export function TeamsPageV1() {
           setSelectedTeamTab(undefined);
           setSelectedTeamSeason(undefined);
         }}
+        onTabChange={(tab) => setSelectedTeamTab(tab)}
       />
     );
   }

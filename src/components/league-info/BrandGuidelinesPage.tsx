@@ -3,6 +3,13 @@
 import { useState } from 'react';
 import { Palette, Download, Check, Copy, X, AlertTriangle, CheckCircle, Type, Image, Layers, Shield } from 'lucide-react';
 
+// Import logo assets
+import shieldLogo from '../../assets/mainlogo.png';
+import horizontalLogo from '../../assets/horizontallogo.png';
+import shoulderPatchLogo from '../../assets/rmll-shoulder-patch-full.png';
+import shieldDarkLogo from '../../assets/mainlogo.png';
+import horizontalDarkLogo from '../../assets/horizontallogo.png';
+
 // ---------------------------------------------------------------------------
 // Colour palette
 // ---------------------------------------------------------------------------
@@ -79,7 +86,7 @@ const LOGO_VARIANTS: LogoVariant[] = [
     id: 'shield',
     name: 'Shield Logo (Primary)',
     description: 'The primary RMLL shield crest. Use this as the main mark wherever the league is represented.',
-    src: 'https://nkfbehspyjookipapdbp.supabase.co/storage/v1/object/public/make-9a1ba23f-images/1774223389508-kcvcngeu67.png',
+    src: shieldLogo,
     bgClass: 'bg-white',
     downloads: [
       { label: 'PNG - Full Size', size: 'Original' },
@@ -92,7 +99,7 @@ const LOGO_VARIANTS: LogoVariant[] = [
     id: 'horizontal',
     name: 'Horizontal Logo',
     description: 'The horizontal lockup combining the crest with the league name. Ideal for headers and banners.',
-    src: 'https://nkfbehspyjookipapdbp.supabase.co/storage/v1/object/public/make-9a1ba23f-images/1774223389516-e9kz3q3g3k.png',
+    src: horizontalLogo,
     bgClass: 'bg-white',
     downloads: [
       { label: 'PNG - Full Size', size: 'Original' },
@@ -105,7 +112,7 @@ const LOGO_VARIANTS: LogoVariant[] = [
     id: 'shoulder-patch',
     name: 'Shoulder Patch Logo',
     description: 'The official RMLL shield crest with red accent bottom, specifically designed for use on jersey shoulder patches.',
-    src: 'https://nkfbehspyjookipapdbp.supabase.co/storage/v1/object/public/make-9a1ba23f-images/1774223389508-kcvcngeu67.png',
+    src: shoulderPatchLogo,
     bgClass: 'bg-[#001741]', // Navy background for contrast
     downloads: [
       { label: 'PNG - Full Size', size: 'Original' },
@@ -117,7 +124,7 @@ const LOGO_VARIANTS: LogoVariant[] = [
     id: 'shield-dark',
     name: 'Shield on Dark',
     description: 'The shield crest for use on dark backgrounds. Ensure sufficient contrast around the mark.',
-    src: 'https://nkfbehspyjookipapdbp.supabase.co/storage/v1/object/public/make-9a1ba23f-images/1774223389508-kcvcngeu67.png',
+    src: shieldDarkLogo,
     bgClass: 'bg-[#001741]',
     downloads: [
       { label: 'PNG - Full Size', size: 'Original' },
@@ -128,7 +135,7 @@ const LOGO_VARIANTS: LogoVariant[] = [
     id: 'horizontal-dark',
     name: 'Horizontal on Dark',
     description: 'Horizontal lockup on dark background. Suitable for dark-themed media and print.',
-    src: 'https://nkfbehspyjookipapdbp.supabase.co/storage/v1/object/public/make-9a1ba23f-images/1774223389516-e9kz3q3g3k.png',
+    src: horizontalDarkLogo,
     bgClass: 'bg-[#001741]',
     downloads: [
       { label: 'PNG - Full Size', size: 'Original' },
@@ -244,8 +251,8 @@ function CopyButton({ text }: { text: string }) {
 // ---------------------------------------------------------------------------
 export function BrandGuidelinesPage() {
   // Get logo URLs for inline references
-  const shieldLogo = LOGO_VARIANTS.find(v => v.id === 'shield')?.src || '';
-  const horizontalLogo = LOGO_VARIANTS.find(v => v.id === 'horizontal')?.src || '';
+  const shieldLogoUrl = shieldLogo;
+  const horizontalLogoUrl = horizontalLogo;
 
   return (
     <div className="space-y-10">
@@ -351,7 +358,7 @@ export function BrandGuidelinesPage() {
             <h4 className="font-bold text-gray-900 mb-3 text-sm">Clear Space</h4>
             <div className="flex items-center justify-center">
               <div className="relative border-2 border-dashed border-blue-300 p-8 sm:p-10 rounded-lg bg-blue-50/30">
-                <img src={shieldLogo} alt="Clear space demo" className="h-20 w-auto mx-auto" />
+                <img src={shieldLogoUrl} alt="Clear space demo" className="h-20 w-auto mx-auto" />
                 {/* Measurement arrows */}
                 <div className="absolute top-2 left-1/2 -translate-x-1/2 text-[10px] font-mono text-blue-500 bg-white px-1 rounded">X</div>
                 <div className="absolute bottom-2 left-1/2 -translate-x-1/2 text-[10px] font-mono text-blue-500 bg-white px-1 rounded">X</div>
@@ -374,19 +381,19 @@ export function BrandGuidelinesPage() {
                 <div className="flex items-end gap-4">
                   <div className="flex flex-col items-center">
                     <div className="w-12 h-12 bg-gray-100 rounded border border-gray-200 flex items-center justify-center">
-                      <img src={shieldLogo} alt="" className="h-8 w-auto" />
+                      <img src={shieldLogoUrl} alt="" className="h-8 w-auto" />
                     </div>
                     <span className="text-[10px] text-gray-400 mt-1">48px</span>
                   </div>
                   <div className="flex flex-col items-center">
                     <div className="w-8 h-8 bg-gray-100 rounded border border-gray-200 flex items-center justify-center">
-                      <img src={shieldLogo} alt="" className="h-5 w-auto" />
+                      <img src={shieldLogoUrl} alt="" className="h-5 w-auto" />
                     </div>
                     <span className="text-[10px] text-gray-400 mt-1">32px min</span>
                   </div>
                   <div className="flex flex-col items-center opacity-40">
                     <div className="w-4 h-4 bg-gray-100 rounded border border-red-300 flex items-center justify-center">
-                      <img src={shieldLogo} alt="" className="h-2.5 w-auto" />
+                      <img src={shieldLogoUrl} alt="" className="h-2.5 w-auto" />
                     </div>
                     <span className="text-[10px] text-red-400 mt-1">Too small</span>
                   </div>
@@ -557,14 +564,14 @@ export function BrandGuidelinesPage() {
 
           <div className="flex flex-wrap gap-3">
             <button
-              onClick={() => downloadLogo(shieldLogo, 'rmll-shield-logo.png', 'Original')}
+              onClick={() => downloadLogo(shieldLogoUrl, 'rmll-shield-logo.png', 'Original')}
               className="inline-flex items-center gap-2 bg-white text-[#013fac] font-semibold px-5 py-2.5 rounded-lg hover:bg-blue-50 transition-colors text-sm"
             >
               <Download className="w-4 h-4" />
               Shield Logo (PNG)
             </button>
             <button
-              onClick={() => downloadLogo(horizontalLogo, 'rmll-horizontal-logo.png', 'Original')}
+              onClick={() => downloadLogo(horizontalLogoUrl, 'rmll-horizontal-logo.png', 'Original')}
               className="inline-flex items-center gap-2 bg-white text-[#013fac] font-semibold px-5 py-2.5 rounded-lg hover:bg-blue-50 transition-colors text-sm"
             >
               <Download className="w-4 h-4" />

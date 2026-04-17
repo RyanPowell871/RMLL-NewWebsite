@@ -10,15 +10,16 @@ export const ORGANIZATION_ID = 520;
 // Mock data fallback configuration
 export const useMockData = false;
 
-// Season IDs for different years
+// Season IDs — only include known valid IDs; zeros are misleading
+// Season IDs change each year and are resolved dynamically from the API via useSeasons
 export const SEASON_IDS: Record<string, number> = {
-  '2025': 7235,
-  '2024': 0, // Replace with actual season ID
-  '2023': 0, // Replace with actual season ID
-  '2022': 0, // Replace with actual season ID
+  '2026': 7235,
 };
 
-// Division ID mappings for 2025 Season
+// Division ID mappings for 2026 Season
+// NOTE: These IDs are season-specific and change when SportzSoft creates new seasons.
+// The dynamic DivisionContext (loaded by DivisionDataLoader) should be the primary source.
+// These constants serve as fallbacks only. Update when a new season starts.
 export const DIVISION_IDS = {
   // Alberta Major Female
   ALBERTA_MAJOR_FEMALE: 76886,

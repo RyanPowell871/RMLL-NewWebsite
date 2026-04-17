@@ -3,7 +3,6 @@ import {
   fetchSchedule,
   fetchTeams,
   fetchStandings,
-  SEASON_IDS,
   DIVISION_NAMES,
   DIVISION_GROUPS,
   SUB_DIVISION_IDS,

@@ -1,6 +1,6 @@
 import { useDocumentMeta, PAGE_META } from '../hooks/useDocumentMeta';
 import { trackPageView } from '../components/GoogleAnalytics';
-import { lazy, Suspense, useEffect, useMemo } from 'react';
+import { lazy, Suspense, useEffect, useMemo, useState } from 'react';
 import { Header } from '../components/Header';
 import { Footer } from '../components/Footer';
 import { ScoreTicker } from '../components/ScoreTicker';
@@ -11,6 +11,8 @@ import { StandingsSection } from '../components/StandingsSection';
 import { NewsSection } from '../components/NewsSection';
 import { RoughnecksSchedule } from '../components/RoughnecksSchedule';
 import { useNavigation } from '../contexts/NavigationContext';
+import { useSeasons } from '../hooks/useSeasons';
+import { Loader2 } from 'lucide-react';
 
 // Lazy load secondary pages
 const SchedulePage = lazy(() => import('./SchedulePage').then(m => ({ default: m.SchedulePage })));
@@ -37,6 +39,18 @@ function PageLoader() {
 
 export function HomePage() {
   const { currentPage, navigateTo } = useNavigation();
+  const { loading: seasonsLoading } = useSeasons();
+  const [showGlobalLoader, setShowGlobalLoader] = useState(true);
+
+  // Hide global loader after a short delay once seasons are loaded
+  useEffect(() => {
+    if (!seasonsLoading) {
+      const timer = setTimeout(() => {
+        setShowGlobalLoader(false);
+      }, 500);
+      return () => clearTimeout(timer);
+    }
+  }, [seasonsLoading]);
 
   // SEO: Dynamic page meta based on current navigation
   const pageMeta = useMemo(() => {
@@ -91,10 +105,19 @@ export function HomePage() {
 
   // Render different pages based on navigation
   // Note: Other pages include their own Header/Footer
-  if (currentPage === 'home') {
-    return (
-      <div className="min-h-screen bg-white">
+  // Homepage is always mounted but hidden when navigating away to cache data
+  return (
+    <>
+      {/* Homepage - always mounted for caching, hidden when not active */}
+      <div className={`min-h-screen bg-white ${currentPage !== 'home' ? 'hidden' : ''}`}>
         <Header />
+        {/* Global Loading Indicator */}
+        {showGlobalLoader && (
+          <div className="fixed top-16 left-0 right-0 z-40 bg-gradient-to-r from-red-600 to-red-700 text-white py-2 px-4 flex items-center justify-center gap-2 shadow-md">
+            <Loader2 className="w-4 h-4 animate-spin" />
+            <span className="text-sm font-semibold">Loading league data...</span>
+          </div>
+        )}
         <main>
           <ScoreTicker />
           <Hero />
@@ -106,21 +129,21 @@ export function HomePage() {
         </main>
         <Footer />
       </div>
-    );
-  }
 
-  // Lazy load other pages
-  return (
-    <Suspense fallback={<PageLoader />}>
-      {currentPage === 'schedule' && <SchedulePage />}
-      {currentPage === 'standings' && <StandingsPage />}
-      {currentPage === 'stats' && <StatsPage />}
-      {currentPage === 'teams' && <TeamsPageV1 />}
-      {currentPage === 'division-info' && <DivisionInfoPage />}
-      {currentPage === 'documents' && <DocumentsPageV1 />}
-      {currentPage === 'store' && <StorePageV1 />}
-      {currentPage === 'player' && <PlayerProfilePage />}
-      {currentPage === 'news' && <NewsPage />}
-    </Suspense>
+      {/* Lazy load other pages - only shown when navigating away from home */}
+      {currentPage !== 'home' && (
+        <Suspense fallback={<PageLoader />}>
+          {currentPage === 'schedule' && <SchedulePage />}
+          {currentPage === 'standings' && <StandingsPage />}
+          {currentPage === 'stats' && <StatsPage />}
+          {currentPage === 'teams' && <TeamsPageV1 />}
+          {currentPage === 'division-info' && <DivisionInfoPage />}
+          {currentPage === 'documents' && <DocumentsPageV1 />}
+          {currentPage === 'store' && <StorePageV1 />}
+          {currentPage === 'player' && <PlayerProfilePage />}
+          {currentPage === 'news' && <NewsPage />}
+        </Suspense>
+      )}
+    </>
   );
 }

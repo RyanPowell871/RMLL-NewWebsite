@@ -56,6 +56,7 @@ interface TeamDetailPageProps {
   divisionId?: number;
   initialTab?: string;
   onBack: () => void;
+  onTabChange?: (tab: string) => void;
 }
 
 interface BenchPersonnel {
@@ -118,7 +119,7 @@ function computeMinutes(obj: any): number {
   return 0;
 }
 
-export function TeamDetailPage({ teamId, teamName, season, teamLogo, divisionId, initialTab, onBack }: TeamDetailPageProps) {
+export function TeamDetailPage({ teamId, teamName, season, teamLogo, divisionId, initialTab, onBack, onTabChange }: TeamDetailPageProps) {
   const { navigateTo } = useNavigation();
   const [activeTab, setActiveTab] = useState(initialTab || 'home');
   const [benchPersonnel, setBenchPersonnel] = useState<BenchPersonnel[]>([]);
@@ -1236,28 +1237,31 @@ export function TeamDetailPage({ teamId, teamName, season, teamLogo, divisionId,
     };
   }, [apiGames, currentTeamId]);
 
-  // Group Roster by Position
+  // Group Roster by Position (Canadian spelling)
   const rosterByPosition = useMemo(() => {
     if (!roster.length) return {};
-    
+
     const groups: Record<string, any[]> = {
       'Goalies': [],
-      'Defense': [],
-      'Forwards': [],
+      'Defence': [],
+      'Offence': [],
+      'Transition': [],
       'Staff': [] // If any
     };
-    
+
     roster.forEach(player => {
       if (player.isGoalie) {
         groups['Goalies'].push(player);
       } else if (player.position?.toLowerCase().includes('def') || player.position === 'D') {
-        groups['Defense'].push(player);
+        groups['Defence'].push(player);
+      } else if (player.position?.toLowerCase().includes('mid') || player.position?.toLowerCase().includes('transition')) {
+        groups['Transition'].push(player);
       } else {
-        // Default to forwards for others (Center, Wing, Forward, or unknown)
-        groups['Forwards'].push(player);
+        // Default to offence for others (Center, Wing, Forward, or unknown)
+        groups['Offence'].push(player);
       }
     });
-    
+
     return groups;
   }, [roster]);
 
@@ -1684,7 +1688,7 @@ export function TeamDetailPage({ teamId, teamName, season, teamLogo, divisionId,
       {/* Navigation Tabs */}
       <div className="bg-white shadow-sm">
         <div className="max-w-[1600px] mx-auto px-4 sm:px-6">
-          <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+          <Tabs value={activeTab} onValueChange={(tab) => { setActiveTab(tab); onTabChange?.(tab); }} className="w-full">
             <TabsList className="w-full justify-start h-auto bg-transparent rounded-none border-b-0 p-0 gap-1 overflow-x-auto">
               <TabsTrigger 
                 value="home"
@@ -2011,27 +2015,32 @@ export function TeamDetailPage({ teamId, teamName, season, teamLogo, divisionId,
                     <CardContent className="p-4">
                       {roster.length > 0 ? (() => {
                         const goalies = roster.filter(p => p.isGoalie);
-                        const defense = roster.filter(p => !p.isGoalie && (p.position?.toLowerCase().includes('def') || p.position === 'D'));
-                        const forwards = roster.filter(p => !p.isGoalie && !(p.position?.toLowerCase().includes('def') || p.position === 'D'));
-                        
+                        const defence = roster.filter(p => !p.isGoalie && (p.position?.toLowerCase().includes('def') || p.position === 'D'));
+                        const transition = roster.filter(p => !p.isGoalie && (p.position?.toLowerCase().includes('mid') || p.position?.toLowerCase().includes('transition')));
+                        const offence = roster.filter(p => !p.isGoalie && !(p.position?.toLowerCase().includes('def') || p.position === 'D') && !(p.position?.toLowerCase().includes('mid') || p.position?.toLowerCase().includes('transition')));
+
                         return (
                           <div className="space-y-3">
                             <div className="text-center mb-3">
                               <div className="text-3xl font-black" style={{ color: extractedColors.primary }}>{roster.length}</div>
                               <div className="text-xs font-bold text-gray-500 uppercase tracking-wider">Total Players</div>
                             </div>
-                            <div className="grid grid-cols-3 gap-3">
+                            <div className="grid grid-cols-4 gap-2">
                               <div className="bg-gray-50 rounded-lg p-3 text-center border border-gray-100">
                                 <div className="text-xl font-black text-gray-800">{goalies.length}</div>
                                 <div className="text-[10px] font-bold text-gray-500 uppercase tracking-wider">Goalies</div>
                               </div>
                               <div className="bg-gray-50 rounded-lg p-3 text-center border border-gray-100">
-                                <div className="text-xl font-black text-gray-800">{defense.length}</div>
-                                <div className="text-[10px] font-bold text-gray-500 uppercase tracking-wider">Defense</div>
+                                <div className="text-xl font-black text-gray-800">{defence.length}</div>
+                                <div className="text-[10px] font-bold text-gray-500 uppercase tracking-wider">Defence</div>
                               </div>
                               <div className="bg-gray-50 rounded-lg p-3 text-center border border-gray-100">
-                                <div className="text-xl font-black text-gray-800">{forwards.length}</div>
-                                <div className="text-[10px] font-bold text-gray-500 uppercase tracking-wider">Forwards</div>
+                                <div className="text-xl font-black text-gray-800">{offence.length}</div>
+                                <div className="text-[10px] font-bold text-gray-500 uppercase tracking-wider">Offence</div>
+                              </div>
+                              <div className="bg-gray-50 rounded-lg p-3 text-center border border-gray-100">
+                                <div className="text-xl font-black text-gray-800">{transition.length}</div>
+                                <div className="text-[10px] font-bold text-gray-500 uppercase tracking-wider">Transition</div>
                               </div>
                             </div>
                             {apiTeamColors && (apiTeamColors.color1 || apiTeamColors.color2) && (
@@ -2090,8 +2099,7 @@ export function TeamDetailPage({ teamId, teamName, season, teamLogo, divisionId,
                                 <div className="flex-1 min-w-0">
                                   <button
                                     onClick={() => navigateToPlayer({ playerId: player.PlayerId, teamId: currentTeamId, seasonId, photoDocId: player.PhotoDocId })}
-                                    className="text-sm font-bold hover:underline transition-colors truncate block"
-                                    style={{ color: extractedColors.primary }}
+                                    className="text-sm font-bold hover:underline transition-colors truncate block text-black"
                                   >
                                     {resolveStr(player, 'PlayerName', 'Name', 'FullName')}
                                   </button>
@@ -2132,8 +2140,7 @@ export function TeamDetailPage({ teamId, teamName, season, teamLogo, divisionId,
                                 <div className="flex-1 min-w-0">
                                   <button
                                     onClick={() => navigateToPlayer({ playerId: topGoalie.PlayerId, teamId: currentTeamId, seasonId, photoDocId: topGoalie.PhotoDocId, isGoalie: true })}
-                                    className="text-sm font-bold hover:underline transition-colors truncate block"
-                                    style={{ color: extractedColors.primary }}
+                                    className="text-sm font-bold hover:underline transition-colors truncate block text-black"
                                   >
                                     {resolveStr(topGoalie, 'PlayerName', 'Name', 'FullName')}
                                   </button>
@@ -3078,8 +3085,7 @@ export function TeamDetailPage({ teamId, teamName, season, teamLogo, divisionId,
                                         <td className="px-3 py-2.5">
                                           <button
                                             onClick={() => navigateToPlayer({ playerId: player.playerId, teamId: currentTeamId, seasonId, photoDocId: player.photoDocId })}
-                                            className="text-left hover:underline transition-colors flex items-center gap-2 group/name text-sm font-semibold"
-                                            style={{ color: extractedColors.primary }}
+                                            className="text-left hover:underline transition-colors flex items-center gap-2 group/name text-sm font-semibold text-black"
                                           >
                                             <PlayerAvatar photoUrl={player.photoUrl} />
                                             {player.name}
@@ -3167,8 +3173,7 @@ export function TeamDetailPage({ teamId, teamName, season, teamLogo, divisionId,
                                         <td className="px-3 py-2.5">
                                           <button
                                             onClick={() => navigateToPlayer({ playerId: player.playerId, teamId: currentTeamId, seasonId, photoDocId: player.photoDocId, isGoalie: true })}
-                                            className="text-left hover:underline transition-colors flex items-center gap-2 group/name text-sm font-semibold"
-                                            style={{ color: extractedColors.primary }}
+                                            className="text-left hover:underline transition-colors flex items-center gap-2 group/name text-sm font-semibold text-black"
                                           >
                                             <PlayerAvatar photoUrl={player.photoUrl} />
                                             {player.name}
@@ -3214,7 +3219,7 @@ export function TeamDetailPage({ teamId, teamName, season, teamLogo, divisionId,
                   </div>
                 ) : (
                 <div className="space-y-6">
-                  {['Goalies', 'Defense', 'Forwards'].map((groupName) => {
+                  {['Goalies', 'Defence', 'Offence', 'Transition'].map((groupName) => {
                     const groupRoster = rosterByPosition[groupName] || [];
                     if (groupRoster.length === 0) return null;
                     const isGoalieGroup = groupName === 'Goalies';
@@ -3287,8 +3292,7 @@ export function TeamDetailPage({ teamId, teamName, season, teamLogo, divisionId,
                                     <td className="px-3 py-2.5">
                                       <button
                                         onClick={() => navigateToPlayer({ playerId: player.playerId, teamId: currentTeamId, seasonId, photoDocId: player.photoDocId, isGoalie: isGoalieGroup || player.isGoalie })}
-                                        className="text-left hover:underline transition-colors flex items-center gap-2 group/name text-sm font-semibold"
-                                        style={{ color: extractedColors.primary }}
+                                        className="text-left hover:underline transition-colors flex items-center gap-2 group/name text-sm font-semibold text-black"
                                       >
                                         <PlayerAvatar photoUrl={player.photoUrl} />
                                         {player.name}
@@ -3309,6 +3313,12 @@ export function TeamDetailPage({ teamId, teamName, season, teamLogo, divisionId,
                                         <td className="px-3 py-2.5 text-center text-sm font-medium text-gray-900">{player.stats.a}</td>
                                         <td className="px-3 py-2.5 text-center text-sm font-bold" style={{ color: extractedColors.primary }}>{player.stats.pts}</td>
                                         <td className="px-3 py-2.5 text-center text-sm text-gray-600 hidden md:table-cell">{player.stats.pim}</td>
+                                      </>
+                                    ) : isGoalieGroup ? (
+                                      <>
+                                        <td className="px-3 py-2.5 text-center text-sm text-gray-400">-</td>
+                                        <td className="px-3 py-2.5 text-center text-sm text-gray-400">-</td>
+                                        <td className="px-3 py-2.5 text-center text-sm text-gray-400 hidden md:table-cell">-</td>
                                       </>
                                     ) : (
                                       <>
@@ -3483,8 +3493,7 @@ export function TeamDetailPage({ teamId, teamName, season, teamLogo, divisionId,
                                   <td className="px-3 py-2.5">
                                     <button
                                       onClick={() => navigateToPlayer({ playerId: player.PlayerId, teamId: currentTeamId, seasonId, photoDocId: player.PhotoDocId || photoDocIdMap[player.PlayerId] })}
-                                      className="text-left hover:underline transition-colors flex items-center gap-1.5 group/name text-sm font-semibold"
-                                      style={{ color: extractedColors.primary }}
+                                      className="text-left hover:underline transition-colors flex items-center gap-1.5 group/name text-sm font-semibold text-black"
                                     >
                                       {resolveStr(player, 'PlayerName', 'Name', 'FullName') || 'Unknown'}
                                       <ChevronRight className="w-3.5 h-3.5 opacity-0 group-hover/name:opacity-60 transition-opacity shrink-0" />
@@ -3588,8 +3597,7 @@ export function TeamDetailPage({ teamId, teamName, season, teamLogo, divisionId,
                                   <td>
                                     <button
                                       onClick={() => navigateToPlayer({ playerId: goalie.PlayerId, teamId: currentTeamId, seasonId, photoDocId: goalie.PhotoDocId || photoDocIdMap[goalie.PlayerId], isGoalie: true })}
-                                      className="text-left hover:underline transition-colors flex items-center gap-1.5 group/name text-sm font-semibold"
-                                      style={{ color: extractedColors.primary }}
+                                      className="text-left hover:underline transition-colors flex items-center gap-1.5 group/name text-sm font-semibold text-black"
                                     >
                                       {resolveStr(goalie, 'PlayerName', 'Name', 'FullName') || 'Unknown'}
                                       <ChevronRight className="w-3.5 h-3.5 opacity-0 group-hover/name:opacity-60 transition-opacity shrink-0" />

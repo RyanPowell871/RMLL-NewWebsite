@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { BookOpen } from 'lucide-react';
 
 const RECORD_BOOK_TABS = [
@@ -56,8 +56,43 @@ const RECORD_BOOK_TABS = [
   },
 ];
 
+// Helper to parse ?tab= from the hash (e.g., #record-books?tab=jr-a)
+function getHashTab(): string | null {
+  const hash = window.location.hash.substring(1);
+  const params = hash.split('?')[1];
+  if (!params) return null;
+  const search = new URLSearchParams(params);
+  return search.get('tab');
+}
+
 export function RecordBooksPage() {
-  const [activeTab, setActiveTab] = useState(RECORD_BOOK_TABS[0].id);
+  const [activeTab, setActiveTab] = useState(() => {
+    const hashTab = getHashTab();
+    if (hashTab && RECORD_BOOK_TABS.some(t => t.id === hashTab)) return hashTab;
+    return RECORD_BOOK_TABS[0].id;
+  });
+
+  // Push tab to URL hash when it changes
+  useEffect(() => {
+    const hash = window.location.hash.substring(1);
+    const pageId = hash.split('?')[0];
+    const newHash = activeTab !== RECORD_BOOK_TABS[0].id
+      ? `${pageId}?tab=${activeTab}`
+      : pageId;
+    window.history.replaceState(null, '', `/league-info#${newHash}`);
+  }, [activeTab]);
+
+  // Listen for browser back/forward
+  useEffect(() => {
+    const handleHashChange = () => {
+      const hashTab = getHashTab();
+      if (hashTab && RECORD_BOOK_TABS.some(t => t.id === hashTab)) {
+        setActiveTab(hashTab);
+      }
+    };
+    window.addEventListener('hashchange', handleHashChange);
+    return () => window.removeEventListener('hashchange', handleHashChange);
+  }, []);
 
   const activeRecord = RECORD_BOOK_TABS.find(t => t.id === activeTab)!;
 
@@ -68,7 +103,7 @@ export function RecordBooksPage() {
         <div className="flex items-start gap-3">
           <BookOpen className="w-5 h-5 text-[#013fac] mt-0.5 flex-shrink-0" />
           <p className="text-sm text-gray-600">
-            Historical record books for all RMLL divisions. Select a division tab below to view records. 
+            Historical record books for all RMLL divisions. Select a division tab below to view records.
             Data is sourced from league archives and updated periodically.
           </p>
         </div>

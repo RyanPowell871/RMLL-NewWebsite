@@ -5,7 +5,7 @@ import { FacilityMapLink } from './FacilityMapLink';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs';
 import { exportGameToCalendar, type GameForCalendar } from '../utils/calendar';
 import { exportGameSheetPDF, type GameSheetPDFData } from '../utils/gameSheetPdf';
-import rmllShieldLogo from 'figma:asset/fdfcb8e6c2b97967b54febaebf3bb794e8d4e2db.png';
+import rmllShieldLogo from '../assets/mainlogo.png';
 import { useGameDetails } from '../hooks/useGameDetails';
 import { fetchTeamRoster, getPlayerPhotoUrl, parseDateAsLocal, type ScoringStats, type GoalieStats, type PenaltyStats, type RosterPlayer as APIRosterPlayer } from '../services/sportzsoft';
 

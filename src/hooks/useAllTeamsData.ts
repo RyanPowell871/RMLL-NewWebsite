@@ -6,23 +6,7 @@ import {
 } from '../services/sportzsoft';
 import { useSeasons } from './useSeasons';
 import { EnhancedTeam } from './useTeamsData';
-
-// Map API subdivision names to broader division categories
-const mapToBroadDivision = (divisionName: string): string => {
-  if (divisionName === 'Alberta Major Female') return 'Alberta Major Female';
-  if (divisionName === 'Alberta Major Senior Female') return 'Alberta Major Senior Female';
-  if (divisionName === 'Jr. A') return 'Junior A';
-  
-  // Check Tier III and Tier II BEFORE Tier I since they contain "Tier I" as a substring
-  if (divisionName.includes('Jr. Tier III')) return 'Junior B Tier III';
-  if (divisionName.includes('Jr. B Tier II')) return 'Junior B Tier II';
-  if (divisionName.includes('Jr. B Tier I')) return 'Junior B Tier I';
-  
-  if (divisionName === 'Sr. B') return 'Senior B';
-  if (divisionName.includes('Sr. C')) return 'Senior C';
-  
-  return divisionName;
-};
+import { mapToBroadDivision } from '../utils/division-mapping';
 
 interface UseAllTeamsDataResult {
   teams: EnhancedTeam[];
