@@ -62,6 +62,7 @@ interface TeamDetailPageProps {
 interface BenchPersonnel {
   role: string;
   name: string;
+  photoUrl?: string;
 }
 
 // ============================================================================
@@ -622,7 +623,9 @@ export function TeamDetailPage({ teamId, teamName, season, teamLogo, divisionId,
         .map((role: any) => {
           const roleName = role.Role || '';
           const personName = role.Name || `${role.FirstName || ''} ${role.LastName || ''}`.trim();
-          return { role: roleName, name: personName || 'TBD' };
+          const activeDocId = role.ActiveDocId || role.ActiveDocID || 0;
+          const photoUrl = activeDocId > 0 ? getPlayerPhotoUrl(activeDocId) : undefined;
+          return { role: roleName, name: personName || 'TBD', photoUrl };
         })
         .sort((a: BenchPersonnel, b: BenchPersonnel) => getRolePriority(a.role) - getRolePriority(b.role));
       
@@ -1853,10 +1856,16 @@ export function TeamDetailPage({ teamId, teamName, season, teamLogo, divisionId,
                     <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
                       {benchPersonnel.map((person, i) => (
                         <div key={`${person.role}-${i}`} className="bg-white border border-gray-100 rounded-lg p-3 flex items-center gap-3 shadow-sm hover:shadow-md transition-all hover:-translate-y-0.5" style={{ borderLeft: `4px solid ${extractedColors.primary}` }}>
-                          <div className="w-10 h-10 rounded-full flex items-center justify-center text-white font-bold text-sm shadow-sm" 
-                               style={{ backgroundColor: extractedColors.secondary }}>
-                            {person.name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase()}
-                          </div>
+                          {person.photoUrl ? (
+                            <div className="w-10 h-10 rounded-full overflow-hidden shadow-sm flex-shrink-0">
+                              <img src={person.photoUrl} alt={person.name} className="w-full h-full object-cover" />
+                            </div>
+                          ) : (
+                            <div className="w-10 h-10 rounded-full flex items-center justify-center text-white font-bold text-sm shadow-sm flex-shrink-0"
+                                 style={{ backgroundColor: extractedColors.secondary }}>
+                              {person.name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase()}
+                            </div>
+                          )}
                           <div className="overflow-hidden">
                             <div className="font-bold text-gray-900 truncate" title={person.name}>{person.name}</div>
                             <div className="text-xs font-bold text-gray-500 uppercase tracking-wide truncate">{person.role}</div>
