@@ -83,7 +83,14 @@ interface DivisionData {
 export function DivisionInfoPage() {
   const { selectedDivision: favoriteDivision, selectedSubDivision: favoriteSubDivision } = useDivision();
   const { navigationParams } = useNavigation();
-  
+
+  // Clean up any legacy hash URLs on mount
+  useEffect(() => {
+    if (window.location.hash) {
+      window.history.replaceState(null, '', '/division-info');
+    }
+  }, []);
+
   // Divisions that are inactive / have no active SportzSoft data for drafts,
   // protected lists, or transactions.  Hide those tabs to avoid showing
   // cross-contaminated data from other divisions.

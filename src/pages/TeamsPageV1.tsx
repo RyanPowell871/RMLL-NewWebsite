@@ -196,7 +196,14 @@ function extractContactInfo(apiTeam: any) {
 export function TeamsPageV1() {
   const { selectedDivision: favoriteDivision, selectedSubDivision: favoriteSubDivision, divisions, subDivisions } = useDivision();
   const { navigationParams } = useNavigation();
-  
+
+  // Clean up any legacy hash URLs on mount
+  useEffect(() => {
+    if (window.location.hash) {
+      window.history.replaceState(null, '', '/teams');
+    }
+  }, []);
+
   const [selectedDivision, setSelectedDivision] = useState(() =>
     favoriteDivision && favoriteDivision !== 'All Divisions' ? favoriteDivision : 'Senior B'
   );
