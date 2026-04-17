@@ -56,7 +56,6 @@ interface TeamDetailPageProps {
   divisionId?: number;
   initialTab?: string;
   onBack: () => void;
-  onTabChange?: (tab: string) => void;
 }
 
 interface BenchPersonnel {
@@ -120,7 +119,7 @@ function computeMinutes(obj: any): number {
   return 0;
 }
 
-export function TeamDetailPage({ teamId, teamName, season, teamLogo, divisionId, initialTab, onBack, onTabChange }: TeamDetailPageProps) {
+export function TeamDetailPage({ teamId, teamName, season, teamLogo, divisionId, initialTab, onBack }: TeamDetailPageProps) {
   const { navigateTo } = useNavigation();
   const [activeTab, setActiveTab] = useState(initialTab || 'home');
   const [benchPersonnel, setBenchPersonnel] = useState<BenchPersonnel[]>([]);
@@ -1691,7 +1690,7 @@ export function TeamDetailPage({ teamId, teamName, season, teamLogo, divisionId,
       {/* Navigation Tabs */}
       <div className="bg-white shadow-sm">
         <div className="max-w-[1600px] mx-auto px-4 sm:px-6">
-          <Tabs value={activeTab} onValueChange={(tab) => { setActiveTab(tab); onTabChange?.(tab); }} className="w-full">
+          <Tabs value={activeTab} onValueChange={(tab) => setActiveTab(tab)} className="w-full">
             <TabsList className="w-full justify-start h-auto bg-transparent rounded-none border-b-0 p-0 gap-1 overflow-x-auto">
               <TabsTrigger 
                 value="home"

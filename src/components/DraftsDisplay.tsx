@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { useDraftPicks } from '../hooks/useDraftPicks';
 import {
   RefreshCw,
@@ -36,16 +36,21 @@ export function DraftsDisplay({ divisionName }: DraftsDisplayProps) {
 
   const [searchQuery, setSearchQuery] = useState('');
   const [viewMode, setViewMode] = useState<'rounds' | 'table'>('rounds');
-  const [selectedDraftId, setSelectedDraftId] = useState<number | 'all'>('all');
+  const [selectedDraftId, setSelectedDraftId] = useState<number>(0);
+
+  // Auto-select first draft when available drafts change (e.g. division switch)
+  useEffect(() => {
+    if (availableDrafts.length > 0) {
+      setSelectedDraftId(availableDrafts[0].id);
+    }
+  }, [availableDrafts]);
 
   // Apply search and draft filter
   const filteredPicks = useMemo(() => {
     let result = allPicks;
 
     // Apply draft filter
-    if (selectedDraftId !== 'all') {
-      result = result.filter(p => p.draftId === selectedDraftId);
-    }
+    result = result.filter(p => p.draftId === selectedDraftId);
 
     // Apply search filter
     if (searchQuery.trim()) {
@@ -171,18 +176,17 @@ export function DraftsDisplay({ divisionName }: DraftsDisplayProps) {
                 </Select>
               </div>
 
-              {/* Draft Filter (if multiple drafts exist) */}
-              {availableDrafts.length > 1 && (
+              {/* Draft Filter */}
+              {availableDrafts.length > 0 && (
                 <div className="w-full sm:w-64 shrink-0">
-                  <Select value={selectedDraftId === 'all' ? 'all' : String(selectedDraftId)} onValueChange={(val) => setSelectedDraftId(val === 'all' ? 'all' : Number(val))}>
+                  <Select value={String(selectedDraftId)} onValueChange={(val) => setSelectedDraftId(Number(val))}>
                     <SelectTrigger className="w-full bg-white font-bold text-sm">
                       <div className="flex items-center gap-2">
                         <Trophy className="w-4 h-4 text-[#013fac]" />
-                        <SelectValue placeholder="All Drafts" />
+                        <SelectValue placeholder="Select Draft" />
                       </div>
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="all" className="font-bold">All Drafts ({totalPicks})</SelectItem>
                       {availableDrafts.map(option => (
                         <SelectItem key={option.id} value={String(option.id)} className="font-bold">
                           {option.title} ({option.count})
