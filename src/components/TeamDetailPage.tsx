@@ -88,33 +88,33 @@ function resolveStr(obj: any, ...fieldNames: string[]): string {
 // Compute GAA: (GoalsAgainst / MinutesPlayed) * 60
 // Also handles direct GAA field from API
 function computeGAA(obj: any): number {
-  const directGAA = resolveNum(obj, 'GoalsAgainstAverage', 'GAA', 'Gaa');
+  const directGAA = resolveNum(obj, 'GoalsAgainstAverage', 'GAA');
   if (directGAA > 0) return directGAA;
-  const ga = resolveNum(obj, 'GoalsAgainst', 'GA', 'GATotal');
-  const min = resolveNum(obj, 'MinutesPlayed', 'Min', 'Minutes', 'TOI', 'TimeOnIce', 'Mins', 'MP', 'TotalMinutes', 'TimePlayed');
+  const ga = resolveNum(obj, 'GoalsAgainst', 'GA');
+  const min = resolveNum(obj, 'MinutesPlayed', 'Min');
   if (min <= 0) return 0;
   return (ga / min) * 60;
 }
 
 // Compute Save%: returns percentage value (e.g. 91.5)
 function computeSavePct(obj: any): number {
-  const directSvPct = resolveNum(obj, 'SavePercentage', 'SavePct', 'SvPct', 'SVPct', 'SV_PCT', 'Svpct', 'SavePctg', 'SVPCT', 'SavePercent', 'Sv_Pct');
+  const directSvPct = resolveNum(obj, 'SavePercentage');
   if (directSvPct > 0) return directSvPct > 1 ? directSvPct : directSvPct * 100;
   // API uses "SaversTotal" for saves
-  const saves = resolveNum(obj, 'Saves', 'SV', 'Svs', 'SVS', 'SaversTotal', 'ShotsStopped', 'SavesMade', 'TotalSaves', 'SavesTotal');
-  const ga = resolveNum(obj, 'GoalsAgainst', 'GA', 'GATotal');
+  const saves = resolveNum(obj, 'SaversTotal', 'Saves', 'ShotsStopped');
+  const ga = resolveNum(obj, 'GoalsAgainst', 'GA');
   // API uses "ShotsTotal" for shots against
-  const sa = resolveNum(obj, 'ShotsAgainst', 'SA', 'ShotsTotal', 'ShotAgainst', 'TotalShots', 'ShotsReceived') || (saves + ga);
+  const sa = resolveNum(obj, 'ShotsTotal', 'ShotsAgainst', 'TotalShots') || (saves + ga);
   if (sa <= 0) return 0;
   return (saves / sa) * 100;
 }
 
 // Compute minutes from GAA and GA: min = GA * 60 / GAA
 function computeMinutes(obj: any): number {
-  const min = resolveNum(obj, 'MinutesPlayed', 'Min', 'Minutes', 'TOI', 'TimeOnIce', 'Mins', 'MP', 'TotalMinutes', 'TimePlayed');
+  const min = resolveNum(obj, 'MinutesPlayed', 'Min');
   if (min > 0) return min;
-  const ga = resolveNum(obj, 'GoalsAgainst', 'GA', 'GATotal');
-  const gaa = resolveNum(obj, 'GoalsAgainstAverage', 'GAA', 'Gaa');
+  const ga = resolveNum(obj, 'GoalsAgainst', 'GA');
+  const gaa = resolveNum(obj, 'GoalsAgainstAverage', 'GAA');
   if (gaa > 0 && ga > 0) return Math.round((ga * 60) / gaa);
   return 0;
 }
@@ -422,10 +422,10 @@ export function TeamDetailPage({ teamId, teamName, season, teamLogo, divisionId,
                       const metrics = goalieMetrics.get(pid);
                       if (!metrics) return s;
                       const merged = { ...s };
-                      const metricFields = ['Saves', 'GoalsAgainst', 'GA', 'ShotsAgainst', 'SA',
-                        'MinutesPlayed', 'Min', 'Minutes', 'Wins', 'W', 'Losses', 'L',
+                      const metricFields = ['Saves', 'GoalsAgainst', 'GA', 'ShotsAgainst',
+                        'MinutesPlayed', 'Min', 'Wins', 'W', 'Losses', 'L',
                         'Shutouts', 'SO', 'GamesDressed', 'GD',
-                        'GoalsAgainstAverage', 'GAA', 'SavePercentage', 'SavePct', 'SvPct'];
+                        'GoalsAgainstAverage', 'GAA', 'SavePercentage'];
                       metricFields.forEach(f => {
                         if (metrics[f] !== undefined && metrics[f] !== null && (merged[f] === undefined || merged[f] === null || merged[f] === 0)) {
                           merged[f] = metrics[f];
@@ -562,8 +562,8 @@ export function TeamDetailPage({ teamId, teamName, season, teamLogo, divisionId,
 
 
     // 0. Team Colors from API (TeamColor1, TeamColor2 fields)
-    const color1 = resolveStr(fullResponse, 'TeamColor1', 'TeamColour1', 'HomeColor', 'HomeColour1', 'PrimaryColor');
-    const color2 = resolveStr(fullResponse, 'TeamColor2', 'TeamColour2', 'AwayColor', 'AwayColour1', 'SecondaryColor');
+    const color1 = resolveStr(fullResponse, 'HomeSweaterColor', 'TeamColor1');
+    const color2 = resolveStr(fullResponse, 'AwaySweaterColor', 'TeamColor2');
     if (color1 || color2) {
 
       setApiTeamColors({ color1: color1 || '', color2: color2 || '' });
@@ -663,7 +663,7 @@ export function TeamDetailPage({ teamId, teamName, season, teamLogo, divisionId,
   
   // Helper to get standing category code from a stat entry
   const getStatCategory = (stat: any): string => {
-    const code = resolveStr(stat, 'StandingCategoryCode', 'StandingCode', 'CategoryCode', 'Standing');
+    const code = resolveStr(stat, 'StandingCategoryCode');
     return code ? code.toLowerCase() : '';
   };
 
@@ -684,9 +684,9 @@ export function TeamDetailPage({ teamId, teamName, season, teamLogo, divisionId,
           byPlayer.set(pid, { ...s });
         } else {
           const existing = byPlayer.get(pid)!;
-          ['GamesPlayed', 'GP', 'Goals', 'G', 'GoalsScored', 'Assists', 'A', 'AssistsTotal',
-           'Points', 'Pts', 'TotalPoints', 'PenaltyMin', 'PenaltyMinutes', 'PIM', 'PenMin', 'Penalties', 'PenMins',
-           'PPGoals', 'PowerPlayGoals', 'PPG', 'PP', 'SHGoals', 'ShortHandedGoals', 'SHG', 'SH',
+          ['GamesPlayed', 'GP', 'Goals', 'G', 'Assists', 'A',
+           'Points', 'Pts', 'PenaltyMin', 'PIM',
+           'PPGoals', 'SHGoals',
            'GameWinningGoals', 'GWG'].forEach(key => {
             if (s[key] !== undefined && s[key] !== null) {
               existing[key] = (existing[key] || 0) + (Number(s[key]) || 0);
@@ -714,14 +714,14 @@ export function TeamDetailPage({ teamId, teamName, season, teamLogo, divisionId,
           byPlayer.set(pid, { ...g });
         } else {
           const existing = byPlayer.get(pid)!;
-          ['GamesPlayed', 'GP', 'GamesDressed', 'GD', 'Dressed',
+          ['GamesPlayed', 'GP', 'GamesDressed', 'GD',
            'Wins', 'W', 'Losses', 'L',
-           'GoalsAgainst', 'GA', 'GATotal',
-           'Saves', 'SV', 'Svs', 'SVS', 'SaversTotal', 'ShotsStopped', 'SavesMade', 'TotalSaves', 'SavesTotal',
-           'ShotsAgainst', 'SA', 'ShotsTotal',
-           'MinutesPlayed', 'Min', 'Minutes', 'TOI', 'Mins',
-           'Goals', 'G', 'Assists', 'A', 'Points', 'Pts', 'TotalPoints',
-           'PenaltyMin', 'PenaltyMinutes', 'PIM', 'PenMin'].forEach(key => {
+           'GoalsAgainst', 'GA',
+           'SaversTotal', 'Saves', 'ShotsStopped',
+           'ShotsTotal', 'ShotsAgainst', 'TotalShots',
+           'MinutesPlayed', 'Min',
+           'Goals', 'G', 'Assists', 'A', 'Points', 'Pts',
+           'PenaltyMin', 'PIM'].forEach(key => {
             if (g[key] !== undefined && g[key] !== null) {
               existing[key] = (existing[key] || 0) + (Number(g[key]) || 0);
             }
@@ -769,7 +769,7 @@ export function TeamDetailPage({ teamId, teamName, season, teamLogo, divisionId,
       const goalie = filteredGoalieStats.find((g: any) => g.PlayerId === playerId);
       
       // Determine if this is primarily a goalie
-      const positionName = resolveStr(player, 'SportPositionName', 'PositionName', 'Position', 'Pos').toLowerCase();
+      const positionName = resolveStr(player, 'SportPositionName', 'Position').toLowerCase();
       const isGoalie = positionName.includes('goalie') || 
                        positionName.includes('goal') ||
                        positionName === 'g';
@@ -782,11 +782,11 @@ export function TeamDetailPage({ teamId, teamName, season, teamLogo, divisionId,
 
       return {
         playerId,
-        number: resolveStr(player, 'PlayerNo', 'PlayerNumber', 'JerseyNumber', 'Number', 'No', 'Jersey') || '0',
-        name: resolveStr(player, 'Name', 'PlayerName', 'FullName') || 'Unknown',
+        number: resolveStr(player, 'PlayerNo', 'JerseyNumber') || '0',
+        name: resolveStr(player, 'PlayerName', 'Name') || 'Unknown',
         firstName: (resolveStr(player, 'Name', 'PlayerName') || '').split(' ')[0] || '',
         lastName: (resolveStr(player, 'Name', 'PlayerName') || '').split(' ').slice(1).join(' ') || '',
-        position: resolveStr(player, 'SportPositionName', 'PositionName', 'Position', 'Pos') || '-',
+        position: resolveStr(player, 'SportPositionName', 'Position') || '-',
         age: player.Age ? Math.floor(player.Age).toString() : '-', 
         height: player.Height || '-',
         weight: player.Weight || '-',
@@ -804,10 +804,10 @@ export function TeamDetailPage({ teamId, teamName, season, teamLogo, divisionId,
           svPct: computeSavePct(goalie) > 0 ? computeSavePct(goalie).toFixed(1) : '0.0'
         } : stats ? {
           gp: resolveNum(stats, 'GamesPlayed', 'GP'),
-          g: resolveNum(stats, 'Goals', 'G', 'GoalsScored'),
-          a: resolveNum(stats, 'Assists', 'A', 'AssistsTotal'),
-          pts: resolveNum(stats, 'Points', 'Pts', 'TotalPoints'),
-          pim: resolveNum(stats, 'PenaltyMin', 'PenaltyMinutes', 'PIM', 'PenMin', 'Penalties', 'PenMins')
+          g: resolveNum(stats, 'Goals', 'G'),
+          a: resolveNum(stats, 'Assists', 'A'),
+          pts: resolveNum(stats, 'Points', 'Pts'),
+          pim: resolveNum(stats, 'PenaltyMin', 'PIM')
         } : null
       };
     }).sort((a: any, b: any) => parseInt(a.number) - parseInt(b.number));
@@ -2095,7 +2095,7 @@ export function TeamDetailPage({ teamId, teamName, season, teamLogo, divisionId,
                           {/* Top 3 Scorers */}
                           {filteredPlayerStats.length > 0 && (() => {
                             const topScorers = [...filteredPlayerStats]
-                              .sort((a, b) => resolveNum(b, 'Points', 'Pts', 'TotalPoints') - resolveNum(a, 'Points', 'Pts', 'TotalPoints'))
+                              .sort((a, b) => resolveNum(b, 'Points', 'Pts') - resolveNum(a, 'Points', 'Pts'))
                               .slice(0, 3);
                             
                             return topScorers.map((player, idx) => (
@@ -2109,16 +2109,16 @@ export function TeamDetailPage({ teamId, teamName, season, teamLogo, divisionId,
                                     onClick={() => navigateToPlayer({ playerId: player.PlayerId, teamId: currentTeamId, seasonId, photoDocId: player.PhotoDocId })}
                                     className="text-sm font-bold hover:underline transition-colors truncate block text-black"
                                   >
-                                    {resolveStr(player, 'PlayerName', 'Name', 'FullName')}
+                                    {resolveStr(player, 'PlayerName', 'Name')}
                                   </button>
                                   <div className="text-[10px] text-gray-500 font-semibold uppercase">
-                                    #{jerseyNumberMap[player.PlayerId] || resolveStr(player, 'PlayerNo', 'PlayerNumber', 'JerseyNumber') || '?'} &middot; {resolveStr(player, 'SportPositionName', 'PositionName', 'Position') || '?'}
+                                    #{jerseyNumberMap[player.PlayerId] || resolveStr(player, 'PlayerNo', 'JerseyNumber') || '?'} &middot; {resolveStr(player, 'SportPositionName', 'Position') || '?'}
                                   </div>
                                 </div>
                                 <div className="text-right flex items-center gap-3">
                                   <div>
                                     <div className="text-sm font-black" style={{ color: extractedColors.primary }}>
-                                      {resolveNum(player, 'Points', 'Pts', 'TotalPoints')}
+                                      {resolveNum(player, 'Points', 'Pts')}
                                     </div>
                                     <div className="text-[10px] text-gray-400 font-bold">PTS</div>
                                   </div>
@@ -2133,7 +2133,7 @@ export function TeamDetailPage({ teamId, teamName, season, teamLogo, divisionId,
                           {/* Top Goalie */}
                           {filteredGoalieStats.length > 0 && (() => {
                             const topGoalie = [...filteredGoalieStats]
-                              .filter(g => resolveNum(g, 'MinutesPlayed', 'Min', 'Minutes', 'TOI', 'Mins') > 0)
+                              .filter(g => resolveNum(g, 'MinutesPlayed', 'Min') > 0)
                               .sort((a, b) => computeGAA(a) - computeGAA(b))[0];
                             
                             if (!topGoalie) return null;
@@ -2150,7 +2150,7 @@ export function TeamDetailPage({ teamId, teamName, season, teamLogo, divisionId,
                                     onClick={() => navigateToPlayer({ playerId: topGoalie.PlayerId, teamId: currentTeamId, seasonId, photoDocId: topGoalie.PhotoDocId, isGoalie: true })}
                                     className="text-sm font-bold hover:underline transition-colors truncate block text-black"
                                   >
-                                    {resolveStr(topGoalie, 'PlayerName', 'Name', 'FullName')}
+                                    {resolveStr(topGoalie, 'PlayerName', 'Name')}
                                   </button>
                                   <div className="text-[10px] text-gray-500 font-semibold uppercase">Top Goaltender</div>
                                 </div>
@@ -3386,12 +3386,12 @@ export function TeamDetailPage({ teamId, teamName, season, teamLogo, divisionId,
                 {filteredPlayerStats.length > 0 && (() => {
                   const teamTotals = filteredPlayerStats.reduce((acc: any, p: any) => {
                     acc.gp = Math.max(acc.gp, resolveNum(p, 'GamesPlayed', 'GP'));
-                    acc.goals += resolveNum(p, 'Goals', 'G', 'GoalsScored');
-                    acc.assists += resolveNum(p, 'Assists', 'A', 'AssistsTotal');
-                    acc.points += resolveNum(p, 'Points', 'Pts', 'TotalPoints');
-                    acc.pim += resolveNum(p, 'PenaltyMin', 'PenaltyMinutes', 'PIM', 'PenMin', 'Penalties', 'PenMins');
-                    acc.ppg += resolveNum(p, 'PPGoals', 'PowerPlayGoals', 'PPG', 'PP');
-                    acc.shg += resolveNum(p, 'SHGoals', 'ShortHandedGoals', 'SHG', 'SH');
+                    acc.goals += resolveNum(p, 'Goals', 'G');
+                    acc.assists += resolveNum(p, 'Assists', 'A');
+                    acc.points += resolveNum(p, 'Points', 'Pts');
+                    acc.pim += resolveNum(p, 'PenaltyMin', 'PIM');
+                    acc.ppg += resolveNum(p, 'PPGoals');
+                    acc.shg += resolveNum(p, 'SHGoals');
                     acc.gwg += resolveNum(p, 'GameWinningGoals', 'GWG');
                     return acc;
                   }, { gp: 0, goals: 0, assists: 0, points: 0, pim: 0, ppg: 0, shg: 0, gwg: 0 });
@@ -3484,15 +3484,15 @@ export function TeamDetailPage({ teamId, teamName, season, teamLogo, divisionId,
                           <tbody className="divide-y divide-gray-100">
                             {playerStatsSort.sortData(filteredPlayerStats, (p: any, col) => {
                               switch (col) {
-                                case 'name': return resolveStr(p, 'PlayerName', 'Name', 'FullName') || '';
-                                case 'no': return parseInt(jerseyNumberMap[p.PlayerId] || resolveStr(p, 'PlayerNo', 'PlayerNumber', 'JerseyNumber', 'Number', 'No', 'Jersey', 'Num', 'JerseyNo')) || 0;
+                                case 'name': return resolveStr(p, 'PlayerName', 'Name') || '';
+                                case 'no': return parseInt(jerseyNumberMap[p.PlayerId] || resolveStr(p, 'PlayerNo', 'JerseyNumber')) || 0;
                                 case 'gp': return resolveNum(p, 'GamesPlayed', 'GP');
-                                case 'g': return resolveNum(p, 'Goals', 'G', 'GoalsScored');
-                                case 'a': return resolveNum(p, 'Assists', 'A', 'AssistsTotal');
-                                case 'pts': return resolveNum(p, 'Points', 'Pts', 'TotalPoints');
-                                case 'pim': return resolveNum(p, 'PenaltyMin', 'PenaltyMinutes', 'PIM', 'PenMin', 'Penalties', 'PenMins');
-                                case 'ppg': return resolveNum(p, 'PPGoals', 'PowerPlayGoals', 'PPG', 'PP');
-                                case 'shg': return resolveNum(p, 'SHGoals', 'ShortHandedGoals', 'SHG', 'SH');
+                                case 'g': return resolveNum(p, 'Goals', 'G');
+                                case 'a': return resolveNum(p, 'Assists', 'A');
+                                case 'pts': return resolveNum(p, 'Points', 'Pts');
+                                case 'pim': return resolveNum(p, 'PenaltyMin', 'PIM');
+                                case 'ppg': return resolveNum(p, 'PPGoals');
+                                case 'shg': return resolveNum(p, 'SHGoals');
                                 default: return 0;
                               }
                             }).map((player: any, i) => (
@@ -3503,22 +3503,22 @@ export function TeamDetailPage({ teamId, teamName, season, teamLogo, divisionId,
                                       onClick={() => navigateToPlayer({ playerId: player.PlayerId, teamId: currentTeamId, seasonId, photoDocId: player.PhotoDocId || photoDocIdMap[player.PlayerId] })}
                                       className="text-left hover:underline transition-colors flex items-center gap-1.5 group/name text-sm font-semibold text-black"
                                     >
-                                      {resolveStr(player, 'PlayerName', 'Name', 'FullName') || 'Unknown'}
+                                      {resolveStr(player, 'PlayerName', 'Name') || 'Unknown'}
                                       <ChevronRight className="w-3.5 h-3.5 opacity-0 group-hover/name:opacity-60 transition-opacity shrink-0" />
                                     </button>
                                   </td>
-                                  <td className="px-3 py-2.5 text-center text-sm font-bold text-gray-500">{jerseyNumberMap[player.PlayerId] || resolveStr(player, 'PlayerNo', 'PlayerNumber', 'JerseyNumber', 'Number', 'No', 'Jersey', 'Num', 'JerseyNo') || '-'}</td>
+                                  <td className="px-3 py-2.5 text-center text-sm font-bold text-gray-500">{jerseyNumberMap[player.PlayerId] || resolveStr(player, 'PlayerNo', 'JerseyNumber') || '-'}</td>
                                   <td className="px-3 py-2.5 text-center text-sm font-medium text-gray-900">{resolveNum(player, 'GamesPlayed', 'GP')}</td>
-                                  <td className="px-3 py-2.5 text-center text-sm font-medium text-gray-900">{resolveNum(player, 'Goals', 'G', 'GoalsScored')}</td>
-                                  <td className="px-3 py-2.5 text-center text-sm font-medium text-gray-900">{resolveNum(player, 'Assists', 'A', 'AssistsTotal')}</td>
+                                  <td className="px-3 py-2.5 text-center text-sm font-medium text-gray-900">{resolveNum(player, 'Goals', 'G')}</td>
+                                  <td className="px-3 py-2.5 text-center text-sm font-medium text-gray-900">{resolveNum(player, 'Assists', 'A')}</td>
                                   <td className="px-3 py-2.5 text-center border-l border-gray-100 bg-gray-50/50">
                                     <span className="inline-block min-w-[28px] py-0.5 px-1.5 rounded text-sm font-bold" style={{ backgroundColor: `${extractedColors.primary}15`, color: extractedColors.primary }}>
-                                      {resolveNum(player, 'Points', 'Pts', 'TotalPoints')}
+                                      {resolveNum(player, 'Points', 'Pts')}
                                     </span>
                                   </td>
-                                  <td className="px-3 py-2.5 text-center text-sm text-gray-600">{resolveNum(player, 'PenaltyMin', 'PenaltyMinutes', 'PIM', 'PenMin', 'Penalties', 'PenMins')}</td>
-                                  <td className="px-3 py-2.5 text-center hidden lg:table-cell text-sm text-gray-500">{resolveNum(player, 'PPGoals', 'PowerPlayGoals', 'PPG', 'PP')}</td>
-                                  <td className="px-3 py-2.5 text-center hidden lg:table-cell text-sm text-gray-500">{resolveNum(player, 'SHGoals', 'ShortHandedGoals', 'SHG', 'SH')}</td>
+                                  <td className="px-3 py-2.5 text-center text-sm text-gray-600">{resolveNum(player, 'PenaltyMin', 'PIM')}</td>
+                                  <td className="px-3 py-2.5 text-center hidden lg:table-cell text-sm text-gray-500">{resolveNum(player, 'PPGoals')}</td>
+                                  <td className="px-3 py-2.5 text-center hidden lg:table-cell text-sm text-gray-500">{resolveNum(player, 'SHGoals')}</td>
                                 </tr>
                               ))}
                           </tbody>
@@ -3571,34 +3571,34 @@ export function TeamDetailPage({ teamId, teamName, season, teamLogo, divisionId,
                           <tbody className="divide-y divide-gray-100">
                             {goalieStatsSort.sortData(filteredGoalieStats, (g: any, col) => {
                               switch (col) {
-                                case 'name': return resolveStr(g, 'PlayerName', 'Name', 'FullName') || '';
+                                case 'name': return resolveStr(g, 'PlayerName', 'Name') || '';
                                 case 'gp': return resolveNum(g, 'GamesPlayed', 'GP');
-                                case 'gd': return resolveNum(g, 'GamesDressed', 'GD', 'Dressed') || resolveNum(g, 'GamesPlayed', 'GP');
+                                case 'gd': return resolveNum(g, 'GamesDressed', 'GD') || resolveNum(g, 'GamesPlayed', 'GP');
                                 case 'min': return computeMinutes(g);
-                                case 'sog': { const sv = resolveNum(g, 'Saves', 'SV', 'Svs', 'SVS', 'SaversTotal', 'ShotsStopped', 'SavesMade', 'TotalSaves', 'SavesTotal'); const ga = resolveNum(g, 'GoalsAgainst', 'GA', 'GATotal'); return resolveNum(g, 'ShotsAgainst', 'SA', 'ShotsTotal', 'ShotAgainst', 'TotalShots', 'ShotsReceived') || (sv + ga); }
-                                case 'ga': return resolveNum(g, 'GoalsAgainst', 'GA', 'GATotal');
+                                case 'sog': { const sv = resolveNum(g, 'SaversTotal', 'Saves', 'ShotsStopped'); const ga = resolveNum(g, 'GoalsAgainst', 'GA'); return resolveNum(g, 'ShotsTotal', 'ShotsAgainst', 'TotalShots') || (sv + ga); }
+                                case 'ga': return resolveNum(g, 'GoalsAgainst', 'GA');
                                 case 'gaa': return computeGAA(g);
-                                case 'sv': return resolveNum(g, 'Saves', 'SV', 'Svs', 'SVS', 'SaversTotal', 'ShotsStopped', 'SavesMade', 'TotalSaves', 'SavesTotal');
+                                case 'sv': return resolveNum(g, 'SaversTotal', 'Saves', 'ShotsStopped');
                                 case 'svPct': return computeSavePct(g);
                                 case 'g': return resolveNum(g, 'Goals', 'G');
                                 case 'a': return resolveNum(g, 'Assists', 'A');
-                                case 'pts': return resolveNum(g, 'Points', 'Pts', 'TotalPoints') || (resolveNum(g, 'Goals', 'G') + resolveNum(g, 'Assists', 'A'));
-                                case 'pim': return resolveNum(g, 'PenaltyMin', 'PenaltyMinutes', 'PIM', 'PenMin', 'Penalties', 'PenMins');
+                                case 'pts': return resolveNum(g, 'Points', 'Pts') || (resolveNum(g, 'Goals', 'G') + resolveNum(g, 'Assists', 'A'));
+                                case 'pim': return resolveNum(g, 'PenaltyMin', 'PIM');
                                 default: return 0;
                               }
                             }).map((goalie: any, i) => {
                                 const gaa = computeGAA(goalie);
                                 const svPct = computeSavePct(goalie);
                                 const minutes = computeMinutes(goalie);
-                                const saves = resolveNum(goalie, 'Saves', 'SV', 'Svs', 'SVS', 'SaversTotal', 'ShotsStopped', 'SavesMade', 'TotalSaves', 'SavesTotal');
-                                const goalsAgainst = resolveNum(goalie, 'GoalsAgainst', 'GA', 'GATotal');
-                                const shotsAgainst = resolveNum(goalie, 'ShotsAgainst', 'SA', 'ShotsTotal', 'ShotAgainst', 'TotalShots', 'ShotsReceived') || (saves + goalsAgainst);
+                                const saves = resolveNum(goalie, 'SaversTotal', 'Saves', 'ShotsStopped');
+                                const goalsAgainst = resolveNum(goalie, 'GoalsAgainst', 'GA');
+                                const shotsAgainst = resolveNum(goalie, 'ShotsTotal', 'ShotsAgainst', 'TotalShots') || (saves + goalsAgainst);
                                 const gp = resolveNum(goalie, 'GamesPlayed', 'GP');
-                                const gd = resolveNum(goalie, 'GamesDressed', 'GD', 'Dressed') || gp;
+                                const gd = resolveNum(goalie, 'GamesDressed', 'GD') || gp;
                                 const goals = resolveNum(goalie, 'Goals', 'G');
                                 const assists = resolveNum(goalie, 'Assists', 'A');
-                                const points = resolveNum(goalie, 'Points', 'Pts', 'TotalPoints') || (goals + assists);
-                                const pim = resolveNum(goalie, 'PenaltyMin', 'PenaltyMinutes', 'PIM', 'PenMin', 'Penalties', 'PenMins');
+                                const points = resolveNum(goalie, 'Points', 'Pts') || (goals + assists);
+                                const pim = resolveNum(goalie, 'PenaltyMin', 'PIM');
                                 return (
                                 <tr key={`${goalie.PlayerId}-${i}`} className="hover:bg-blue-50/50 transition-colors group">
                                   <td className="text-center text-sm font-bold text-gray-400">{i + 1}</td>
@@ -3607,7 +3607,7 @@ export function TeamDetailPage({ teamId, teamName, season, teamLogo, divisionId,
                                       onClick={() => navigateToPlayer({ playerId: goalie.PlayerId, teamId: currentTeamId, seasonId, photoDocId: goalie.PhotoDocId || photoDocIdMap[goalie.PlayerId], isGoalie: true })}
                                       className="text-left hover:underline transition-colors flex items-center gap-1.5 group/name text-sm font-semibold text-black"
                                     >
-                                      {resolveStr(goalie, 'PlayerName', 'Name', 'FullName') || 'Unknown'}
+                                      {resolveStr(goalie, 'PlayerName', 'Name') || 'Unknown'}
                                       <ChevronRight className="w-3.5 h-3.5 opacity-0 group-hover/name:opacity-60 transition-opacity shrink-0" />
                                     </button>
                                   </td>

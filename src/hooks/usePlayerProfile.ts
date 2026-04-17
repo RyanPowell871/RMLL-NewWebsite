@@ -38,16 +38,16 @@ function isGoalieStatEntry(stat: any): boolean {
     if (stat.SportPositionId === GOALIE_POSITION_ID) return true;
 
     // 2. Check position name fields for goalie keywords
-    const posName = resolveStr(stat, 'SportPositionName', 'PositionName', 'Position', 'Pos').toLowerCase().trim();
+    const posName = resolveStr(stat, 'SportPositionName', 'Position').toLowerCase().trim();
     if (posName && GOALIE_POSITION_NAMES.some(g => posName.includes(g))) return true;
 
     // 3. Check position code fields
-    const posCode = resolveStr(stat, 'PositionCode', 'PosCode', 'SportPositionCode').toLowerCase().trim();
+    const posCode = resolveStr(stat, 'PositionCode', 'SportPositionCode').toLowerCase().trim();
     if (posCode && GOALIE_POSITION_CODES.includes(posCode)) return true;
 
     // 4. Heuristic: ONLY fires if Saves > 0 (the one truly goalie-exclusive stat).
     // Game API per-period entries use ShotsStopped; PlayerStats bulk API uses Saves
-    const saves = resolveNum(stat, 'ShotsStopped', 'Saves', 'SV', 'Svs', 'SVS', 'SaversTotal', 'SavesMade', 'TotalSaves', 'SavesTotal');
+    const saves = resolveNum(stat, 'ShotsStopped', 'Saves');
     if (saves > 0) return true;
 
     return false;
@@ -216,7 +216,7 @@ export interface PlayerProfile {
 // ============================================================================
 function resolveTeamName(stat: any): string {
     // Prefer TeamShortName (clean, no division prefix) over FullTeamName (includes division like "U15 Tier 1 - Calgary Mountaineers")
-    return resolveStr(stat, 'TeamShortName', 'TeamName', 'Team', 'PlayingWithTeam', 'ClubName', 'Club', 'TeamCode', 'TeamAbbr', 'TeamAbbrv', 'TeamAbbreviation', 'FullTeamName') || 'Unknown Team';
+    return resolveStr(stat, 'TeamShortName', 'TeamName', 'FullTeamName', 'PlayingWithTeam') || 'Unknown Team';
 }
 
 // ============================================================================
@@ -246,8 +246,8 @@ function cleanSeasonName(raw: string): string {
 function buildGameLogEntry(g: any, targetSeasonId?: number): GameLogEntry {
     // ---- Game ID & Date ----
     const gameId = resolveNum(g, 'GameId', 'GameID', 'Id', 'ID');
-    const gameNumber = resolveStr(g, 'GameNumber', 'GameNo', 'GameNum');
-    const date = resolveStr(g, 'GameDate', 'Date', 'GameDt', 'Dt', 'ScheduleDate');
+    const gameNumber = resolveStr(g, 'GameNumber');
+    const date = resolveStr(g, 'GameDate');
     
     // ---- Opponent Detection (Cross-reference HomeTeam/VisitorTeam) ----
     const playerTeamId = resolveNum(g, 'TeamId', 'TeamID', 'PlayerTeamId');
@@ -255,10 +255,10 @@ function buildGameLogEntry(g: any, targetSeasonId?: number): GameLogEntry {
     const visitorTeamId = resolveNum(g, 'VisitorTeamId', 'VisitorTeamID', 'AwayTeamId', 'AwayTeamID', 'VisitorId');
     
     const homeTeamName = resolveStr(g, 'HomeTeamName', 'HomeTeam', 'HomeClub', 'HomeTeamClub');
-    const visitorTeamName = resolveStr(g, 'VisitorTeamName', 'VisitorTeam', 'AwayTeamName', 'AwayTeam', 'VisitorClub', 'VisitorTeamClub', 'AwayClub');
+    const visitorTeamName = resolveStr(g, 'VisitorTeamName');
     
     // Direct opponent fields - API uses OpposingTeam, PlayingWithTeam
-    let opponent = resolveStr(g, 'OpposingTeam', 'OpponentName', 'Opponent', 'OpponentTeam', 'OppTeam', 'OppTeamName', 'OpponentClub');
+    let opponent = resolveStr(g, 'OpposingTeam', 'OpponentName');
     
     // Cross-reference if opponent not directly available
     if (!opponent || opponent === 'Unknown') {
@@ -277,7 +277,7 @@ function buildGameLogEntry(g: any, targetSeasonId?: number): GameLogEntry {
     if (!opponent) opponent = 'Unknown';
     
     // ---- Home/Away Detection ----
-    let homeAway = resolveStr(g, 'HomeAway', 'HomeAwayCode', 'HA');
+    let homeAway = resolveStr(g, 'HomeAway');
     if (!homeAway) {
         const isHome = resolveField(g, 'IsHome', 'IsHomeTeam', 'HomeFlag');
         if (isHome === true || isHome === 1 || isHome === 'Y') homeAway = 'Home';
@@ -289,9 +289,9 @@ function buildGameLogEntry(g: any, targetSeasonId?: number): GameLogEntry {
     
     // ---- Score & Result ----
     // API returns GameScoreInfo with combined info like "W 5-3", "L 2-4", "T 3-3", or just "5-3"
-    const gameScoreInfo = resolveStr(g, 'GameScoreInfo', 'Score', 'FinalScore');
+    const gameScoreInfo = resolveStr(g, 'GameScoreInfo', 'Score');
     let score = '-';
-    let result = resolveStr(g, 'Result', 'GameResult', 'WinLoss', 'WL');
+    let result = resolveStr(g, 'Result');
     
     if (gameScoreInfo) {
         const trimmed = gameScoreInfo.trim();
@@ -324,23 +324,23 @@ function buildGameLogEntry(g: any, targetSeasonId?: number): GameLogEntry {
     
     // ---- Player Stats for this game ----
     // API uses: Goals, Assists, Points, PenaltyMin, PPGoals, SHGoals (may be null for 0 values)
-    const goals = resolveNum(g, 'Goals', 'G', 'GoalsScored');
-    const assists = resolveNum(g, 'Assists', 'A', 'AssistsTotal');
-    const points = resolveNum(g, 'Points', 'Pts', 'TotalPoints') || (goals + assists);
-    const pim = resolveNum(g, 'PenaltyMin', 'PenaltyMinutes', 'PIM', 'PenMin', 'Penalties', 'PenMins');
-    const ppg = resolveNum(g, 'PPGoals', 'PowerPlayGoals', 'PPG', 'PP');
-    const shg = resolveNum(g, 'SHGoals', 'ShortHandedGoals', 'SHG', 'SH');
+    const goals = resolveNum(g, 'Goals', 'G');
+    const assists = resolveNum(g, 'Assists', 'A');
+    const points = resolveNum(g, 'Points', 'Pts') || (goals + assists);
+    const pim = resolveNum(g, 'PenaltyMin', 'PIM');
+    const ppg = resolveNum(g, 'PPGoals');
+    const shg = resolveNum(g, 'SHGoals');
     const gwg = resolveNum(g, 'GameWinningGoals', 'GWG');
-    const shots = resolveNum(g, 'Shots', 'SOG', 'ShotsOnGoal');
-    const plusMinus = resolveNum(g, 'PlusMinus', 'PM', 'Plus_Minus');
+    const shots = resolveNum(g, 'Shots');
+    const plusMinus = resolveNum(g, 'PlusMinus');
     
     // ---- Goalie Stats for this game ----
     // Game API per-period entries use ShotsStopped (saves) and TotalShots (shots against)
-    const saves = resolveNum(g, 'ShotsStopped', 'Saves', 'SV', 'Svs', 'SVS', 'SaversTotal', 'SavesMade', 'TotalSaves', 'SavesTotal');
-    const goalsAgainst = resolveNum(g, 'GoalsAgainst', 'GA', 'GATotal');
+    const saves = resolveNum(g, 'SaversTotal', 'Saves', 'ShotsStopped');
+    const goalsAgainst = resolveNum(g, 'GoalsAgainst', 'GA');
     // Don't use 'ShotsOnGoal' or 'SOG' here — those are the SKATER's shots, not shots against the goalie
-    const shotsAgainst = resolveNum(g, 'TotalShots', 'ShotsAgainst', 'SA', 'ShotsTotal', 'ShotAgainst', 'ShotsReceived') || (saves + goalsAgainst);
-    const minutes = resolveNum(g, 'MinutesPlayed', 'Min', 'Minutes', 'TOI', 'TimeOnIce', 'Mins', 'MP', 'TotalMinutes');
+    const shotsAgainst = resolveNum(g, 'TotalShots', 'ShotsTotal', 'ShotsAgainst') || (saves + goalsAgainst);
+    const minutes = resolveNum(g, 'MinutesPlayed', 'Min');
     const decision = resolveStr(g, 'Decision', 'Dec', 'GoalieDecision');
     const shutout = resolveField(g, 'Shutout', 'ShutOut', 'SO') === true || resolveField(g, 'Shutout', 'ShutOut', 'SO') === 1;
     
@@ -377,7 +377,7 @@ function buildGameLogEntry(g: any, targetSeasonId?: number): GameLogEntry {
 // PENALTY LOG ENTRY BUILDER - Exhaustive field mapping (11+ field name variants)
 // ============================================================================
 function buildPenaltyLogEntry(p: any, targetSeasonId?: number): PenaltyLogEntry {
-    const date = resolveStr(p, 'GameDate', 'Date', 'GameDt', 'Dt', 'PenaltyDate');
+    const date = resolveStr(p, 'GameDate');
     const gameId = resolveNum(p, 'GameId', 'GameID', 'Id');
     const gameNumber = resolveStr(p, 'GameNumber', 'GameNo');
     
@@ -385,39 +385,31 @@ function buildPenaltyLogEntry(p: any, targetSeasonId?: number): PenaltyLogEntry 
     let opponent = resolveStr(p, 'OpposingTeam', 'OpponentName', 'Opponent', 'OpponentTeam', 'OppTeam', 'OppTeamName');
     
     // Offense/Infraction name - API uses PenaltyName
-    const offense = resolveStr(p, 
-        'PenaltyName', 'OffenseName', 'Offense', 'Penalty', 'PenaltyType', 
-        'PenaltyDescription', 'InfractionName', 'Infraction', 'OffenseDescription',
-        'PenaltyCode', 'OffenseCode', 'Description'
+    const offense = resolveStr(p,
+        'PenaltyName'
     ) || 'Penalty';
     
     // Minor/Major indicator
     const minorMajor = resolveStr(p, 'MinorMajor', 'PenaltyClass', 'Type');
     
     // Minutes - API uses PenaltyMin
-    const minutes = resolveNum(p, 
-        'PenaltyMin', 'PenaltyMinutes', 'Minutes', 'Min', 'PIM', 'PenMin',
-        'Duration', 'Mins', 'PenMins', 'TotalMinutes'
+    const minutes = resolveNum(p,
+        'PenaltyMin'
     );
     
     // Period
-    const period = resolveStr(p, 
-        'Period', 'PeriodNo', 'PeriodNumber', 'Per', 'Pd', 'PeriodId',
-        'PeriodName', 'PeriodDesc'
+    const period = resolveStr(p,
+        'Period'
     ) || '-';
     
     // Start time - API uses TimeIn
-    const time = resolveStr(p, 
-        'TimeIn', 'TimeOff', 'Time', 'Start', 'StartTime', 'PenaltyTime', 
-        'InfractionTime', 'OffenseTime', 'TimePenalty', 'PenTime', 
-        'GameTime', 'ClockTime', 'TimeOfPenalty', 'PenaltyStart'
+    const time = resolveStr(p,
+        'TimeIn'
     ) || '-';
     
     // End time - API uses TimeOut
-    const timeOut = resolveStr(p, 
-        'TimeOut', 'TimeOn', 'End', 'EndTime', 'TimeServed', 'ReleaseTime', 
-        'ExpiryTime', 'PenaltyEnd', 'EndOfPenalty', 'TimeReturn',
-        'TimeBack', 'ReturnTime', 'PenaltyExpiry', 'ExpireTime'
+    const timeOut = resolveStr(p,
+        'TimeOut'
     ) || '-';
     
     const pp = resolveField(p, 'PowerPlay', 'PP', 'IsPowerPlay') === true;
@@ -474,7 +466,7 @@ export function usePlayerProfile(playerId: number, teamId?: number, seasonId?: n
         // (person-level). Game API GoalieStats use PersonId for matching,
         // NOT PlayerId. We must resolve PersonId early for use in Step 3.5.
         // ================================================================
-        const playerPersonId = resolveNum(playerObj, 'PersonId', 'PersonID', 'MemberId', 'MemberID') || playerId;
+        const playerPersonId = resolveNum(playerObj, 'PersonId') || playerId;
 
         
         // Also try to get PersonId from GoalieStats entries (G child code)
@@ -521,7 +513,7 @@ export function usePlayerProfile(playerId: number, teamId?: number, seasonId?: n
         let allStats: PlayerSeasonStats[] = [];
         
         // PlayerStats (P) - Per-season aggregate stats for skaters
-        const playerStatsArr = playerObj.PlayerStats || playerObj.Stats || playerObj.SeasonStats;
+        const playerStatsArr = playerObj.PlayerStats || playerObj.Stats;
         if (Array.isArray(playerStatsArr)) {
 
             allStats = [...playerStatsArr];
@@ -624,7 +616,7 @@ export function usePlayerProfile(playerId: number, teamId?: number, seasonId?: n
                     allGoalieEntries.forEach((g: any) => {
                         const sId = g.SeasonId;
                         const tId = g.TeamId;
-                        const standing = resolveStr(g, 'StandingCategoryCode', 'StandingCode', 'CategoryCode').toLowerCase();
+                        const standing = resolveStr(g, 'StandingCategoryCode').toLowerCase();
                         goalieDataMap.set(`${sId}-${tId}-${standing}`, g);
                         if (!goalieDataMap.has(`${sId}-${tId}-`)) goalieDataMap.set(`${sId}-${tId}-`, g);
                     });
@@ -635,17 +627,17 @@ export function usePlayerProfile(playerId: number, teamId?: number, seasonId?: n
                         if (!isGoalieStatEntry(stat) && stat.SportPositionId !== GOALIE_POSITION_ID) return;
                         const sId = stat.SeasonId;
                         const tId = stat.TeamId;
-                        const standing = resolveStr(stat, 'StandingCategoryCode', 'StandingCode', 'CategoryCode').toLowerCase();
+                        const standing = resolveStr(stat, 'StandingCategoryCode').toLowerCase();
                         const goalieData = goalieDataMap.get(`${sId}-${tId}-${standing}`) || goalieDataMap.get(`${sId}-${tId}-`);
                         
                         if (goalieData) {
                             const fieldsToMerge = [
-                                'Saves', 'SV', 'Svs', 'GoalsAgainst', 'GA',
-                                'ShotsAgainst', 'SA', 'MinutesPlayed', 'Min', 'Minutes', 'MP',
+                                'Saves', 'GoalsAgainst', 'GA',
+                                'ShotsAgainst', 'MinutesPlayed', 'Min',
                                 'Wins', 'W', 'Losses', 'L', 'Ties', 'T',
                                 'OvertimeLosses', 'OTL', 'Shutouts', 'SO',
                                 'GamesDressed', 'GD', 'GoalsAgainstAverage', 'GAA',
-                                'SavePercentage', 'SavePct', 'SvPct',
+                                'SavePercentage',
                             ];
                             fieldsToMerge.forEach(field => {
                                 if (goalieData[field] !== undefined && goalieData[field] !== null) {
@@ -690,7 +682,7 @@ export function usePlayerProfile(playerId: number, teamId?: number, seasonId?: n
         // STEP 3: Parse Game Log from H (GamesPlayedStats) - from full response
         // ================================================================
         let allGameLogs: GameLogEntry[] = [];
-        const rawGameLog = playerObj.GamesPlayedStats || playerObj.PlayerGamesPlayedStats || playerObj.GamesPlayed;
+        const rawGameLog = playerObj.GamesPlayedStats || playerObj.PlayerGamesPlayedStats;
         if (Array.isArray(rawGameLog) && rawGameLog.length > 0) {
 
             
@@ -799,15 +791,15 @@ export function usePlayerProfile(playerId: number, teamId?: number, seasonId?: n
                                     const aggregated: any = { _periodCount: myEntries.length };
                                     let totalSaves = 0, totalShots = 0;
                                     myEntries.forEach((pe: any) => {
-                                        totalSaves += resolveNum(pe, 'ShotsStopped', 'Saves', 'SV', 'Svs', 'SVS', 'SavesMade');
-                                        totalShots += resolveNum(pe, 'TotalShots', 'ShotsAgainst', 'SA', 'ShotsTotal');
+                                        totalSaves += resolveNum(pe, 'ShotsStopped', 'Saves');
+                                        totalShots += resolveNum(pe, 'TotalShots', 'ShotsTotal', 'ShotsAgainst');
                                     });
                                     aggregated.ShotsStopped = totalSaves;
                                     aggregated.TotalShots = totalShots;
                                     aggregated.GoalsAgainst = totalShots - totalSaves;
                                     // Copy non-aggregatable fields from first entry
                                     const first = myEntries[0];
-                                    aggregated.MinutesPlayed = resolveNum(first, 'MinutesPlayed', 'Min', 'Minutes', 'TOI', 'TimeOnIce');
+                                    aggregated.MinutesPlayed = resolveNum(first, 'MinutesPlayed', 'Min');
                                     aggregated.Decision = resolveStr(first, 'Decision', 'Dec', 'GoalieDecision');
                                     aggregated.Shutout = resolveField(first, 'Shutout', 'ShutOut');
                                     aggregated.Wins = resolveNum(first, 'Wins', 'Win', 'W');
@@ -837,10 +829,10 @@ export function usePlayerProfile(playerId: number, teamId?: number, seasonId?: n
                     if (!entry.gameId || !gameGoalieStatsMap.has(entry.gameId)) return entry;
                     
                     const gs = gameGoalieStatsMap.get(entry.gameId)!;
-                    const saves = resolveNum(gs, 'ShotsStopped', 'Saves', 'SV', 'Svs', 'SVS', 'SavesMade', 'TotalSaves');
-                    const goalsAgainst = resolveNum(gs, 'GoalsAgainst', 'GA', 'GATotal');
-                    const shotsAgainst = resolveNum(gs, 'TotalShots', 'ShotsAgainst', 'SA', 'ShotsTotal') || (saves + goalsAgainst);
-                    const minutes = resolveNum(gs, 'MinutesPlayed', 'Min', 'Minutes', 'TOI', 'TimeOnIce', 'Mins', 'MP', 'TotalMinutes');
+                    const saves = resolveNum(gs, 'ShotsStopped', 'Saves');
+                    const goalsAgainst = resolveNum(gs, 'GoalsAgainst', 'GA');
+                    const shotsAgainst = resolveNum(gs, 'TotalShots', 'ShotsTotal', 'ShotsAgainst') || (saves + goalsAgainst);
+                    const minutes = resolveNum(gs, 'MinutesPlayed', 'Min');
                     const decision = resolveStr(gs, 'Decision', 'Dec', 'GoalieDecision');
                     const shutoutVal = resolveField(gs, 'Shutout', 'ShutOut', 'SO');
                     const shutout = shutoutVal === true || shutoutVal === 1 || goalsAgainst === 0;
@@ -873,7 +865,7 @@ export function usePlayerProfile(playerId: number, teamId?: number, seasonId?: n
         // STEP 4: Parse Penalty Log from Y (PenaltyStats) - from full response
         // ================================================================
         let allPenaltyLogs: PenaltyLogEntry[] = [];
-        const rawPenaltyLog = playerObj.PenaltyStats || playerObj.PlayerPenaltyStats || playerObj.Penalties;
+        const rawPenaltyLog = playerObj.PenaltyStats || playerObj.PlayerPenaltyStats;
         if (Array.isArray(rawPenaltyLog) && rawPenaltyLog.length > 0) {
 
             allPenaltyLogs = rawPenaltyLog.map((p: any) => buildPenaltyLogEntry(p, resolveNum(p, 'SeasonId') || targetSeasonId));
@@ -947,14 +939,14 @@ export function usePlayerProfile(playerId: number, teamId?: number, seasonId?: n
                                     const aggregated: any = { _periodCount: myEntries.length };
                                     let totalSaves = 0, totalShots = 0;
                                     myEntries.forEach((pe: any) => {
-                                        totalSaves += resolveNum(pe, 'ShotsStopped', 'Saves', 'SV', 'Svs', 'SVS', 'SavesMade');
-                                        totalShots += resolveNum(pe, 'TotalShots', 'ShotsAgainst', 'SA', 'ShotsTotal');
+                                        totalSaves += resolveNum(pe, 'ShotsStopped', 'Saves');
+                                        totalShots += resolveNum(pe, 'TotalShots', 'ShotsTotal', 'ShotsAgainst');
                                     });
                                     aggregated.ShotsStopped = totalSaves;
                                     aggregated.TotalShots = totalShots;
                                     aggregated.GoalsAgainst = totalShots - totalSaves;
                                     const first = myEntries[0];
-                                    aggregated.MinutesPlayed = resolveNum(first, 'MinutesPlayed', 'Min', 'Minutes', 'TOI', 'TimeOnIce');
+                                    aggregated.MinutesPlayed = resolveNum(first, 'MinutesPlayed', 'Min');
                                     aggregated.Decision = resolveStr(first, 'Decision', 'Dec', 'GoalieDecision');
                                     aggregated.Shutout = resolveField(first, 'Shutout', 'ShutOut');
                                     gameGoalieStatsMap.set(gid, aggregated);
@@ -968,9 +960,9 @@ export function usePlayerProfile(playerId: number, teamId?: number, seasonId?: n
                 allGameLogs = allGameLogs.map(entry => {
                     if (!entry.gameId || !gameGoalieStatsMap.has(entry.gameId)) return entry;
                     const gs = gameGoalieStatsMap.get(entry.gameId)!;
-                    const saves = resolveNum(gs, 'ShotsStopped', 'Saves', 'SV', 'Svs', 'SVS', 'SavesMade', 'TotalSaves');
-                    const goalsAgainst = resolveNum(gs, 'GoalsAgainst', 'GA', 'GATotal');
-                    const shotsAgainst = resolveNum(gs, 'TotalShots', 'ShotsAgainst', 'SA', 'ShotsTotal') || (saves + goalsAgainst);
+                    const saves = resolveNum(gs, 'ShotsStopped', 'Saves');
+                    const goalsAgainst = resolveNum(gs, 'GoalsAgainst', 'GA');
+                    const shotsAgainst = resolveNum(gs, 'TotalShots', 'ShotsTotal', 'ShotsAgainst') || (saves + goalsAgainst);
                     const shutoutVal = resolveField(gs, 'Shutout', 'ShutOut', 'SO');
                     let derivedDecision = resolveStr(gs, 'Decision', 'Dec', 'GoalieDecision');
                     if (!derivedDecision && entry.result) {
@@ -984,7 +976,7 @@ export function usePlayerProfile(playerId: number, teamId?: number, seasonId?: n
                         saves: saves || entry.saves,
                         goalsAgainst: goalsAgainst !== undefined ? goalsAgainst : entry.goalsAgainst,
                         shotsAgainst: shotsAgainst || entry.shotsAgainst,
-                        minutes: resolveNum(gs, 'MinutesPlayed', 'Min', 'Minutes', 'TOI', 'TimeOnIce', 'Mins', 'MP') || entry.minutes,
+                        minutes: resolveNum(gs, 'MinutesPlayed', 'Min') || entry.minutes,
                         decision: derivedDecision || entry.decision,
                         shutout: (shutoutVal === true || shutoutVal === 1 || goalsAgainst === 0) || entry.shutout,
                     };
@@ -1066,7 +1058,7 @@ export function usePlayerProfile(playerId: number, teamId?: number, seasonId?: n
             rawGameLog.forEach((g: any) => {
                 // Note: H entries don't have TeamId/HomeTeamId/VisitorTeamId
                 // They have PlayingWithTeam and OpposingTeam as string names only
-                const tName = resolveStr(g, 'PlayingWithTeam', 'FullTeamName', 'TeamName', 'Team');
+                const tName = resolveStr(g, 'PlayingWithTeam', 'TeamName', 'FullTeamName');
                 const oppName = resolveStr(g, 'OpposingTeam', 'OpponentTeam');
                 // We can't map names to IDs from game log alone, but names help with display
                 // Try standard ID fields as fallback
@@ -1199,7 +1191,7 @@ export function usePlayerProfile(playerId: number, teamId?: number, seasonId?: n
             }
 
             const group = seasonGroups.get(key)!;
-            const standingCode = resolveStr(stat, 'StandingCategoryCode', 'StandingCode', 'CategoryCode').toLowerCase();
+            const standingCode = resolveStr(stat, 'StandingCategoryCode').toLowerCase();
             const seasonNameLow = (stat.SeasonName || '').toLowerCase();
 
             if (standingCode === 'regu' || (!standingCode && !seasonNameLow.includes('playoff') && !seasonNameLow.includes('playodd') && !seasonNameLow.includes('exhibition') && !seasonNameLow.includes('provincial'))) {
@@ -1243,18 +1235,18 @@ export function usePlayerProfile(playerId: number, teamId?: number, seasonId?: n
             careerGP += resolveNum(s, 'GamesPlayed', 'GP');
             careerGD += resolveNum(s, 'GamesDressed', 'GD', 'Dressed');
             // API uses PenaltyMin (not PenaltyMinutes)
-            careerPIM += resolveNum(s, 'PenaltyMin', 'PenaltyMinutes', 'PIM', 'PenMin', 'Penalties');
+            careerPIM += resolveNum(s, 'PenaltyMin', 'PIM');
 
             if (isGoalieStat) {
                 careerWins += resolveNum(s, 'Wins', 'W');
                 careerLosses += resolveNum(s, 'Losses', 'L');
                 careerTies += resolveNum(s, 'Ties', 'T');
                 careerOTL += resolveNum(s, 'OvertimeLosses', 'OTLosses', 'OTL');
-                careerGA += resolveNum(s, 'GoalsAgainst', 'GA', 'GATotal');
-                careerSaves += resolveNum(s, 'Saves', 'SV', 'Svs', 'SVS', 'SaversTotal', 'ShotsStopped', 'SavesMade', 'TotalSaves', 'SavesTotal');
+                careerGA += resolveNum(s, 'GoalsAgainst', 'GA');
+                careerSaves += resolveNum(s, 'SaversTotal', 'Saves', 'ShotsStopped');
                 careerSO += resolveNum(s, 'Shutouts', 'SO', 'ShutOuts');
-                careerMins += resolveNum(s, 'MinutesPlayed', 'Min', 'Minutes', 'Mins', 'MP', 'TOI', 'TimeOnIce', 'TotalMinutes');
-                careerSA += resolveNum(s, 'ShotsAgainst', 'SA', 'ShotsTotal', 'ShotAgainst', 'TotalShots', 'ShotsReceived');
+                careerMins += resolveNum(s, 'MinutesPlayed', 'Min');
+                careerSA += resolveNum(s, 'TotalShots', 'ShotsTotal', 'ShotsAgainst');
                 careerG += resolveNum(s, 'Goals', 'G');
                 careerA += resolveNum(s, 'Assists', 'A');
                 careerPts += resolveNum(s, 'Points', 'Pts');
@@ -1263,11 +1255,11 @@ export function usePlayerProfile(playerId: number, teamId?: number, seasonId?: n
                 careerA += resolveNum(s, 'Assists', 'A');
                 careerPts += resolveNum(s, 'Points', 'Pts');
                 // API uses PPGoals, SHGoals (not PowerPlayGoals, ShortHandedGoals)
-                careerPPG += resolveNum(s, 'PPGoals', 'PowerPlayGoals', 'PPG', 'PP');
-                careerSHG += resolveNum(s, 'SHGoals', 'ShortHandedGoals', 'SHG', 'SH');
+                careerPPG += resolveNum(s, 'PPGoals');
+                careerSHG += resolveNum(s, 'SHGoals');
                 careerGWG += resolveNum(s, 'GameWinningGoals', 'GWG');
                 careerShots += resolveNum(s, 'Shots', 'SOG', 'ShotsOnGoal');
-                careerPlusMinus += resolveNum(s, 'PlusMinus', 'PM', 'Plus_Minus');
+                careerPlusMinus += resolveNum(s, 'PlusMinus');
             }
         });
 
@@ -1283,7 +1275,7 @@ export function usePlayerProfile(playerId: number, teamId?: number, seasonId?: n
             const target = isGoalieStat ? gCareer : pCareer;
             target.gamesPlayed += resolveNum(s, 'GamesPlayed', 'GP');
             target.gamesDressed += resolveNum(s, 'GamesDressed', 'GD', 'Dressed');
-            target.pim += resolveNum(s, 'PenaltyMin', 'PenaltyMinutes', 'PIM', 'PenMin', 'Penalties');
+            target.pim += resolveNum(s, 'PenaltyMin', 'PIM');
             target.goals += resolveNum(s, 'Goals', 'G');
             target.assists += resolveNum(s, 'Assists', 'A');
             target.points += resolveNum(s, 'Points', 'Pts');
@@ -1293,17 +1285,17 @@ export function usePlayerProfile(playerId: number, teamId?: number, seasonId?: n
                 target.losses += resolveNum(s, 'Losses', 'L');
                 target.ties += resolveNum(s, 'Ties', 'T');
                 target.otLosses += resolveNum(s, 'OvertimeLosses', 'OTLosses', 'OTL');
-                target.goalsAgainst += resolveNum(s, 'GoalsAgainst', 'GA', 'GATotal');
-                target.saves += resolveNum(s, 'Saves', 'SV', 'Svs', 'SVS', 'SaversTotal', 'ShotsStopped', 'SavesMade', 'TotalSaves', 'SavesTotal');
+                target.goalsAgainst += resolveNum(s, 'GoalsAgainst', 'GA');
+                target.saves += resolveNum(s, 'SaversTotal', 'Saves', 'ShotsStopped');
                 target.shutouts += resolveNum(s, 'Shutouts', 'SO', 'ShutOuts');
-                target.minutes += resolveNum(s, 'MinutesPlayed', 'Min', 'Minutes', 'Mins', 'MP', 'TOI', 'TimeOnIce', 'TotalMinutes');
-                target.shotsAgainst += resolveNum(s, 'ShotsAgainst', 'SA', 'ShotsTotal', 'ShotAgainst', 'TotalShots', 'ShotsReceived');
+                target.minutes += resolveNum(s, 'MinutesPlayed', 'Min');
+                target.shotsAgainst += resolveNum(s, 'TotalShots', 'ShotsTotal', 'ShotsAgainst');
             } else {
-                target.ppg += resolveNum(s, 'PPGoals', 'PowerPlayGoals', 'PPG', 'PP');
-                target.shg += resolveNum(s, 'SHGoals', 'ShortHandedGoals', 'SHG', 'SH');
+                target.ppg += resolveNum(s, 'PPGoals');
+                target.shg += resolveNum(s, 'SHGoals');
                 target.gwg += resolveNum(s, 'GameWinningGoals', 'GWG');
                 target.shots += resolveNum(s, 'Shots', 'SOG', 'ShotsOnGoal');
-                target.plusMinus += resolveNum(s, 'PlusMinus', 'PM', 'Plus_Minus');
+                target.plusMinus += resolveNum(s, 'PlusMinus');
             }
         });
         // Fix shotsAgainst if not provided
@@ -1374,12 +1366,12 @@ export function usePlayerProfile(playerId: number, teamId?: number, seasonId?: n
         
 
         
-        const firstName = resolveStr(source, 'FirstName', 'First', 'FName');
-        const lastName = resolveStr(source, 'LastName', 'Last', 'LName', 'Surname');
-        const playerName = resolveStr(source, 'PlayerName', 'Name', 'FullName') || 
+        const firstName = resolveStr(source, 'FirstName');
+        const lastName = resolveStr(source, 'LastName');
+        const playerName = resolveStr(source, 'PlayerName', 'Name') ||
             (firstName && lastName ? `${firstName} ${lastName}` : 'Unknown Player');
         
-        const photoId = resolveNum(source, 'PhotoDocId', 'ImageDocId', 'ProfileImageId', 'DocId', 'PhotoId') || 
+        const photoId = resolveNum(source, 'PhotoDocId', 'ImageDocId') ||
                          resolveNum(latestEntry, 'PhotoDocId', 'ImageDocId');
         // Hero section always uses latestEntry (current team) - not season-selected mostRecent
         const currentTeamId = latestEntry.TeamId || teamId;
@@ -1393,7 +1385,7 @@ export function usePlayerProfile(playerId: number, teamId?: number, seasonId?: n
         
         // Calculate Age
         let age: number | undefined = resolveField(source, 'Age', 'AgeWeb', 'PlayerAge');
-        const birthDateStr = resolveStr(source, 'BirthDate', 'DOB', 'DateOfBirth', 'Birthday');
+        const birthDateStr = resolveStr(source, 'BirthDate');
         if (!age && birthDateStr) {
             const birthDate = new Date(birthDateStr);
             if (!isNaN(birthDate.getTime())) {
@@ -1407,8 +1399,8 @@ export function usePlayerProfile(playerId: number, teamId?: number, seasonId?: n
         }
         
         // Position - API uses SportPositionName. Use latestEntry (current team) for hero display.
-        const position = resolveStr(source, 'SportPositionName', 'Position', 'PositionName', 'Pos') ||
-                          resolveStr(latestEntry, 'SportPositionName', 'Position', 'PositionName', 'Pos');
+        const position = resolveStr(source, 'SportPositionName', 'Position') ||
+                          resolveStr(latestEntry, 'SportPositionName', 'Position');
         
         // Final fallback: If the bio-level position indicates goalie but primaryRole wasn't detected,
         // override it. This catches cases where the API only has position info on the player object
@@ -1434,8 +1426,8 @@ export function usePlayerProfile(playerId: number, teamId?: number, seasonId?: n
         }
         
         // Hometown
-        const homeCityName = resolveStr(source, 'HomeCityName', 'HomeCity', 'City', 'Hometown', 'HomeTown');
-        const homeProvStateCd = resolveStr(source, 'HomeProvStateCd', 'HomeProvince', 'Province', 'State', 'ProvState');
+        const homeCityName = resolveStr(source, 'HomeCityName', 'City');
+        const homeProvStateCd = resolveStr(source, 'HomeProvStateCd', 'Province');
         const hometown = homeCityName && homeProvStateCd 
             ? `${homeCityName}, ${homeProvStateCd}` 
             : (homeCityName || '');
@@ -1473,15 +1465,15 @@ export function usePlayerProfile(playerId: number, teamId?: number, seasonId?: n
                     
                     if (t) {
                         currentTeamNameForLookup = t.TeamName;
-                        teamLogoUrl = resolveStr(t, 'PrimaryTeamLogoURL', 'TeamLogoUrl', 'TeamLogoFilename', 'LogoUrl', 'Logo');
+                        teamLogoUrl = resolveStr(t, 'PrimaryTeamLogoURL', 'TeamLogoFilename');
                         if (!divisionId) divisionId = t.DivisionId;
                         
-                        const color1 = resolveStr(t, 'TeamColor1', 'Color1', 'PrimaryColor');
+                        const color1 = resolveStr(t, 'HomeSweaterColor', 'TeamColor1');
                         if (color1) {
                             currentTeamColors = {
                                 primary: color1,
-                                secondary: resolveStr(t, 'TeamColor2', 'Color2', 'SecondaryColor') || '#ffffff',
-                                tertiary: resolveStr(t, 'TeamColor3', 'Color3', 'TertiaryColor') || '#000000'
+                                secondary: resolveStr(t, 'AwaySweaterColor', 'TeamColor2') || '#ffffff',
+                                tertiary: resolveStr(t, 'TeamColor3') || '#000000'
                             };
                         }
                     }
@@ -1521,7 +1513,7 @@ export function usePlayerProfile(playerId: number, teamId?: number, seasonId?: n
         // STEP 11: Build Profile Object
         // ================================================================
         // API uses PlayerNo (not JerseyNumber). Use latestEntry for current team context.
-        const jersey = resolveStr(latestEntry, 'PlayerNo', 'PlayerNumber', 'JerseyNumber', 'Number', 'No', 'Jersey', 'Num', 'JerseyNo');
+        const jersey = resolveStr(latestEntry, 'PlayerNo', 'JerseyNumber');
         
         const profileData: PlayerProfile = {
             playerId,

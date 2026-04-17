@@ -101,95 +101,21 @@ function getAllTeamColors(homeStr: string, awayStr: string): string[] {
   return result;
 }
 
-// Deep resolve — searches top-level keys AND common nested containers
-function deepResolveStr(obj: any, ...keys: string[]): string {
-  // First try top-level
-  const topLevel = resolveStr(obj, ...keys);
-  if (topLevel) return topLevel;
-  
-  // Then try common nested containers
-  const nestedContainers = [
-    'TeamContacts', 'Contacts', 'Contact', 'ContactInfo', 'TeamContact',
-    'TeamLinks', 'Links', 'Link', 'TeamLink', 'SocialMedia', 'Social',
-    'TeamInfo', 'Info', 'Details', 'TeamDetails', 'TeamData',
-    'TeamWebLinks', 'WebLinks', 'ExternalLinks',
-  ];
-  
-  for (const container of nestedContainers) {
-    const nested = obj?.[container];
-    if (!nested) continue;
-    
-    // If it's an array, search each element
-    if (Array.isArray(nested)) {
-      for (const item of nested) {
-        const val = resolveStr(item, ...keys);
-        if (val) return val;
-      }
-    } else if (typeof nested === 'object') {
-      const val = resolveStr(nested, ...keys);
-      if (val) return val;
-    }
-  }
-  
-  return '';
-}
-
-// Search for social link in array of link/contact objects (SportzSoft often uses typed arrays)
-function findLinkByType(obj: any, ...typePatterns: string[]): string {
-  // Check common array containers for typed link objects
-  const arrayContainers = [
-    'TeamLinks', 'Links', 'Link', 'WebLinks', 'TeamWebLinks', 'ExternalLinks',
-    'SocialMediaLinks', 'SocialLinks', 'TeamContacts', 'Contacts',
-  ];
-  
-  for (const container of arrayContainers) {
-    const items = obj?.[container];
-    if (!Array.isArray(items)) continue;
-    
-    for (const item of items) {
-      // Check if item has a type/name field matching our pattern
-      const typeFields = ['LinkType', 'Type', 'TypeCd', 'TypeCode', 'Name', 'LinkName', 
-                          'ContactType', 'MediaType', 'Platform', 'SocialType', 'Label'];
-      for (const typeField of typeFields) {
-        const typeVal = item?.[typeField];
-        if (typeVal && typeof typeVal === 'string') {
-          const typeLower = typeVal.toLowerCase();
-          for (const pattern of typePatterns) {
-            if (typeLower.includes(pattern.toLowerCase())) {
-              // Found a matching type — now get the URL/value
-              const urlVal = resolveStr(item, 'Url', 'URL', 'LinkUrl', 'LinkURL', 'Value', 
-                'Link', 'Address', 'WebAddress', 'Handle', 'ProfileUrl', 'ProfileURL');
-              if (urlVal) return urlVal;
-            }
-          }
-        }
-      }
-    }
-  }
-  
-  return '';
-}
-
 // Extract contact info from the raw API team object
 function extractContactInfo(apiTeam: any) {
   return {
-    contactName: deepResolveStr(apiTeam, 'ContactName', 'PrimaryContactName', 'Contact', 'ManagerName', 'GMName', 'GeneralManager', 'Name'),
-    contactEmail: deepResolveStr(apiTeam, 'ContactEmail', 'PrimaryContactEmail', 'Email', 'TeamEmail', 'ManagerEmail', 'EmailAddress'),
-    contactPhone: deepResolveStr(apiTeam, 'ContactPhone', 'PrimaryContactPhone', 'Phone', 'TeamPhone', 'ManagerPhone', 'PhoneNumber', 'Telephone'),
-    website: deepResolveStr(apiTeam, 'WebsiteUrl', 'TeamWebsiteUrl', 'Website', 'TeamUrl', 'TeamWebsite', 'Url', 'WebsiteURL', 'WebAddress', 'HomePage', 'HomePageUrl'),
-    headCoach: deepResolveStr(apiTeam, 'HeadCoach', 'Coach', 'HeadCoachName', 'CoachName'),
-    city: deepResolveStr(apiTeam, 'City', 'TeamCity', 'Location', 'HomeTown', 'CityName'),
-    // Social media links — try top-level fields, nested containers, AND typed link arrays
-    facebook: deepResolveStr(apiTeam, 'FaceBookAccount', 'FacebookAccount', 'FacebookUrl', 'FacebookURL', 'Facebook', 'FacebookPage', 'FacebookLink', 'SocialFacebook') 
-              || findLinkByType(apiTeam, 'facebook', 'fb'),
-    twitter: deepResolveStr(apiTeam, 'TwitterAccount', 'TwitterUrl', 'TwitterURL', 'Twitter', 'TwitterHandle', 'TwitterLink', 'XUrl', 'XURL', 'SocialTwitter', 'SocialX')
-             || findLinkByType(apiTeam, 'twitter', 'x.com', 'x '),
-    instagram: deepResolveStr(apiTeam, 'InstagramAccount', 'InstagramUrl', 'InstagramURL', 'Instagram', 'InstagramHandle', 'InstagramLink', 'SocialInstagram')
-               || findLinkByType(apiTeam, 'instagram', 'ig'),
-    youtube: deepResolveStr(apiTeam, 'YouTubeUrl', 'YoutubeUrl', 'YouTubeURL', 'YoutubeURL', 'YouTube', 'Youtube', 'YouTubeChannel', 'SocialYouTube')
-             || findLinkByType(apiTeam, 'youtube', 'yt'),
-    tiktok: deepResolveStr(apiTeam, 'TikTokUrl', 'TiktokUrl', 'TikTokURL', 'TikTok', 'Tiktok', 'TikTokLink', 'SocialTikTok')
-            || findLinkByType(apiTeam, 'tiktok', 'tik tok'),
+    contactName: resolveStr(apiTeam, 'ContactName', 'Name'),
+    contactEmail: resolveStr(apiTeam, 'ContactEmail', 'Email', 'EmailAddress'),
+    contactPhone: resolveStr(apiTeam, 'ContactPhone', 'Phone', 'PhoneNumber'),
+    website: resolveStr(apiTeam, 'WebSite', 'WebsiteUrl'),
+    headCoach: resolveStr(apiTeam, 'HeadCoach'),
+    city: resolveStr(apiTeam, 'City'),
+    // Social media — confirmed API field names
+    facebook: resolveStr(apiTeam, 'FaceBookAccount'),
+    twitter: resolveStr(apiTeam, 'TwitterAccount'),
+    instagram: resolveStr(apiTeam, 'InstagramAccount'),
+    youtube: resolveStr(apiTeam, 'YouTubeUrl'),
+    tiktok: resolveStr(apiTeam, 'TikTokUrl'),
   };
 }
 
@@ -341,13 +267,13 @@ export function TeamsPageV1() {
             };
 
             // Extract team colors from API
-            const color1 = resolveStr(teamData, 'HomeSweaterColor', 'TeamColor1', 'TeamColour1', 'HomeColor', 'HomeColour1', 'PrimaryColor');
-            const color2 = resolveStr(teamData, 'AwaySweaterColor', 'TeamColor2', 'TeamColour2', 'AwayColor', 'AwayColour1', 'SecondaryColor');
+            const color1 = resolveStr(teamData, 'HomeSweaterColor', 'TeamColor1');
+            const color2 = resolveStr(teamData, 'AwaySweaterColor', 'TeamColor2');
             if (color1) enriched.teamColor1 = color1;
             if (color2) enriched.teamColor2 = color2;
 
             // Extract home facility
-            const facility = resolveStr(teamData, 'HomeFacilityName', 'HomeFacility1Name', 'HomeFacility2Name', 'FacilityName', 'HomeFacility', 'HomeArena', 'HomeVenue', 'Arena', 'Facility');
+            const facility = resolveStr(teamData, 'HomeFacilityName', 'HomeFacility1Name', 'HomeFacility2Name');
             if (facility) enriched.homeFacility = facility;
 
             // Extract Public Contact from TeamRoles (returned by ChildCodes=B)

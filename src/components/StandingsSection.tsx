@@ -341,7 +341,7 @@ export function StandingsSection() {
           const sd = rawDiv?.SportsDivision || rawDiv;
           if (!sd) return;
 
-          const standingsArr = sd.Standings || sd.Standing || sd.TeamStandings;
+          const standingsArr = sd.Standings || sd.Standing;
           if (!Array.isArray(standingsArr) || standingsArr.length === 0) {
             console.log(`[Standings] Div ${divId}: No Standings array found on SportsDivision object`);
             return;
@@ -374,21 +374,21 @@ export function StandingsSection() {
 
             // Extract stats — handle both field naming conventions
             const gp = item.GamesPlayed ?? item.GP ?? 0;
-            const l = item.GamesLost ?? item.MatchesLost ?? item.Losses ?? item.L ?? 0;
-            const t = item.GamesTied ?? item.MatchesTied ?? item.Ties ?? item.T ?? 0;
+            const l = item.GamesLost ?? item.Losses ?? item.L ?? 0;
+            const t = item.GamesTied ?? item.Ties ?? item.T ?? 0;
             const def = item.GamesDefaulted ?? item.Defaults ?? item.Def ?? 0;
-            const w = item.GamesWon ?? item.MatchesWon ?? item.Wins ?? item.W ?? 
+            const w = item.GamesWon ?? item.Wins ?? item.W ??
                       (gp > 0 ? (gp - l - t - def) : 0);
             const otl = item.OvertimeLosses ?? item.OTL ?? 0;
             const pts = item.Points ?? item.Pts ?? ((w * 2) + t + otl);
             const gf = item.GoalsFor ?? item.GF ?? 0;
             const ga = item.GoalsAgainst ?? item.GA ?? 0;
-            const diff = item.GoalDifference ?? item.GoalsDifference ?? item.GoalDifferential ?? item.Diff ?? (gf - ga);
-            const pim = item.PenaltyMins ?? item.PenaltyMinutes ?? item.Penalties ?? item.PIM ?? 0;
-            const pct = item.PointsPercentage ?? item.PointPercentage ?? item.Percentage ?? null;
+            const diff = gf - ga;
+            const pim = item.PenaltyMins ?? item.PIM ?? 0;
+            const pct = item.PointsPercentage ?? null;
             const gAvg = pct !== null ? (typeof pct === 'number' ? pct : parseFloat(pct) || 0) :
               ((gf + ga) > 0 ? parseFloat((gf / (gf + ga)).toFixed(3)) : 0);
-            const streak = item.StreakInfo ?? item.Streak ?? item.StreakDescription ?? '-';
+            const streak = item.StreakInfo ?? item.Streak ?? '-';
 
             if (extractedStandings.length === 0) {
               console.log('%c[Standings] First extraction! TeamId:', 'color: magenta; font-weight: bold', 
@@ -461,7 +461,7 @@ export function StandingsSection() {
             const sd = rawDiv.SportsDivision || rawDiv;
             if (sd) {
               console.log(`%c[Standings] Div ${divId} SportsDivision keys: ${JSON.stringify(Object.keys(sd))}`, 'color: blue; font-weight: bold');
-              const standingsArr = sd.Standings || sd.Standing || sd.Teams || sd.TeamStandings;
+              const standingsArr = sd.Standings || sd.Standing;
               if (Array.isArray(standingsArr) && standingsArr.length > 0) {
                 console.log(`%c[Standings] Div ${divId} Standings[0] keys: ${JSON.stringify(Object.keys(standingsArr[0]))}`, 'color: green; font-weight: bold');
                 console.log(`%c[Standings] Div ${divId} Standings[0] sample: ${JSON.stringify(standingsArr[0]).substring(0, 2000)}`, 'color: green; font-weight: bold');

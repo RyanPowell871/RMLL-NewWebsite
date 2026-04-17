@@ -85,17 +85,16 @@ interface FranchiseData {
 function parseContact(data: any, rolePrefix: string): FranchiseContact | null {
   if (!data) return null;
   const name = resolveStr(data,
-    `${rolePrefix}Name`, `${rolePrefix}ContactName`, `${rolePrefix}PersonName`,
-    `${rolePrefix}FirstName`, `${rolePrefix}Contact`
+    `${rolePrefix}Name`, `${rolePrefix}ContactName`, `${rolePrefix}FirstName`
   );
   if (!name) return null;
   return {
     name,
     role: (rolePrefix === 'Primary' || rolePrefix === 'Prim') ? 'Team Primary' : 'Team Secondary',
-    homePhone: resolveStr(data, `${rolePrefix}HomePhone`, `${rolePrefix}Phone`, `${rolePrefix}PhoneHome`),
-    workPhone: resolveStr(data, `${rolePrefix}WorkPhone`, `${rolePrefix}PhoneWork`, `${rolePrefix}BusinessPhone`),
-    cellPhone: resolveStr(data, `${rolePrefix}CellPhone`, `${rolePrefix}PhoneCell`, `${rolePrefix}MobilePhone`, `${rolePrefix}Cell`),
-    email: resolveStr(data, `${rolePrefix}Email`, `${rolePrefix}EmailAddress`, `${rolePrefix}EMailAddress`),
+    homePhone: resolveStr(data, `${rolePrefix}HomePhone`, `${rolePrefix}Phone`),
+    workPhone: resolveStr(data, `${rolePrefix}WorkPhone`),
+    cellPhone: resolveStr(data, `${rolePrefix}CellPhone`, `${rolePrefix}MobilePhone`),
+    email: resolveStr(data, `${rolePrefix}Email`, `${rolePrefix}EmailAddress`),
   };
 }
 
@@ -106,18 +105,16 @@ function determineApprovalStatus(
 ): { status: ApprovalStatus; raw: string; bondDate: string } {
   // Search for bond/approval fields across both franchise and team data
   const bondDate = resolveStr(data,
-    'BondedDate', 'BondSubmittedDate', 'BondDate', 'BondSubmitted', 'BondDt', 'BondSubmittedDt',
-    'BondReceivedDate', 'BondReceived'
+    'BondedDate', 'BondDate'
   ) || resolveStr(teamData,
-    'BondedDate', 'BondSubmittedDate', 'BondDate', 'BondSubmitted', 'BondDt', 'BondSubmittedDt',
-    'BondReceivedDate', 'BondReceived'
+    'BondedDate', 'BondDate'
   );
 
   // Check for franchise certificate approval timestamp - this is the definitive indicator
   const approvedTimestamp = resolveStr(data,
-    'FranCertApprovedTimestamp', 'ApprovedTimestamp', 'CertApprovedDate', 'CertificateApprovedDate'
+    'FranCertApprovedTimestamp', 'ApprovedTimestamp'
   ) || resolveStr(teamData,
-    'FranCertApprovedTimestamp', 'ApprovedTimestamp', 'CertApprovedDate', 'CertificateApprovedDate'
+    'FranCertApprovedTimestamp', 'ApprovedTimestamp'
   );
 
   // If there's an approved timestamp, the franchise is definitely approved
@@ -128,15 +125,9 @@ function determineApprovalStatus(
 
   // Look for explicit approval/status fields
   const statusField = resolveStr(data,
-    'ApprovalStatus', 'Status', 'FranchiseStatus', 'ApprovalStatusCd',
-    'StatusCd', 'FranchiseStatusCd', 'CurrentStatus', 'SeasonStatus',
-    'Approved', 'IsApproved', 'ApprovedFlag', 'CertificateStatus', 'CertStatus',
-    'FranchiseApproval', 'FranchiseApproved', 'SeasonApproval', 'FranchiseCertStatus'
+    'ApprovalStatus', 'Status'
   ) || resolveStr(teamData,
-    'ApprovalStatus', 'Status', 'TeamStatus', 'ApprovalStatusCd',
-    'StatusCd', 'TeamStatusCd', 'CurrentStatus', 'SeasonStatus',
-    'Approved', 'IsApproved', 'ApprovedFlag', 'CertificateStatus', 'CertStatus',
-    'FranchiseApproval', 'FranchiseApproved', 'SeasonApproval', 'FranchiseCertStatus'
+    'TeamStatus', 'Status'
   );
 
   // Determine status
@@ -202,9 +193,9 @@ function extractFranchiseData(
   console.log('[FranchiseCert] team contact-related fields:', JSON.stringify(teamContactKeys, null, 2));
   
   // Log roles arrays
-  const roles_diag = tf.TeamFranchiseRoles || tf.FranchiseRoles || tf.Roles || tf.TeamFranchiseRole || tf.FranchiseRole;
+  const roles_diag = tf.TeamFranchiseRoles || tf.FranchiseRoles;
   console.log('[FranchiseCert] tf roles array:', JSON.stringify(roles_diag, null, 2));
-  const teamRoles_diag = team.TeamRoles || team.Roles || team.TeamRole || team.ContactRoles;
+  const teamRoles_diag = team.TeamRoles || team.Roles;
   console.log('[FranchiseCert] team roles array:', JSON.stringify(teamRoles_diag, null, 2));
   
   // Log ALL keys from the first TeamRole entry + the Team Primary/Secondary entries to find visibility flags
@@ -231,21 +222,20 @@ function extractFranchiseData(
   if (!secondaryContact) secondaryContact = parseContact(team, 'Secondary') || parseContact(team, 'Secd');
 
   // Check TeamFranchiseRoles array (from franchise data) — these are authoritative and OVERRIDE flat fields
-  const roles = tf.TeamFranchiseRoles || tf.FranchiseRoles || tf.Roles ||
-    tf.TeamFranchiseRole || tf.FranchiseRole || [];
+  const roles = tf.TeamFranchiseRoles || tf.FranchiseRoles || [];
   if (Array.isArray(roles) && roles.length > 0) {
     for (const role of roles) {
       const roleCd = role.FranchiseRoleCd || role.RoleCd || role.RoleCode || '';
-      const personName = role.FullName || role.PersonName || role.Name || role.ContactName ||
+      const personName = role.FullName || role.Name ||
         ((role.FirstName || '') + (role.LastName ? ' ' + role.LastName : '')).trim();
       if (!personName) continue;
       const contact: FranchiseContact = {
         name: personName,
         role: roleCd === 'PRIM' ? 'Team Primary' : roleCd === 'SECD' ? 'Team Secondary' : roleCd,
-        homePhone: role.HomePhone || role.PhoneHome || '',
-        workPhone: role.WorkPhone || role.PhoneWork || role.BusinessPhone || '',
-        cellPhone: role.CellPhone || role.PhoneCell || role.MobilePhone || role.Cell || '',
-        email: role.Email || role.EmailAddress || role.EMailAddress || '',
+        homePhone: role.HomePhone || '',
+        workPhone: role.WorkPhone || '',
+        cellPhone: role.CellPhone || role.MobilePhone || '',
+        email: role.Email || role.EmailAddress || '',
       };
       // Roles array is authoritative — override flat-field contacts
       if (roleCd === 'PRIM' || roleCd === 'PRIMARY') primaryContact = contact;
@@ -254,7 +244,7 @@ function extractFranchiseData(
   }
 
   // Check TeamRoles array (from team data) — also authoritative, override if found
-  const teamRoles = team.TeamRoles || team.Roles || team.TeamRole || team.ContactRoles || [];
+  const teamRoles = team.TeamRoles || team.Roles || [];
   if (Array.isArray(teamRoles) && teamRoles.length > 0) {
     for (const role of teamRoles) {
       const roleCd = (role.TeamRoleCd || role.FranchiseRoleCd || role.RoleCd || role.RoleCode || role.Role || '').toUpperCase().trim();
@@ -284,7 +274,7 @@ function extractFranchiseData(
   const { status, raw: statusRaw, bondDate } = determineApprovalStatus(tf, team, currentSeason);
 
   return {
-    franchiseName: tf.FranchiseName || tf.TeamFranchiseName || tf.Name || '',
+    franchiseName: tf.FranchiseName || tf.TeamFranchiseName || '',
     divGroupCommonCode: tf.DivGroupCommonCode || tf.DivisionGroupCode || '',
     ageGroupName: tf.AgeGroupName || '',
     orgName: tf.OrgName || tf.OrganizationName || '',
@@ -300,37 +290,33 @@ function extractFranchiseData(
     approvalStatus: status,
     approvalStatusRaw: statusRaw,
     franCertApprovedTimestamp: resolveStr(tf, 'FranCertApprovedTimestamp', 'ApprovedTimestamp'),
-    teamCity: team.City || team.CityName || team.HomeTown || '',
-    teamProvince: team.Province || team.ProvinceName || team.State || team.StateName || '',
-    teamWebsite: team.WebSite || team.Website || team.WebsiteUrl || team.WebUrl || '',
-    teamEmail: team.Email || team.TeamEmail || team.EMailAddress || '',
-    teamPhone: team.Phone || team.TeamPhone || team.PhoneNumber || '',
+    teamCity: team.City || team.CityName || '',
+    teamProvince: team.Province || team.ProvinceName || '',
+    teamWebsite: team.WebSite || team.WebsiteUrl || '',
+    teamEmail: team.Email || team.EMailAddress || '',
+    teamPhone: team.Phone || team.PhoneNumber || '',
     // Additional certificate fields
     chequesPayableTo: resolveStr(tf,
-      'ChequesPayableTo', 'ChequePayableTo', 'PayableTo', 'ChequesPayable',
-      'ChequePayable', 'PayableToName', 'ChqPayableTo'
+      'ChequesPayableTo', 'ChequePayableTo'
     ) || resolveStr(team,
-      'ChequesPayableTo', 'ChequePayableTo', 'PayableTo', 'ChequesPayable',
-      'ChequePayable', 'PayableToName', 'ChqPayableTo'
+      'ChequesPayableTo', 'ChequePayableTo'
     ),
     eftEmailAddress: resolveStr(tf,
-      'EtransferEmail', 'EFTEMailAddress', 'EFTEmailAddress', 'EftEmail', 'EFTEmail',
-      'EFT_Email', 'EftEMailAddress', 'EFTEMail'
+      'EtransferEmail', 'EFTEmail'
     ) || resolveStr(team,
-      'EtransferEmail', 'EFTEMailAddress', 'EFTEmailAddress', 'EftEmail', 'EFTEmail',
-      'EFT_Email', 'EftEMailAddress', 'EFTEMail'
+      'EtransferEmail', 'EFTEmail'
     ),
     memberSince: resolveStr(tf,
-      'MemberSinceYear', 'MemberSince', 'RMLLMemberSince', 'MemberYear'
+      'MemberSinceYear', 'MemberSince'
     ) || resolveStr(team,
-      'MemberSinceYear', 'MemberSince', 'RMLLMemberSince', 'MemberYear'
+      'MemberSinceYear', 'MemberSince'
     ) || (tf.FirstYear && tf.FirstYear > 0 ? String(tf.FirstYear) : ''),
     // New fields from raw Team endpoint — use exact API field names
     formationDate: resolveStr(team, 'FormationDate'),
     formedByStatute: resolveStr(team, 'FormedByStatute'),
     financialYearEnd: resolveStr(team, 'FinancialYearEnd'),
     businessAccessNumber: resolveStr(team, 'BusinessAccessNumber'),
-    facebookAccount: resolveStr(team, 'FaceBookAccount', 'FacebookAccount'),
+    facebookAccount: resolveStr(team, 'FaceBookAccount'),
     instagramAccount: resolveStr(team, 'InstagramAccount'),
     homeSweaterColor: resolveStr(team, 'HomeSweaterColor'),
     awaySweaterColor: resolveStr(team, 'AwaySweaterColor'),

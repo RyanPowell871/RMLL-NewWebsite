@@ -237,7 +237,7 @@ function transformRosterWithScoring(
     if (String(p.TeamId) !== String(teamId)) return false;
     
     // Check various possible fields for jersey number
-    const playerNum = p.JerseyNumber || p.PlayerNumber || p.JerseyNo || p.No;
+    const playerNum = p.JerseyNumber || p.PlayerNumber;
     
     // Check if it's a valid number
     return playerNum && !isNaN(parseInt(playerNum));
@@ -276,9 +276,9 @@ function transformRosterWithScoring(
     // CRITICAL: Penalties use PlayerId, not PersonId!
     const penaltyMinutes = allPenalties
       .filter(p => p.PlayerId === playerId)
-      .reduce((sum, p) => sum + (p.PenaltyMinutes || p.PenaltyMin || 0), 0);
+      .reduce((sum, p) => sum + (p.PenaltyMin || p.PenaltyMinutes || 0), 0);
 
-    const playerNum = player.JerseyNumber || player.PlayerNumber || player.JerseyNo || player.No || '0';
+    const playerNum = player.JerseyNumber || player.PlayerNumber || '0';
 
     // Determine player position/flag code for gamesheet
     // Primary source: PositionCode field from the API roster entry
@@ -287,11 +287,11 @@ function transformRosterWithScoring(
     
     // Fallback: infer from legacy fields if PositionCode is missing
     if (!flag) {
-      const pos = (player.Position || player.RosterPosition || player.PlayerPosition || '').toUpperCase();
+      const pos = (player.Position || player.RosterPosition || '').toUpperCase();
       if (/^G$|GOALIE|GOALKEEPER|GOAL\s*TENDER/i.test(pos)) flag = 'G';
       if (player.IsCaptain || player.Captain) flag = 'C';
-      else if (player.IsAlternate || player.IsAssistantCaptain || player.AlternateCaptain) flag = 'A';
-      if ((player.IsAffiliate || player.AffiliatePlayer || player.AffiliateFlag) && !flag) flag = 'AP';
+      else if (player.IsAlternate || player.IsAssistantCaptain) flag = 'A';
+      if ((player.IsAffiliate || player.AffiliateFlag) && !flag) flag = 'AP';
       if ((player.InHomePenalties || player.InHomePenaltiesFlag) && !flag) flag = 'IN';
       if (player.ServingSuspension && !flag) flag = 'S';
     }
@@ -346,7 +346,7 @@ function transformPenalties(
       (r.PlayerId || r.PersonId) === penalty.PlayerId
     );
     
-    const jerseyNumber = player?.JerseyNumber || player?.PlayerNumber || penalty.PlayerNo || '?';
+    const jerseyNumber = player?.JerseyNumber || player?.PlayerNumber || '?';
     const playerName = player 
       ? `${player.FirstName} ${player.LastName}`.toUpperCase()
       : `PLAYER #${jerseyNumber}`;
@@ -355,8 +355,8 @@ function transformPenalties(
       period: penalty.Period || 0,
       playerNumber: String(jerseyNumber),
       playerName,
-      offence: penalty.PenaltyName || penalty.PenaltyType || 'Unknown',
-      minutes: penalty.PenaltyMin || penalty.PenaltyMinutes || 0,
+      offence: penalty.PenaltyName || 'Unknown',
+      minutes: penalty.PenaltyMin || 0,
       startTime: penalty.TimeIn || '0:00',
       finishTime: penalty.TimeOut || 'End'
     };
@@ -786,9 +786,9 @@ export function GameSheetModal({ game, open, onClose }: GameSheetModalProps) {
         awayLogo: displayGame.awayLogo,
         rmllLogo: rmllShieldLogo,
         officials: gameDetails?.Officials?.map((o: any) => ({
-          role: o.OfficialRole || o.RoleName || o.PositionName || 'Referee',
-          name: `${o.FirstName || ''} ${o.LastName || ''}`.trim() || o.OfficialName || o.Name || '',
-          number: o.RefereeNumber || o.OfficialNumber || o.JerseyNumber || '',
+          role: o.OfficialRole || o.RoleName || 'Referee',
+          name: `${o.FirstName || ''} ${o.LastName || ''}`.trim() || o.OfficialName || '',
+          number: o.RefereeNumber || o.OfficialNumber || '',
           signOffTimestamp: o.SignedDateTime
             ? new Date(o.SignedDateTime).toLocaleString('en-US', {
                 month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit'

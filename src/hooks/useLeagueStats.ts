@@ -449,27 +449,27 @@ export function useLeagueStats(seasonId: number | null, divisionIds?: number[] |
                        const sportPosId = Number(p.SportPositionId || p.PositionId || 0);
                        const isGoalieStatEntry = sportPosId === 113;
                        
-                       const rawSvPct = resolveNum(p, 'SavePercentage', 'SavePct', 'SvPct', 'SVPct', 'SV_PCT', 'Svpct', 'SavePctg', 'SVPCT', 'SavePercent', 'Sv_Pct');
+                       const rawSvPct = resolveNum(p, 'SavePercentage');
                        
                        const gamesPlayed = resolveNum(p, 'GamesPlayed', 'GP');
-                       const gamesDressed = resolveNum(p, 'GamesDressed', 'GD', 'Dressed') || gamesPlayed;
+                       const gamesDressed = resolveNum(p, 'GamesDressed', 'GD') || gamesPlayed;
                        const wins = resolveNum(p, 'Wins', 'W');
                        const losses = resolveNum(p, 'Losses', 'L');
-                       const ties = resolveNum(p, 'Ties', 'T', 'OTL', 'OvertimeLosses');
-                       const shutouts = resolveNum(p, 'Shutouts', 'SO', 'ShutOuts');
+                       const ties = resolveNum(p, 'Ties', 'OvertimeLosses', 'OTL');
+                       const shutouts = resolveNum(p, 'Shutouts', 'SO');
                        // API uses "SaversTotal" for saves (not "Saves" or "SavesTotal")
-                       const saves = resolveNum(p, 'Saves', 'SV', 'Svs', 'SVS', 'SaversTotal', 'ShotsStopped', 'SavesMade', 'TotalSaves', 'SavesTotal');
+                       const saves = resolveNum(p, 'SaversTotal', 'Saves');
                        const goalsAgainst = resolveNum(p, 'GoalsAgainst', 'GA');
                        // API uses "ShotsTotal" for shots against
-                       const shotsAgainst = resolveNum(p, 'ShotsAgainst', 'SA', 'ShotsTotal', 'ShotAgainst', 'TotalShots', 'ShotsReceived') || (saves + goalsAgainst);
+                       const shotsAgainst = resolveNum(p, 'ShotsTotal', 'ShotsAgainst') || (saves + goalsAgainst);
                        const goals = resolveNum(p, 'Goals', 'G');
                        const assists = resolveNum(p, 'Assists', 'A');
                        const points = resolveNum(p, 'Points', 'Pts') || (goals + assists);
-                       const pim = resolveNum(p, 'PenaltyMin', 'PenaltyMinutes', 'PIM', 'Penalties', 'TM_PIM', 'PenMin');
-                       let minutes = resolveNum(p, 'MinutesPlayed', 'Minutes', 'Min', 'Mins', 'MinPlayed', 'MinsPlayed', 'MP', 'TOI', 'TimeOnIce', 'TotalMinutes', 'TimePlayed');
+                       const pim = resolveNum(p, 'PenaltyMin', 'PIM');
+                       let minutes = resolveNum(p, 'MinutesPlayed', 'Min');
                        
                        // Calculate GAA and SV% from raw data if API didn't provide them
-                       const rawGAA = resolveNum(p, 'GoalsAgainstAverage', 'GAA', 'Gaa');
+                       const rawGAA = resolveNum(p, 'GoalsAgainstAverage', 'GAA');
                        
                        // Back-calculate minutes from GAA + GA if the API doesn't return minutes directly
                        // GAA = GA * 60 / MIN → MIN = GA * 60 / GAA
@@ -524,7 +524,7 @@ export function useLeagueStats(seasonId: number | null, divisionIds?: number[] |
                            const goalieEntry: LeagueGoalieStat = {
                               player: name,
                               playerId: playerId,
-                              jerseyNumber: resolveStr(p, 'PlayerNo', 'JerseyNumber', 'No', 'Jersey', 'Number', 'Num', 'JerseyNo'),
+                              jerseyNumber: resolveStr(p, 'PlayerNo', 'JerseyNumber'),
                               team: teamName,
                               teamId: tId,
                               teamLogoUrl: teamInfo?.teamLogoUrl,
@@ -558,13 +558,13 @@ export function useLeagueStats(seasonId: number | null, divisionIds?: number[] |
                        const goals = resolveNum(p, 'Goals', 'G');
                        const assists = resolveNum(p, 'Assists', 'A');
                        const points = resolveNum(p, 'Points', 'Pts') || (goals + assists);
-                       const shots = resolveNum(p, 'Shots', 'SOG', 'ShotsOnGoal');
-                       const plusMinus = resolveNum(p, 'PlusMinus', 'PM', 'Plus_Minus');
-                       const pim = resolveNum(p, 'PenaltyMin', 'PenaltyMinutes', 'PIM', 'Penalties', 'TM_PIM', 'PenMin');
-                       const ppg = resolveNum(p, 'PPGoals', 'PowerPlayGoals', 'PPG', 'PP');
-                       const shg = resolveNum(p, 'SHGoals', 'ShortHandedGoals', 'SHG', 'SH');
+                       const shots = resolveNum(p, 'Shots');
+                       const plusMinus = resolveNum(p, 'PlusMinus');
+                       const pim = resolveNum(p, 'PenaltyMin', 'PIM');
+                       const ppg = resolveNum(p, 'PPGoals');
+                       const shg = resolveNum(p, 'SHGoals');
                        const gwg = resolveNum(p, 'GameWinningGoals', 'GWG');
-                       const otGoals = resolveNum(p, 'OTGoals', 'OvertimeGoals', 'OT', 'OTG');
+                       const otGoals = resolveNum(p, 'OTGoals');
 
                        if (playersMap.has(entryKey)) {
                           // Merge Stats
@@ -585,11 +585,11 @@ export function useLeagueStats(seasonId: number | null, divisionIds?: number[] |
                            const playerEntry: LeaguePlayerStat = {
                               player: name,
                               playerId: playerId,
-                              jerseyNumber: resolveStr(p, 'PlayerNo', 'JerseyNumber', 'No', 'Jersey', 'Number', 'Num', 'JerseyNo'),
+                              jerseyNumber: resolveStr(p, 'PlayerNo', 'JerseyNumber'),
                               team: teamName,
                               teamId: tId,
                               teamLogoUrl: teamInfo?.teamLogoUrl,
-                              position: resolveStr(p, 'SportPositionName', 'Position', 'Pos') || 'F',
+                              position: resolveStr(p, 'SportPositionName', 'Position') || 'F',
                               gamesPlayed,
                               goals,
                               assists,
