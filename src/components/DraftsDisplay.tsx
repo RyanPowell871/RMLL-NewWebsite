@@ -38,13 +38,6 @@ export function DraftsDisplay({ divisionName }: DraftsDisplayProps) {
   const [viewMode, setViewMode] = useState<'rounds' | 'table'>('rounds');
   const [selectedDraftId, setSelectedDraftId] = useState<number>(0);
 
-  // Auto-select first draft when available drafts change (e.g. division switch)
-  useEffect(() => {
-    if (availableDrafts.length > 0) {
-      setSelectedDraftId(availableDrafts[0].id);
-    }
-  }, [availableDrafts]);
-
   // Apply search and draft filter
   const filteredPicks = useMemo(() => {
     let result = allPicks;
@@ -87,6 +80,13 @@ export function DraftsDisplay({ divisionName }: DraftsDisplayProps) {
     });
     return Array.from(draftMap.values()).sort((a, b) => a.id - b.id);
   }, [allPicks]);
+
+  // Auto-select first draft when available drafts change (e.g. division switch)
+  useEffect(() => {
+    if (availableDrafts.length > 0) {
+      setSelectedDraftId(availableDrafts[0].id);
+    }
+  }, [availableDrafts]);
 
   // Has any pick with round info?
   const hasRounds = filteredPicks.some(p => p.round !== null);
