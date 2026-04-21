@@ -7,7 +7,7 @@ import { exportGameToCalendar, type GameForCalendar } from '../utils/calendar';
 import { exportGameSheetPDF, type GameSheetPDFData } from '../utils/gameSheetPdf';
 import rmllShieldLogo from '../assets/mainlogo.png';
 import { useGameDetails } from '../hooks/useGameDetails';
-import { fetchTeamRoster, getPlayerPhotoUrl, parseDateAsLocal, type ScoringStats, type GoalieStats, type PenaltyStats, type RosterPlayer as APIRosterPlayer } from '../services/sportzsoft';
+import { parseDateAsLocal, type ScoringStats, type GoalieStats, type PenaltyStats, type RosterPlayer as APIRosterPlayer } from '../services/sportzsoft';
 
 // Parse a datetime string's TIME portion as local (avoids UTC timezone shift).
 // SportzSoft returns e.g. "2025-06-15T19:00:00" or "2025-06-15T19:00:00.000Z"
@@ -60,6 +60,12 @@ interface Game {
   location: string;
   venue?: string;
   gamestreamurl?: string;
+  actualStartTime?: string;
+  actualEndTime?: string;
+  officialScorerName?: string;
+  officialGameTimerName?: string;
+  officialShotTimerName?: string;
+  officialAlternateRefereeName?: string;
 }
 
 interface PeriodScore {
@@ -416,6 +422,64 @@ function calculateTeamStats(
 }
 
 /**
+ * Extract coaching staff from the game's RosterView (game-specific bench personnel).
+ * Staff entries are identified by: non-numeric PlayerNumber (role codes like "TPRM", "ASSTC", etc.)
+ * or TeamRoleClassification === 'Bench', and are specific to this game (not the team's overall staff).
+ */
+function extractCoachingFromGameRoster(roster: any[], teamId: number): CoachingStaff {
+  if (!roster || roster.length === 0) {
+    return { headCoach: 'TBD', assistantCoaches: [], trainer: '', manager: '', allStaff: [] };
+  }
+
+  // Filter for this team's staff entries:
+  // Staff either have a non-numeric PlayerNumber (role code) OR are marked as Bench classification
+  const staff = roster.filter(p => {
+    if (String(p.TeamId) !== String(teamId)) return false;
+    const num = p.JerseyNumber || p.PlayerNumber || '';
+    const roleClass = (p.TeamRoleClassification || '').toLowerCase();
+    // Bench-classified entries are always staff
+    if (roleClass === 'bench') return true;
+    // Entries with role codes instead of jersey numbers are staff
+    if (num && isNaN(parseInt(num))) return true;
+    return false;
+  });
+
+  function cleanName(p: any): string {
+    const first = p.FirstName || '';
+    const last = p.LastName || '';
+    const name = `${first} ${last}`.trim();
+    return name.toUpperCase();
+  }
+
+  function inferRole(p: any): string {
+    const code = (p.JerseyNumber || p.PlayerNumber || '').toUpperCase();
+    const posCode = (p.PositionCode || '').toUpperCase();
+    const role = (p.TeamRoleClassification || p.Role || '').toLowerCase();
+
+    if (code.includes('HC') || code.includes('HDCOACH') || posCode === 'HC' || role.includes('head coach')) return 'COACH';
+    if (code.includes('AC') || code.includes('ASSTC') || code.includes('ASST') || role.includes('asst coach') || role.includes('assistant coach')) return 'COACH';
+    if (code.includes('TR') || code.includes('TPRM') || code.includes('TRAINER') || role.includes('trainer')) return 'TRAINER';
+    if (code.includes('MG') || code.includes('MAN') || code.includes('BM') || code.includes('GM') || role.includes('manager')) return 'MANAGER';
+    return 'STAFF';
+  }
+
+  const allStaff = staff.map(p => ({ role: inferRole(p), name: cleanName(p) }));
+
+  const headCoach = allStaff.find(s => s.role === 'COACH');
+  const assistantCoaches = allStaff.filter(s => s.role === 'COACH').slice(1); // skip first if it's head coach
+  const trainer = allStaff.find(s => s.role === 'TRAINER');
+  const manager = allStaff.find(s => s.role === 'MANAGER');
+
+  return {
+    headCoach: headCoach?.name || 'TBD',
+    assistantCoaches: assistantCoaches.map(ac => ac.name),
+    trainer: trainer?.name || '',
+    manager: manager?.name || '',
+    allStaff
+  };
+}
+
+/**
  * Extract coaching staff from TeamRoles array (bench personnel)
  * This matches the data structure used by the Team Detail Page
  */
@@ -562,10 +626,10 @@ export function GameSheetModal({ game, open, onClose }: GameSheetModalProps) {
   const displayGame = useMemo(() => {
     if (!game) return null;
     if (!gameDetails?.Game) return game;
-    
+
     const details = gameDetails.Game;
     const statusLower = (details.GameStatus || '').toLowerCase();
-    
+
     let status = game.status;
     if (statusLower === 'final' || statusLower === 'played' || statusLower === 'completed') {
       status = 'FINAL';
@@ -574,31 +638,46 @@ export function GameSheetModal({ game, open, onClose }: GameSheetModalProps) {
     } else if (status === 'UPCOMING' && details.HomeScore !== null && details.VisitorScore !== null) {
       status = 'FINAL';
     }
-    
+
+    // Score logic: if both HomeScore and VisitorScore are 0, use BoxScore fields;
+    // if either is non-zero, use HomeScore/VisitorScore
+    const homeScoreRaw = details.HomeScore ?? game.homeScore;
+    const awayScoreRaw = details.VisitorScore ?? game.awayScore;
+    const useBoxScore = !homeScoreRaw && !awayScoreRaw;
+    const homeScore = useBoxScore
+      ? ((details as any).BoxScoreHome ?? homeScoreRaw)
+      : homeScoreRaw;
+    const awayScore = useBoxScore
+      ? ((details as any).BoxScoreVisistor ?? awayScoreRaw)
+      : awayScoreRaw;
+
     return {
       ...game,
       status,
-      homeScore: details.HomeScore ?? game.homeScore,
-      awayScore: details.VisitorScore ?? game.awayScore,
+      homeScore,
+      awayScore,
       homeTeam: details.HomeTeamName || game.homeTeam,
       awayTeam: details.VisitorTeamName || game.awayTeam,
-      // Try to get logos from API response if available (some endpoints return them)
       homeLogo: (details as any).HomeTeamLogoURL || (details as any).HomeTeamLogo || game.homeLogo,
       awayLogo: (details as any).VisitorTeamLogoURL || (details as any).VisitorTeamLogo || game.awayLogo,
-      // Update date/time/venue from detailed response
       date: details.GameDayDate || game.date,
-      fullDate: details.GameDate ? parseDateAsLocal(details.GameDate).toLocaleDateString('en-US', { 
-        weekday: 'long', 
-        year: 'numeric', 
-        month: 'long', 
-        day: 'numeric' 
+      fullDate: details.GameDate ? parseDateAsLocal(details.GameDate).toLocaleDateString('en-US', {
+        weekday: 'long',
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric'
       }) : (details.GameDayDate || game.fullDate),
-      // IMPORTANT: Prefer game.time from the schedule listing (already correct).
-      // The detail endpoint's GameDate often has an incorrect time component (e.g. T01:00:00).
-      // Only fall back to detail fields if schedule time is missing.
       time: game.time || (details as any).StartEndTime || (details.GameDate ? parseTimeAsLocal(details.GameDate) : ''),
       venue: (details as any).FacilityName || (details as any).VenueName || game.venue,
-      gamestreamurl: (details as any).GameStreamUrl || (details as any).gamestreamurl || (details as any).GameStreamURL || game.gamestreamurl
+      gamestreamurl: (details as any).GameStreamUrl || (details as any).gamestreamurl || (details as any).GameStreamURL || game.gamestreamurl,
+      // Actual game times from the official gamesheet
+      actualStartTime: (details as any).ActualStartTime || '',
+      actualEndTime: (details as any).ActualEndTime || '',
+      // Game officials (scorer, timer, 30-sec timer)
+      officialScorerName: (details as any).OfficialScorerName || '',
+      officialGameTimerName: (details as any).OfficialGameTimerName || '',
+      officialShotTimerName: (details as any).OfficialShotTimerName || '',
+      officialAlternateRefereeName: (details as any).OfficialAlternateRefereeName || '',
     };
   }, [game, gameDetails]);
 
@@ -670,92 +749,22 @@ export function GameSheetModal({ game, open, onClose }: GameSheetModalProps) {
   };
 
   const [pdfExporting, setPdfExporting] = useState(false);
-  const [homeBenchPersonnel, setHomeBenchPersonnel] = useState<CoachingStaff | null>(null);
-  const [awayBenchPersonnel, setAwayBenchPersonnel] = useState<CoachingStaff | null>(null);
 
-  // Fetch bench personnel from team data (TeamRoles)
-  useEffect(() => {
-    const fetchBenchPersonnel = async () => {
-      if (!homeTeamId || !visitorTeamId) return;
-
-      console.log('[GameSheet] Fetching bench personnel - Home:', homeTeamId, 'Visitor:', visitorTeamId);
-
-      try {
-        // Fetch home team data with TeamRoles (childCode 'B')
-        if (homeTeamId !== 0) {
-          const homeResponse = await fetchTeamRoster(homeTeamId, 'B', 'B');
-          console.log('[GameSheet] Home team full response:', homeResponse);
-
-          // Try multiple paths to find TeamRoles
-          let homeTeamRoles = null;
-          if (homeResponse.Success) {
-            homeTeamRoles = homeResponse.Response?.Team?.TeamRoles
-              || homeResponse.Response?.TeamRoles
-              || homeResponse.TeamRoles
-              || (homeResponse as any).Response?.TeamRoles;
-
-            console.log('[GameSheet] Home team TeamRoles found at path:', homeTeamRoles ? 'YES' : 'NO');
-            console.log('[GameSheet] Home team Response keys:', homeResponse.Response ? Object.keys(homeResponse.Response) : 'N/A');
-            console.log('[GameSheet] Home team Response.Team keys:', homeResponse.Response?.Team ? Object.keys(homeResponse.Response.Team) : 'N/A');
-            if (homeTeamRoles) {
-              console.log('[GameSheet] Home team TeamRoles data:', homeTeamRoles);
-            }
-          }
-
-          if (homeTeamRoles && Array.isArray(homeTeamRoles)) {
-            const homeStaff = extractCoachingStaffFromTeamRoles(homeTeamRoles);
-            console.log('[GameSheet] Home bench personnel extracted:', homeStaff);
-            setHomeBenchPersonnel(homeStaff);
-          } else {
-            console.warn('[GameSheet] Home team: No valid TeamRoles array found');
-          }
-        }
-
-        // Fetch visitor team data with TeamRoles (childCode 'B')
-        if (visitorTeamId !== 0) {
-          const awayResponse = await fetchTeamRoster(visitorTeamId, 'B', 'B');
-          console.log('[GameSheet] Visitor team full response:', awayResponse);
-
-          // Try multiple paths to find TeamRoles
-          let awayTeamRoles = null;
-          if (awayResponse.Success) {
-            awayTeamRoles = awayResponse.Response?.Team?.TeamRoles
-              || awayResponse.Response?.TeamRoles
-              || awayResponse.TeamRoles
-              || (awayResponse as any).Response?.TeamRoles;
-
-            console.log('[GameSheet] Visitor team TeamRoles found at path:', awayTeamRoles ? 'YES' : 'NO');
-            console.log('[GameSheet] Visitor team Response keys:', awayResponse.Response ? Object.keys(awayResponse.Response) : 'N/A');
-            console.log('[GameSheet] Visitor team Response.Team keys:', awayResponse.Response?.Team ? Object.keys(awayResponse.Response.Team) : 'N/A');
-            if (awayTeamRoles) {
-              console.log('[GameSheet] Visitor team TeamRoles data:', awayTeamRoles);
-            }
-          }
-
-          if (awayTeamRoles && Array.isArray(awayTeamRoles)) {
-            const awayStaff = extractCoachingStaffFromTeamRoles(awayTeamRoles);
-            console.log('[GameSheet] Visitor bench personnel extracted:', awayStaff);
-            setAwayBenchPersonnel(awayStaff);
-          } else {
-            console.warn('[GameSheet] Visitor team: No valid TeamRoles array found');
-          }
-        }
-      } catch (err) {
-        console.error('[GameSheet] Error fetching bench personnel:', err);
-      }
-    };
-
-    if (open && homeTeamId && visitorTeamId) {
-      fetchBenchPersonnel();
+  // Extract bench personnel from the game's RosterView (game-specific staff)
+  // instead of fetching from team's actual staff
+  const homeCoaching = useMemo(() => {
+    if (!gameDetails?.Roster || !homeTeamId) {
+      return { headCoach: 'TBD', assistantCoaches: [], trainer: '', manager: '', allStaff: [] };
     }
-  }, [open, homeTeamId, visitorTeamId]);
+    return extractCoachingFromGameRoster(gameDetails.Roster, homeTeamId);
+  }, [gameDetails?.Roster, homeTeamId]);
 
-  // Use fetched bench personnel if available, otherwise fall back to TBD
-  const homeCoaching = homeBenchPersonnel || { headCoach: 'TBD', assistantCoaches: [], trainer: '', manager: '', allStaff: [] };
-  const awayCoaching = awayBenchPersonnel || { headCoach: 'TBD', assistantCoaches: [], trainer: '', manager: '', allStaff: [] };
-
-  console.log('[GameSheet] Render - homeCoaching:', homeCoaching);
-  console.log('[GameSheet] Render - awayCoaching:', awayCoaching);
+  const awayCoaching = useMemo(() => {
+    if (!gameDetails?.Roster || !visitorTeamId) {
+      return { headCoach: 'TBD', assistantCoaches: [], trainer: '', manager: '', allStaff: [] };
+    }
+    return extractCoachingFromGameRoster(gameDetails.Roster, visitorTeamId);
+  }, [gameDetails?.Roster, visitorTeamId]);
 
   const handleExportPDF = async () => {
     setPdfExporting(true);
@@ -788,17 +797,24 @@ export function GameSheetModal({ game, open, onClose }: GameSheetModalProps) {
         officials: gameDetails?.Officials?.map((o: any) => ({
           role: o.OfficialRole || o.RoleName || 'Referee',
           name: `${o.FirstName || ''} ${o.LastName || ''}`.trim() || o.OfficialName || '',
-          number: o.RefereeNumber || o.OfficialNumber || '',
+          number: o.RefereeNumber || o.OfficialNumber || o.OfficialRefereeNumber || o.JerseyNumber || o.RefNo || '',
           signOffTimestamp: o.SignedDateTime
             ? new Date(o.SignedDateTime).toLocaleString('en-US', {
                 month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit'
               })
             : undefined,
         })) || [],
-        gameStartTime: displayGame.time,
-        gameEndTime: gameDetails?.EndTime
-          ? parseTimeAsLocal(gameDetails.EndTime)
-          : undefined,
+        // Game-specific off-floor officials from the Game object
+        officialScorerName: displayGame.officialScorerName || '',
+        officialGameTimerName: displayGame.officialGameTimerName || '',
+        officialShotTimerName: displayGame.officialShotTimerName || '',
+        officialAlternateRefereeName: displayGame.officialAlternateRefereeName || '',
+        gameStartTime: displayGame.actualStartTime
+          ? parseTimeAsLocal(displayGame.actualStartTime) || displayGame.actualStartTime
+          : displayGame.time,
+        gameEndTime: displayGame.actualEndTime
+          ? parseTimeAsLocal(displayGame.actualEndTime) || displayGame.actualEndTime
+          : (displayGame.status === 'FINAL' ? '' : undefined),
         timeOuts: gameDetails?.TimeOuts?.map((to: any) => ({
           period: to.Period || 0,
           timeOnClock: to.TimeOnClock || '',
@@ -1105,8 +1121,15 @@ export function GameSheetModal({ game, open, onClose }: GameSheetModalProps) {
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                   <div className="bg-white rounded-lg p-3 border border-gray-300">
                     <h5 className="font-bold text-xs text-gray-900 mb-1 uppercase">Game Time</h5>
-                    <p className="text-xs"><span className="font-bold">Started:</span> {displayGame.time || 'N/A'}</p>
-                    <p className="text-xs"><span className="font-bold">Status:</span> {displayGame.status}</p>
+                    <p className="text-xs"><span className="font-bold">Scheduled:</span> {displayGame.time || 'N/A'}</p>
+                    {displayGame.actualStartTime && (
+                      <p className="text-xs"><span className="font-bold">Actual Start:</span> {parseTimeAsLocal(displayGame.actualStartTime) || displayGame.actualStartTime}</p>
+                    )}
+                    {displayGame.actualEndTime ? (
+                      <p className="text-xs"><span className="font-bold">Actual End:</span> {parseTimeAsLocal(displayGame.actualEndTime) || displayGame.actualEndTime}</p>
+                    ) : (
+                      <p className="text-xs"><span className="font-bold">Status:</span> {displayGame.status}</p>
+                    )}
                   </div>
 
                   <div className="bg-white rounded-lg p-3 border border-gray-300">
@@ -1610,6 +1633,51 @@ export function GameSheetModal({ game, open, onClose }: GameSheetModalProps) {
 
               {/* Officials Tab */}
               <TabsContent value="officials" className="space-y-4 mt-4">
+                {/* Game Officials (Scorer, Timer, 30s Timer) */}
+                {(displayGame.officialScorerName || displayGame.officialGameTimerName || displayGame.officialShotTimerName) && (
+                  <div className="bg-white rounded-lg border-2 border-gray-300 overflow-hidden">
+                    <div className="bg-black px-4 py-2">
+                      <h4 className="font-bold text-white text-sm text-center">OFF-FLOOR OFFICIALS</h4>
+                    </div>
+                    <div className="overflow-x-auto">
+                      <table className="w-full">
+                        <thead>
+                          <tr className="bg-white border-b-2 border-black">
+                            <th className="px-3 py-2 text-left font-bold text-xs">ROLE</th>
+                            <th className="px-3 py-2 text-left font-bold text-xs">NAME</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {displayGame.officialScorerName && (
+                            <tr className="border-b border-gray-200 bg-gray-50">
+                              <td className="px-3 py-2 text-xs font-bold">Official Scorer</td>
+                              <td className="px-3 py-2 text-xs font-bold">{displayGame.officialScorerName}</td>
+                            </tr>
+                          )}
+                          {displayGame.officialGameTimerName && (
+                            <tr className="border-b border-gray-200 bg-white">
+                              <td className="px-3 py-2 text-xs font-bold">Game Timer</td>
+                              <td className="px-3 py-2 text-xs font-bold">{displayGame.officialGameTimerName}</td>
+                            </tr>
+                          )}
+                          {displayGame.officialShotTimerName && (
+                            <tr className="border-b border-gray-200 bg-gray-50">
+                              <td className="px-3 py-2 text-xs font-bold">30-Second Timer</td>
+                              <td className="px-3 py-2 text-xs font-bold">{displayGame.officialShotTimerName}</td>
+                            </tr>
+                          )}
+                          {displayGame.officialAlternateRefereeName && (
+                            <tr className="border-b border-gray-200 bg-white">
+                              <td className="px-3 py-2 text-xs font-bold">Alternate Referee</td>
+                              <td className="px-3 py-2 text-xs font-bold">{displayGame.officialAlternateRefereeName}</td>
+                            </tr>
+                          )}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                )}
+
                 {(gameDetails?.Officials && gameDetails.Officials.length > 0) ? (
                   <div className="bg-white rounded-lg border-2 border-gray-300 overflow-hidden">
                     <div className="bg-black px-4 py-2">
@@ -1627,7 +1695,7 @@ export function GameSheetModal({ game, open, onClose }: GameSheetModalProps) {
                         </thead>
                         <tbody>
                           {gameDetails.Officials.map((official: any, idx: number) => {
-                            const refNumber = official.RefereeNumber || official.OfficialNumber || official.JerseyNumber || '';
+                            const refNumber = official.RefereeNumber || official.OfficialNumber || official.OfficialRefereeNumber || official.JerseyNumber || official.RefNo || '';
                             const name = official.FirstName && official.LastName
                               ? `${official.FirstName} ${official.LastName}`
                               : official.OfficialName || official.Name || 'N/A';

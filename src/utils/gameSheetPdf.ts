@@ -124,6 +124,10 @@ export interface GameSheetPDFData {
   awayLogo?: string;
   rmllLogo?: string;
   officials?: OfficialInfo[];
+  officialScorerName?: string;
+  officialGameTimerName?: string;
+  officialShotTimerName?: string;
+  officialAlternateRefereeName?: string;
   gameStartTime?: string;
   gameEndTime?: string;
   timeOuts?: { period: number; timeOnClock: string; isHome: boolean }[];
@@ -500,7 +504,7 @@ export async function exportGameSheetPDF(data: GameSheetPDFData): Promise<void> 
       doc.text(ref.signOffTimestamp, cx + 16, cy + 7.2);
     } else {
       sz(3.5); ital(); setC(MGRAY);
-      doc.text('— Not signed —', cx + 16, cy + 7.2);
+      doc.text('\u2014 Not signed \u2014', cx + 16, cy + 7.2);
     }
 
     // Referee Number
@@ -520,17 +524,40 @@ export async function exportGameSheetPDF(data: GameSheetPDFData): Promise<void> 
     cy += refRowH;
   }
 
+  // ── Alternate Referee (if provided) ──
+  if (data.officialAlternateRefereeName) {
+    const altRefH = 5;
+    setD(BLK); doc.setLineWidth(0.2);
+    doc.rect(cx, cy, cw, altRefH);
+    sz(4); bold(); setC(BLK);
+    doc.text('ALT. REFEREE', cx + 2, cy + 2.5);
+    sz(3.5); ital(); setC(DKGRAY);
+    doc.text('Print Name', cx + 2, cy + 4.5);
+    norm(); sz(4.5); setC(BLK);
+    doc.text(trunc(doc, data.officialAlternateRefereeName, cw - 8), cx + 16, cy + 4.5);
+    cy += altRefH;
+  }
+
   // ── Additional Officials (OFF. SCORER, 30 SEC. TIMER, GAME TIMER) ──
   const addlOfficialH = 4;
-  const addlLabels = ['OFF. SCORER', '30 SEC. TIMER', 'GAME TIMER'];
-  addlLabels.forEach((lbl) => {
+  const addlOfficialsData: [string, string][] = [
+    ['OFF. SCORER', data.officialScorerName || ''],
+    ['30 SEC. TIMER', data.officialShotTimerName || ''],
+    ['GAME TIMER', data.officialGameTimerName || ''],
+  ];
+  addlOfficialsData.forEach(([lbl, name]) => {
     setD(BLK); doc.setLineWidth(0.15);
     doc.rect(cx, cy, cw, addlOfficialH);
     sz(3.5); bold(); setC(BLK);
     doc.text(lbl, cx + 2, cy + 2.8);
-    // Line for name
-    setD(MGRAY); doc.setLineWidth(0.1);
-    hLine(cx + 22, cy + 2.8, cx + cw - 2);
+    if (name) {
+      norm(); sz(4); setC(RED);
+      doc.text(trunc(doc, name, cw - 26), cx + 22, cy + 2.8);
+    } else {
+      // Blank line for name
+      setD(MGRAY); doc.setLineWidth(0.1);
+      hLine(cx + 22, cy + 2.8, cx + cw - 2);
+    }
     cy += addlOfficialH;
   });
 
@@ -549,7 +576,7 @@ export async function exportGameSheetPDF(data: GameSheetPDFData): Promise<void> 
   doc.text('ENDED', cx + halfCW + 3, cy + 3);
   norm(); setC(RED); sz(5);
   doc.text(data.gameStartTime || data.time || '', cx + 20, cy + 3);
-  doc.text(data.gameEndTime || (data.status === 'FINAL' ? 'FINAL' : ''), cx + halfCW + 16, cy + 3);
+  doc.text(data.gameEndTime || '', cx + halfCW + 16, cy + 3);
   cy += 6 + 0.3;
 
   // ── Suspensions ──
