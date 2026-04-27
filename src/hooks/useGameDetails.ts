@@ -66,6 +66,15 @@ export function useGameDetails({
         
         const gameObj = rawResponse.Game || rawResponse;
 
+        // Hoist actual game times from raw response if not on gameObj itself
+        // (API may return ActualStartTime/ActualEndTime at the Response level)
+        if (!gameObj.ActualStartTime && rawResponse.ActualStartTime) {
+          gameObj.ActualStartTime = rawResponse.ActualStartTime;
+        }
+        if (!gameObj.ActualEndTime && rawResponse.ActualEndTime) {
+          gameObj.ActualEndTime = rawResponse.ActualEndTime;
+        }
+
         const normalizedDetails: GameDetailResponse = {
           Game: gameObj,
           // Extract arrays from Game object if they exist there, otherwise use top-level or empty array

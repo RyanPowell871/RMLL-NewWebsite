@@ -282,15 +282,19 @@ export interface PlayerSeasonStats {
 // Game Official - returned by ChildCode 'O' on Game endpoint
 export interface GameOfficial {
   PersonId?: number;
+  Name?: string;           // Combined name field (e.g. "John Smith")
   FirstName?: string;
   LastName?: string;
   OfficialName?: string;
+  RefereeNo?: string | number;  // Primary referee number field from API
   RefereeNumber?: string | number;
   OfficialRole?: string;
   RoleName?: string;
   PositionName?: string;
+  SignedTimestamp?: string;  // Unix timestamp or ISO datetime for sign-off
   SignedDateTime?: string;  // When they signed the gamesheet
-  SignatureDocId?: number;  // DocId for the image of their signature
+  SignatureDocId?: number;   // DocId for the image of their signature
+  SignatureURL?: string;     // URL for the signature image
   [key: string]: any;
 }
 

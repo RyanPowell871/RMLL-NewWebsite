@@ -423,8 +423,9 @@ function calculateTeamStats(
 
 /**
  * Extract coaching staff from the game's RosterView (game-specific bench personnel).
- * Staff entries are identified by: non-numeric PlayerNumber (role codes like "TPRM", "ASSTC", etc.)
- * or TeamRoleClassification === 'Bench', and are specific to this game (not the team's overall staff).
+ * Staff entries are identified by BenchRole (e.g. "Head Coach", "Asst Coach 1") or
+ * RoleTypeCd (e.g. "HC", "CH1", "TR", "MG1") fields from the API.
+ * Fallback: non-numeric PlayerNumber entries are also treated as staff.
  */
 function extractCoachingFromGameRoster(roster: any[], teamId: number): CoachingStaff {
   if (!roster || roster.length === 0) {
@@ -432,19 +433,28 @@ function extractCoachingFromGameRoster(roster: any[], teamId: number): CoachingS
   }
 
   // Filter for this team's staff entries:
-  // Staff either have a non-numeric PlayerNumber (role code) OR are marked as Bench classification
+  // Staff have BenchRole, a non-numeric PlayerNumber/RoleTypeCd, or are marked as Bench classification
   const staff = roster.filter(p => {
     if (String(p.TeamId) !== String(teamId)) return false;
+    const benchRole = (p.BenchRole || '').trim();
+    const roleTypeCd = (p.RoleTypeCd || '').trim();
     const num = p.JerseyNumber || p.PlayerNumber || '';
     const roleClass = (p.TeamRoleClassification || '').toLowerCase();
+    // Entries with BenchRole are always staff
+    if (benchRole) return true;
     // Bench-classified entries are always staff
     if (roleClass === 'bench') return true;
+    // RoleTypeCd codes for bench roles (HC, CH1-CH3, TR, MG1, BM)
+    if (roleTypeCd && /^(HC|CH\d?|AC\d?|TR\d?|MG\d?|BM|GM)$/i.test(roleTypeCd)) return true;
     // Entries with role codes instead of jersey numbers are staff
     if (num && isNaN(parseInt(num))) return true;
     return false;
   });
 
   function cleanName(p: any): string {
+    // Prefer FullName, then FirstName+LastName, then BenchRole-derived name
+    const fullName = (p.FullName || '').trim();
+    if (fullName) return fullName.toUpperCase();
     const first = p.FirstName || '';
     const last = p.LastName || '';
     const name = `${first} ${last}`.trim();
@@ -452,12 +462,32 @@ function extractCoachingFromGameRoster(roster: any[], teamId: number): CoachingS
   }
 
   function inferRole(p: any): string {
+    // Priority: BenchRole > RoleTypeCd > legacy fields
+    const benchRole = (p.BenchRole || '').toLowerCase();
+    const roleTypeCd = (p.RoleTypeCd || '').toUpperCase();
     const code = (p.JerseyNumber || p.PlayerNumber || '').toUpperCase();
     const posCode = (p.PositionCode || '').toUpperCase();
     const role = (p.TeamRoleClassification || p.Role || '').toLowerCase();
 
+    // Use BenchRole if available (most reliable)
+    if (benchRole) {
+      if (benchRole.includes('head coach')) return 'COACH';
+      if (benchRole.includes('asst coach') || benchRole.includes('assistant coach')) return 'ASST_COACH';
+      if (benchRole.includes('trainer')) return 'TRAINER';
+      if (benchRole.includes('manager')) return 'MANAGER';
+      // Generic coach without "asst" or "head"
+      if (benchRole.includes('coach')) return 'COACH';
+    }
+
+    // Use RoleTypeCd
+    if (roleTypeCd === 'HC') return 'COACH';
+    if (/^CH\d?$/.test(roleTypeCd) || roleTypeCd === 'AC') return 'ASST_COACH';
+    if (/^TR\d?$/.test(roleTypeCd)) return 'TRAINER';
+    if (/^MG\d?$/.test(roleTypeCd) || roleTypeCd === 'BM' || roleTypeCd === 'GM') return 'MANAGER';
+
+    // Legacy fallbacks
     if (code.includes('HC') || code.includes('HDCOACH') || posCode === 'HC' || role.includes('head coach')) return 'COACH';
-    if (code.includes('AC') || code.includes('ASSTC') || code.includes('ASST') || role.includes('asst coach') || role.includes('assistant coach')) return 'COACH';
+    if (code.includes('AC') || code.includes('ASSTC') || code.includes('ASST') || role.includes('asst coach') || role.includes('assistant coach')) return 'ASST_COACH';
     if (code.includes('TR') || code.includes('TPRM') || code.includes('TRAINER') || role.includes('trainer')) return 'TRAINER';
     if (code.includes('MG') || code.includes('MAN') || code.includes('BM') || code.includes('GM') || role.includes('manager')) return 'MANAGER';
     return 'STAFF';
@@ -466,7 +496,7 @@ function extractCoachingFromGameRoster(roster: any[], teamId: number): CoachingS
   const allStaff = staff.map(p => ({ role: inferRole(p), name: cleanName(p) }));
 
   const headCoach = allStaff.find(s => s.role === 'COACH');
-  const assistantCoaches = allStaff.filter(s => s.role === 'COACH').slice(1); // skip first if it's head coach
+  const assistantCoaches = allStaff.filter(s => s.role === 'ASST_COACH' || (s.role === 'COACH' && s !== headCoach));
   const trainer = allStaff.find(s => s.role === 'TRAINER');
   const manager = allStaff.find(s => s.role === 'MANAGER');
 
@@ -672,8 +702,8 @@ export function GameSheetModal({ game, open, onClose }: GameSheetModalProps) {
       gamestreamurl: (details as any).GameStreamUrl || (details as any).gamestreamurl || (details as any).GameStreamURL || game.gamestreamurl,
       // Actual game times from the official gamesheet
       // If ActualEndTime contains a non-time value like "FINAL", treat it as absent
-      actualStartTime: (details as any).ActualStartTime || '',
-      actualEndTime: (() => { const et = (details as any).ActualEndTime || ''; return et && !/^final$/i.test(et.trim()) ? et : ''; })(),
+      actualStartTime: (details as any).ActualStartTime || (gameDetails as any)?.ActualStartTime || '',
+      actualEndTime: (() => { const et = (details as any).ActualEndTime || (gameDetails as any)?.ActualEndTime || ''; return et && !/^final$/i.test(et.trim()) ? et : ''; })(),
       // Game officials (scorer, timer, 30-sec timer)
       officialScorerName: (details as any).OfficialScorerName || '',
       officialGameTimerName: (details as any).OfficialGameTimerName || '',
@@ -796,9 +826,9 @@ export function GameSheetModal({ game, open, onClose }: GameSheetModalProps) {
         awayLogo: displayGame.awayLogo,
         rmllLogo: rmllShieldLogo,
         officials: gameDetails?.Officials?.map((o: any) => ({
-          role: o.OfficialRole || o.RoleName || 'Referee',
-          name: `${o.FirstName || ''} ${o.LastName || ''}`.trim() || o.OfficialName || '',
-          number: o.RefereeNumber || o.OfficialNumber || o.OfficialRefereeNumber || o.JerseyNumber || o.RefNo || '',
+          role: o.OfficialRole || o.RoleName || o.PositionName || 'Referee',
+          name: o.Name || `${o.FirstName || ''} ${o.LastName || ''}`.trim() || o.OfficialName || '',
+          number: o.RefereeNo || o.RefereeNumber || o.OfficialNumber || o.OfficialRefereeNumber || o.JerseyNumber || o.RefNo || '',
           signOffTimestamp: (o.SignedDateTime || o.SignedTimestamp)
             ? new Date(o.SignedDateTime || o.SignedTimestamp).toLocaleString('en-US', {
                 month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit'
@@ -1116,6 +1146,24 @@ export function GameSheetModal({ game, open, onClose }: GameSheetModalProps) {
                       </tbody>
                     </table>
                   </div>
+                  {/* TimeOuts inside Period Scores */}
+                  {gameDetails?.TimeOuts && gameDetails.TimeOuts.length > 0 && (
+                    <div className="border-t-2 border-gray-300 px-4 py-2">
+                      <div className="flex items-center gap-4 flex-wrap">
+                        <span className="text-xs font-bold text-gray-700 uppercase">Time Outs:</span>
+                        {gameDetails.TimeOuts.map((to: any, idx: number) => {
+                          const isHomeTO = to.HomeTimeOut || (to.TimeOutTeamId && String(to.TimeOutTeamId) === String(homeTeamId));
+                          const teamLabel = isHomeTO ? displayGame.homeTeam : displayGame.awayTeam;
+                          return (
+                            <span key={idx} className="text-xs">
+                              <span className={isHomeTO ? 'text-blue-700 font-bold' : 'text-red-700 font-bold'}>{teamLabel}</span>
+                              {' '}P{to.Period || '?'} @ {to.TimeOnClock || '?'}
+                            </span>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
                 </div>
 
                 {/* Game Time */}
@@ -1634,6 +1682,48 @@ export function GameSheetModal({ game, open, onClose }: GameSheetModalProps) {
                     </div>
                   </div>
                 </div>
+
+                {/* Suspensions Section */}
+                {gameDetails?.Roster && (() => {
+                  const suspendedPlayers = (gameDetails.Roster as any[]).filter((p: any) => p.ServingSuspension);
+                  if (suspendedPlayers.length === 0) return null;
+                  return (
+                    <div className="bg-white rounded-lg border-2 border-amber-300 overflow-hidden">
+                      <div className="bg-amber-600 px-4 py-2">
+                        <h4 className="font-bold text-white text-sm text-center">PLAYERS SERVING SUSPENSIONS</h4>
+                      </div>
+                      <div className="overflow-x-auto">
+                        <table className="w-full">
+                          <thead>
+                            <tr className="bg-amber-50 border-b-2 border-amber-300">
+                              <th className="px-3 py-2 text-center font-bold text-xs">#</th>
+                              <th className="px-3 py-2 text-left font-bold text-xs">PLAYER</th>
+                              <th className="px-3 py-2 text-left font-bold text-xs">TEAM</th>
+                              <th className="px-3 py-2 text-left font-bold text-xs">SUSPENSION NOTE</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {suspendedPlayers.map((p: any, idx: number) => {
+                              const isHome = String(p.TeamId) === String(homeTeamId);
+                              return (
+                                <tr key={idx} className={`border-b border-amber-100 ${idx % 2 === 0 ? 'bg-amber-50/30' : 'bg-white'}`}>
+                                  <td className="px-3 py-2 text-center text-xs font-bold">{p.JerseyNumber || p.PlayerNumber || '?'}</td>
+                                  <td className="px-3 py-2 text-xs font-bold">{`${p.FirstName || ''} ${p.LastName || ''}`.trim()}</td>
+                                  <td className="px-3 py-2 text-xs">
+                                    <span className={isHome ? 'text-blue-700 font-bold' : 'text-red-700 font-bold'}>
+                                      {isHome ? displayGame.homeTeam : displayGame.awayTeam}
+                                    </span>
+                                  </td>
+                                  <td className="px-3 py-2 text-xs text-gray-600">{p.SuspensionNote || 'Serving suspension'}</td>
+                                </tr>
+                              );
+                            })}
+                          </tbody>
+                        </table>
+                      </div>
+                    </div>
+                  );
+                })()}
               </TabsContent>
 
               {/* Officials Tab */}
@@ -1700,10 +1790,12 @@ export function GameSheetModal({ game, open, onClose }: GameSheetModalProps) {
                         </thead>
                         <tbody>
                           {gameDetails.Officials.map((official: any, idx: number) => {
-                            const refNumber = official.RefereeNumber || official.OfficialNumber || official.OfficialRefereeNumber || official.JerseyNumber || official.RefNo || '';
-                            const name = official.FirstName && official.LastName
-                              ? `${official.FirstName} ${official.LastName}`
-                              : official.OfficialName || official.Name || 'N/A';
+                            const refNumber = official.RefereeNo || official.RefereeNumber || official.OfficialNumber || official.OfficialRefereeNumber || official.JerseyNumber || official.RefNo || '';
+                            const name = official.Name
+                              || (official.FirstName && official.LastName
+                                ? `${official.FirstName} ${official.LastName}`
+                                : '')
+                              || official.OfficialName || 'N/A';
                             const role = official.OfficialRole || official.RoleName || official.PositionName || `Referee ${idx + 1}`;
                             const signedAt = (official.SignedDateTime || official.SignedTimestamp)
                               ? new Date(official.SignedDateTime || official.SignedTimestamp).toLocaleString('en-US', {
@@ -1736,91 +1828,6 @@ export function GameSheetModal({ game, open, onClose }: GameSheetModalProps) {
                     </p>
                   </div>
                 )}
-
-                {/* Time Outs Section */}
-                {gameDetails?.TimeOuts && gameDetails.TimeOuts.length > 0 && (
-                  <div className="bg-white rounded-lg border-2 border-gray-300 overflow-hidden">
-                    <div className="bg-black px-4 py-2">
-                      <h4 className="font-bold text-white text-sm text-center">TIME OUTS</h4>
-                    </div>
-                    <div className="overflow-x-auto">
-                      <table className="w-full">
-                        <thead>
-                          <tr className="bg-white border-b-2 border-black">
-                            <th className="px-3 py-2 text-center font-bold text-xs">PERIOD</th>
-                            <th className="px-3 py-2 text-center font-bold text-xs">TIME ON CLOCK</th>
-                            <th className="px-3 py-2 text-left font-bold text-xs">TEAM</th>
-                            <th className="px-3 py-2 text-center font-bold text-xs">HOME</th>
-                            <th className="px-3 py-2 text-center font-bold text-xs">VISITOR</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {gameDetails.TimeOuts.map((to: any, idx: number) => {
-                            const isHomeTO = to.HomeTimeOut || (to.TimeOutTeamId && String(to.TimeOutTeamId) === String(homeTeamId));
-                            const teamLabel = isHomeTO ? displayGame.homeTeam : displayGame.awayTeam;
-                            return (
-                              <tr key={idx} className={`border-b border-gray-200 ${idx % 2 === 0 ? 'bg-gray-50' : 'bg-white'}`}>
-                                <td className="px-3 py-2 text-center text-xs font-bold">{to.Period || '-'}</td>
-                                <td className="px-3 py-2 text-center text-xs">{to.TimeOnClock || '-'}</td>
-                                <td className="px-3 py-2 text-xs font-bold">
-                                  <span className={isHomeTO ? 'text-blue-700' : 'text-red-700'}>{teamLabel}</span>
-                                </td>
-                                <td className="px-3 py-2 text-center text-xs">
-                                  {isHomeTO ? <span className="text-blue-700 font-bold">TO</span> : '—'}
-                                </td>
-                                <td className="px-3 py-2 text-center text-xs">
-                                  {!isHomeTO ? <span className="text-red-700 font-bold">TO</span> : '—'}
-                                </td>
-                              </tr>
-                            );
-                          })}
-                        </tbody>
-                      </table>
-                    </div>
-                  </div>
-                )}
-
-                {/* Suspension Serving Section */}
-                {gameDetails?.Roster && (() => {
-                  const suspendedPlayers = (gameDetails.Roster as any[]).filter((p: any) => p.ServingSuspension);
-                  if (suspendedPlayers.length === 0) return null;
-                  return (
-                    <div className="bg-white rounded-lg border-2 border-amber-300 overflow-hidden">
-                      <div className="bg-amber-600 px-4 py-2">
-                        <h4 className="font-bold text-white text-sm text-center">PLAYERS SERVING SUSPENSIONS</h4>
-                      </div>
-                      <div className="overflow-x-auto">
-                        <table className="w-full">
-                          <thead>
-                            <tr className="bg-amber-50 border-b-2 border-amber-300">
-                              <th className="px-3 py-2 text-center font-bold text-xs">#</th>
-                              <th className="px-3 py-2 text-left font-bold text-xs">PLAYER</th>
-                              <th className="px-3 py-2 text-left font-bold text-xs">TEAM</th>
-                              <th className="px-3 py-2 text-left font-bold text-xs">SUSPENSION NOTE</th>
-                            </tr>
-                          </thead>
-                          <tbody>
-                            {suspendedPlayers.map((p: any, idx: number) => {
-                              const isHome = String(p.TeamId) === String(homeTeamId);
-                              return (
-                                <tr key={idx} className={`border-b border-amber-100 ${idx % 2 === 0 ? 'bg-amber-50/30' : 'bg-white'}`}>
-                                  <td className="px-3 py-2 text-center text-xs font-bold">{p.JerseyNumber || p.PlayerNumber || '?'}</td>
-                                  <td className="px-3 py-2 text-xs font-bold">{`${p.FirstName || ''} ${p.LastName || ''}`.trim()}</td>
-                                  <td className="px-3 py-2 text-xs">
-                                    <span className={isHome ? 'text-blue-700 font-bold' : 'text-red-700 font-bold'}>
-                                      {isHome ? displayGame.homeTeam : displayGame.awayTeam}
-                                    </span>
-                                  </td>
-                                  <td className="px-3 py-2 text-xs text-gray-600">{p.SuspensionNote || 'Serving suspension'}</td>
-                                </tr>
-                              );
-                            })}
-                          </tbody>
-                        </table>
-                      </div>
-                    </div>
-                  );
-                })()}
               </TabsContent>
             </Tabs>
           )}
