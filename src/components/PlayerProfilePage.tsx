@@ -411,26 +411,50 @@ export default function PlayerProfilePage() {
 
                 {/* Team History */}
                 {(() => {
-                    // Build team history from aggregated seasons (use all seasons, not role-filtered)
-                    const teamMap = new Map<string, { teamName: string; teamId: number; seasons: string[]; divisionName: string; latestSeasonIdx: number }>();
-                    const allSeasons = profile.aggregatedSeasons;
-                    // allSeasons is sorted newest-first, so index 0 = most recent
-                    allSeasons.forEach((s, idx) => {
-                        const key = s.teamName;
-                        if (!teamMap.has(key)) {
-                            teamMap.set(key, { teamName: s.teamName, teamId: s.teamId, seasons: [], divisionName: s.divisionName, latestSeasonIdx: idx });
-                        }
-                        const entry = teamMap.get(key)!;
-                        if (!entry.seasons.includes(s.seasonName)) {
-                            entry.seasons.push(s.seasonName);
-                        }
-                        if (!entry.divisionName && s.divisionName) {
-                            entry.divisionName = s.divisionName;
-                        }
-                    });
+                    // Use authoritative team history from "T" child code when available,
+                    // otherwise fall back to deriving from aggregated seasons
+                    type TeamHistoryEntry = { teamName: string; teamId: number; seasons: string[]; divisionName: string; latestSeasonIdx: number; isAffiliate: boolean };
+                    const teamMap = new Map<string, TeamHistoryEntry>();
+
+                    if (profile.teamHistory && profile.teamHistory.length > 0) {
+                        // Build team history from the "T" child code data (authoritative source)
+                        profile.teamHistory.forEach((th, idx) => {
+                            const key = th.teamName;
+                            if (!teamMap.has(key)) {
+                                teamMap.set(key, { teamName: th.teamName, teamId: th.teamId, seasons: [], divisionName: th.divisionName, latestSeasonIdx: idx, isAffiliate: th.isAffiliate });
+                            }
+                            const entry = teamMap.get(key)!;
+                            if (!entry.seasons.includes(th.seasonName)) {
+                                entry.seasons.push(th.seasonName);
+                            }
+                            // If any entry for this team is non-affiliate, mark the whole team as non-affiliate
+                            if (!th.isAffiliate) {
+                                entry.isAffiliate = false;
+                            }
+                        });
+                    } else {
+                        // Fallback: derive from aggregated seasons
+                        const allSeasons = profile.aggregatedSeasons;
+                        allSeasons.forEach((s, idx) => {
+                            const key = s.teamName;
+                            if (!teamMap.has(key)) {
+                                teamMap.set(key, { teamName: s.teamName, teamId: s.teamId, seasons: [], divisionName: s.divisionName, latestSeasonIdx: idx, isAffiliate: !!s.isAffiliate });
+                            }
+                            const entry = teamMap.get(key)!;
+                            if (!entry.seasons.includes(s.seasonName)) {
+                                entry.seasons.push(s.seasonName);
+                            }
+                            if (!entry.divisionName && s.divisionName) {
+                                entry.divisionName = s.divisionName;
+                            }
+                            if (!s.isAffiliate) {
+                                entry.isAffiliate = false;
+                            }
+                        });
+                    }
                     const teams = Array.from(teamMap.values());
                     if (teams.length === 0) return null;
-                    
+
                     // Sort by most recent appearance first
                     teams.sort((a, b) => a.latestSeasonIdx - b.latestSeasonIdx);
                     const isMostRecent = (idx: number) => idx === 0;
@@ -449,8 +473,8 @@ export default function PlayerProfilePage() {
                                         <div key={team.teamId || idx} className="flex items-stretch gap-4">
                                             {/* Timeline connector */}
                                             <div className="flex flex-col items-center">
-                                                <div 
-                                                    className={`flex-shrink-0 w-3 h-3 rounded-full mt-1.5 ${isMostRecent(idx) ? '' : 'bg-gray-300'}`} 
+                                                <div
+                                                    className={`flex-shrink-0 w-3 h-3 rounded-full mt-1.5 ${isMostRecent(idx) ? '' : 'bg-gray-300'}`}
                                                     style={isMostRecent(idx) ? { backgroundColor: primaryColor } : undefined}
                                                 />
                                                 {idx < teams.length - 1 && (
@@ -466,6 +490,11 @@ export default function PlayerProfilePage() {
                                                     {isMostRecent(idx) && (
                                                         <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full text-white" style={{ backgroundColor: primaryColor }}>
                                                             Most Recent
+                                                        </span>
+                                                    )}
+                                                    {team.isAffiliate && (
+                                                        <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-purple-100 text-purple-800">
+                                                            AP
                                                         </span>
                                                     )}
                                                 </div>
@@ -535,7 +564,7 @@ export default function PlayerProfilePage() {
                                     // Regular Season Row
                                     if (season.stats.regular) {
                                         rows.push(
-                                            <StatsRow 
+                                            <StatsRow
                                                 key={`${idx}-reg`}
                                                 season={season.seasonName}
                                                 team={season.teamName}
@@ -544,6 +573,7 @@ export default function PlayerProfilePage() {
                                                 stat={season.stats.regular}
                                                 isGoalie={isGoalieView}
                                                 primaryColor={primaryColor}
+                                                isAffiliate={!!season.isAffiliate}
                                             />
                                         );
                                     }
@@ -551,7 +581,7 @@ export default function PlayerProfilePage() {
                                     // Playoffs Row
                                     if (season.stats.playoffs) {
                                         rows.push(
-                                            <StatsRow 
+                                            <StatsRow
                                                 key={`${idx}-ply`}
                                                 season={season.seasonName}
                                                 team={season.teamName}
@@ -561,6 +591,7 @@ export default function PlayerProfilePage() {
                                                 isGoalie={isGoalieView}
                                                 primaryColor={primaryColor}
                                                 isPlayoff
+                                                isAffiliate={!!season.isAffiliate}
                                             />
                                         );
                                     }
@@ -568,7 +599,7 @@ export default function PlayerProfilePage() {
                                     // Exhibition Row
                                     if (season.stats.exhibition) {
                                         rows.push(
-                                            <StatsRow 
+                                            <StatsRow
                                                 key={`${idx}-exh`}
                                                 season={season.seasonName}
                                                 team={season.teamName}
@@ -577,6 +608,7 @@ export default function PlayerProfilePage() {
                                                 stat={season.stats.exhibition}
                                                 isGoalie={isGoalieView}
                                                 primaryColor={primaryColor}
+                                                isAffiliate={!!season.isAffiliate}
                                             />
                                         );
                                     }
@@ -584,7 +616,7 @@ export default function PlayerProfilePage() {
                                     // Provincials Row
                                     if (season.stats.provincials) {
                                         rows.push(
-                                            <StatsRow 
+                                            <StatsRow
                                                 key={`${idx}-prov`}
                                                 season={season.seasonName}
                                                 team={season.teamName}
@@ -594,6 +626,7 @@ export default function PlayerProfilePage() {
                                                 isGoalie={isGoalieView}
                                                 primaryColor={primaryColor}
                                                 isPlayoff
+                                                isAffiliate={!!season.isAffiliate}
                                             />
                                         );
                                     }
@@ -837,9 +870,9 @@ function StatCard({ label, value, icon, highlight, color }: { label: string, val
   );
 }
 
-function StatsRow({ season, team, divisionName, type, stat, isGoalie, primaryColor, isPlayoff }: any) {
+function StatsRow({ season, team, divisionName, type, stat, isGoalie, primaryColor, isPlayoff, isAffiliate }: any) {
     const rowClass = isPlayoff ? "bg-amber-50/40 hover:bg-amber-50/80" : "hover:bg-gray-50";
-    
+
     // Local resolver helpers - same pattern as usePlayerProfile to handle API field name variations
     const rn = (obj: any, ...fields: string[]): number => {
         for (const f of fields) {
@@ -847,14 +880,19 @@ function StatsRow({ season, team, divisionName, type, stat, isGoalie, primaryCol
         }
         return 0;
     };
-    
+
     return (
         <tr className={`transition-colors border-b border-gray-50 last:border-0 ${rowClass}`}>
             <td className="px-6 py-3 font-bold text-gray-900">
                 {season}
             </td>
             <td className="px-6 py-3">
-                <div className="font-medium text-gray-700">{team}</div>
+                <div className="font-medium text-gray-700">
+                    {team}
+                    {isAffiliate && (
+                        <span className="ml-2 text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-purple-100 text-purple-800">AP</span>
+                    )}
+                </div>
                 <div className="text-[10px] text-gray-400 uppercase tracking-wide">{divisionName || ''}</div>
             </td>
             <td className="px-4 py-3 text-center">
@@ -864,23 +902,23 @@ function StatsRow({ season, team, divisionName, type, stat, isGoalie, primaryCol
                     {type}
                 </span>
             </td>
-            <td className="px-4 py-3 text-center font-bold text-gray-900">{rn(stat, 'GamesPlayed', 'GP')}</td>
+            <td className="px-4 py-3 text-center font-bold text-gray-900">{rn(stat, 'GamesPlayed')}</td>
             
             {isGoalie ? (() => {
-                const gd = rn(stat, 'GamesDressed', 'GD', 'Dressed');
-                const min = rn(stat, 'MinutesPlayed', 'Min', 'Minutes', 'Mins', 'MP', 'TOI', 'TimeOnIce', 'TotalMinutes');
-                const ga = rn(stat, 'GoalsAgainst', 'GA', 'GATotal');
-                const sv = rn(stat, 'Saves', 'SV', 'Svs', 'SVS', 'SaversTotal', 'ShotsStopped', 'SavesMade', 'TotalSaves', 'SavesTotal');
+                const gd = rn(stat, 'GamesDressed', 'GD');
+                const min = rn(stat, 'MinutesPlayed', 'MinPlayed', 'Min');
+                const ga = rn(stat, 'GoalsAgainst', 'GA');
+                const sv = rn(stat, 'SaversTotal', 'Saves', 'ShotsStopped');
                 // Don't use 'SOG' here — that's the SKATER's shots on goal, not shots against the goalie
-                const sa = rn(stat, 'ShotsAgainst', 'SA', 'ShotsTotal', 'ShotAgainst', 'TotalShots', 'ShotsReceived') || (sv + ga);
+                const sa = rn(stat, 'ShotsAgainst', 'ShotsTotal', 'TotalShots') || (sv + ga);
                 const svPct = sa > 0 ? ((sv / sa) * 100).toFixed(1) : '-';
                 // Try pre-computed GAA first, then calculate from GA/MIN
-                const preGAA = rn(stat, 'GoalsAgainstAverage', 'GAA', 'Gaa');
+                const preGAA = rn(stat, 'GoalsAgainstAverage', 'GAA');
                 const gaa = preGAA > 0 ? preGAA.toFixed(2) : (min > 0 ? (ga * 60 / min).toFixed(2) : '-');
                 const g = rn(stat, 'Goals', 'G');
                 const a = rn(stat, 'Assists', 'A');
                 const pts = rn(stat, 'Points', 'Pts') || (g + a);
-                const pim = rn(stat, 'PenaltyMin', 'PenaltyMinutes', 'PIM', 'PenMin', 'Penalties');
+                const pim = rn(stat, 'PenaltyMin', 'PIM');
                 return (
                 <>
                     <td className="px-4 py-3 text-center text-gray-500">{gd}</td>
@@ -903,9 +941,9 @@ function StatsRow({ season, team, divisionName, type, stat, isGoalie, primaryCol
                     <td className="px-4 py-3 text-center font-black text-lg bg-gray-50/50" style={{ color: primaryColor }}>
                         {rn(stat, 'Points', 'Pts') || (rn(stat, 'Goals', 'G') + rn(stat, 'Assists', 'A'))}
                     </td>
-                    <td className="px-4 py-3 text-center text-gray-600">{rn(stat, 'PenaltyMin', 'PenaltyMinutes', 'PIM', 'PenMin', 'Penalties')}</td>
-                    <td className="px-4 py-3 text-center text-gray-400 text-xs">{rn(stat, 'PPGoals', 'PowerPlayGoals', 'PPG', 'PP') || '-'}</td>
-                    <td className="px-4 py-3 text-center text-gray-400 text-xs">{rn(stat, 'SHGoals', 'ShortHandedGoals', 'SHG', 'SH') || '-'}</td>
+                    <td className="px-4 py-3 text-center text-gray-600">{rn(stat, 'PenaltyMin', 'PIM')}</td>
+                    <td className="px-4 py-3 text-center text-gray-400 text-xs">{rn(stat, 'PPGoals') || '-'}</td>
+                    <td className="px-4 py-3 text-center text-gray-400 text-xs">{rn(stat, 'SHGoals') || '-'}</td>
                     <td className="px-4 py-3 text-center text-gray-400 text-xs">{rn(stat, 'GameWinningGoals', 'GWG') || '-'}</td>
                 </>
             )}

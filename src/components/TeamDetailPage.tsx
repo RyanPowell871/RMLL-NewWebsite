@@ -91,7 +91,7 @@ function computeGAA(obj: any): number {
   const directGAA = resolveNum(obj, 'GoalsAgainstAverage', 'GAA');
   if (directGAA > 0) return directGAA;
   const ga = resolveNum(obj, 'GoalsAgainst', 'GA');
-  const min = resolveNum(obj, 'MinutesPlayed', 'Min');
+  const min = resolveNum(obj, 'MinutesPlayed', 'MinPlayed', 'Min');
   if (min <= 0) return 0;
   return (ga / min) * 60;
 }
@@ -111,7 +111,7 @@ function computeSavePct(obj: any): number {
 
 // Compute minutes from GAA and GA: min = GA * 60 / GAA
 function computeMinutes(obj: any): number {
-  const min = resolveNum(obj, 'MinutesPlayed', 'Min');
+  const min = resolveNum(obj, 'MinutesPlayed', 'MinPlayed', 'Min');
   if (min > 0) return min;
   const ga = resolveNum(obj, 'GoalsAgainst', 'GA');
   const gaa = resolveNum(obj, 'GoalsAgainstAverage', 'GAA');
@@ -423,7 +423,7 @@ export function TeamDetailPage({ teamId, teamName, season, teamLogo, divisionId,
                       if (!metrics) return s;
                       const merged = { ...s };
                       const metricFields = ['Saves', 'GoalsAgainst', 'GA', 'ShotsAgainst',
-                        'MinutesPlayed', 'Min', 'Wins', 'W', 'Losses', 'L',
+                        'MinutesPlayed', 'MinPlayed', 'Min', 'Wins', 'W', 'Losses', 'L',
                         'Shutouts', 'SO', 'GamesDressed', 'GD',
                         'GoalsAgainstAverage', 'GAA', 'SavePercentage'];
                       metricFields.forEach(f => {
@@ -719,7 +719,7 @@ export function TeamDetailPage({ teamId, teamName, season, teamLogo, divisionId,
            'GoalsAgainst', 'GA',
            'SaversTotal', 'Saves', 'ShotsStopped',
            'ShotsTotal', 'ShotsAgainst', 'TotalShots',
-           'MinutesPlayed', 'Min',
+           'MinutesPlayed', 'MinPlayed', 'Min',
            'Goals', 'G', 'Assists', 'A', 'Points', 'Pts',
            'PenaltyMin', 'PIM'].forEach(key => {
             if (g[key] !== undefined && g[key] !== null) {
@@ -2133,7 +2133,7 @@ export function TeamDetailPage({ teamId, teamName, season, teamLogo, divisionId,
                           {/* Top Goalie */}
                           {filteredGoalieStats.length > 0 && (() => {
                             const topGoalie = [...filteredGoalieStats]
-                              .filter(g => resolveNum(g, 'MinutesPlayed', 'Min') > 0)
+                              .filter(g => resolveNum(g, 'MinutesPlayed', 'MinPlayed', 'Min') > 0)
                               .sort((a, b) => computeGAA(a) - computeGAA(b))[0];
                             
                             if (!topGoalie) return null;

@@ -671,8 +671,9 @@ export function GameSheetModal({ game, open, onClose }: GameSheetModalProps) {
       venue: (details as any).FacilityName || (details as any).VenueName || game.venue,
       gamestreamurl: (details as any).GameStreamUrl || (details as any).gamestreamurl || (details as any).GameStreamURL || game.gamestreamurl,
       // Actual game times from the official gamesheet
+      // If ActualEndTime contains a non-time value like "FINAL", treat it as absent
       actualStartTime: (details as any).ActualStartTime || '',
-      actualEndTime: (details as any).ActualEndTime || '',
+      actualEndTime: (() => { const et = (details as any).ActualEndTime || ''; return et && !/^final$/i.test(et.trim()) ? et : ''; })(),
       // Game officials (scorer, timer, 30-sec timer)
       officialScorerName: (details as any).OfficialScorerName || '',
       officialGameTimerName: (details as any).OfficialGameTimerName || '',
@@ -798,8 +799,8 @@ export function GameSheetModal({ game, open, onClose }: GameSheetModalProps) {
           role: o.OfficialRole || o.RoleName || 'Referee',
           name: `${o.FirstName || ''} ${o.LastName || ''}`.trim() || o.OfficialName || '',
           number: o.RefereeNumber || o.OfficialNumber || o.OfficialRefereeNumber || o.JerseyNumber || o.RefNo || '',
-          signOffTimestamp: o.SignedDateTime
-            ? new Date(o.SignedDateTime).toLocaleString('en-US', {
+          signOffTimestamp: (o.SignedDateTime || o.SignedTimestamp)
+            ? new Date(o.SignedDateTime || o.SignedTimestamp).toLocaleString('en-US', {
                 month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit'
               })
             : undefined,
@@ -837,7 +838,7 @@ export function GameSheetModal({ game, open, onClose }: GameSheetModalProps) {
             timeIn: g.TimeIn || '',
             periodOut: g.PeriodOut || 0,
             timeOut: g.TimeOut || '',
-            minsPlayed: g.MinutesPlayed || '',
+            minsPlayed: g.MinPlayed || g.MinutesPlayed || '',
             shots: g.TotalShots || 0,
             saves: g.ShotsStopped || 0,
           })) || [],
@@ -850,7 +851,7 @@ export function GameSheetModal({ game, open, onClose }: GameSheetModalProps) {
             timeIn: g.TimeIn || '',
             periodOut: g.PeriodOut || 0,
             timeOut: g.TimeOut || '',
-            minsPlayed: g.MinutesPlayed || '',
+            minsPlayed: g.MinPlayed || g.MinutesPlayed || '',
             shots: g.TotalShots || 0,
             saves: g.ShotsStopped || 0,
           })) || [],
@@ -1163,6 +1164,7 @@ export function GameSheetModal({ game, open, onClose }: GameSheetModalProps) {
                             <th className="px-3 py-2 text-center font-bold text-xs">2</th>
                             <th className="px-3 py-2 text-center font-bold text-xs">3</th>
                             <th className="px-3 py-2 text-center font-bold text-xs">OT</th>
+                            <th className="px-3 py-2 text-center font-bold text-xs bg-blue-50">SOG</th>
                             <th className="px-3 py-2 text-center font-bold text-xs bg-yellow-50">SAVES</th>
                           </tr>
                         </thead>
@@ -1175,11 +1177,12 @@ export function GameSheetModal({ game, open, onClose }: GameSheetModalProps) {
                               <td className="px-3 py-2 text-center text-xs">{goalie.period2}</td>
                               <td className="px-3 py-2 text-center text-xs">{goalie.period3}</td>
                               <td className="px-3 py-2 text-center text-xs">{goalie.ot || '-'}</td>
+                              <td className="px-3 py-2 text-center text-xs bg-blue-50">{goalie.totalShots}</td>
                               <td className="px-3 py-2 text-center text-xs font-bold bg-yellow-50">{goalie.totalSaves}</td>
                             </tr>
                           )) : (
                             <tr>
-                              <td colSpan={7} className="px-3 py-2 text-center text-xs text-gray-500">No goalie data available</td>
+                              <td colSpan={8} className="px-3 py-2 text-center text-xs text-gray-500">No goalie data available</td>
                             </tr>
                           )}
                         </tbody>
@@ -1203,6 +1206,7 @@ export function GameSheetModal({ game, open, onClose }: GameSheetModalProps) {
                             <th className="px-3 py-2 text-center font-bold text-xs">2</th>
                             <th className="px-3 py-2 text-center font-bold text-xs">3</th>
                             <th className="px-3 py-2 text-center font-bold text-xs">OT</th>
+                            <th className="px-3 py-2 text-center font-bold text-xs bg-blue-50">SOG</th>
                             <th className="px-3 py-2 text-center font-bold text-xs bg-yellow-50">SAVES</th>
                           </tr>
                         </thead>
@@ -1215,11 +1219,12 @@ export function GameSheetModal({ game, open, onClose }: GameSheetModalProps) {
                               <td className="px-3 py-2 text-center text-xs">{goalie.period2}</td>
                               <td className="px-3 py-2 text-center text-xs">{goalie.period3}</td>
                               <td className="px-3 py-2 text-center text-xs">{goalie.ot || '-'}</td>
+                              <td className="px-3 py-2 text-center text-xs bg-blue-50">{goalie.totalShots}</td>
                               <td className="px-3 py-2 text-center text-xs font-bold bg-yellow-50">{goalie.totalSaves}</td>
                             </tr>
                           )) : (
                             <tr>
-                              <td colSpan={7} className="px-3 py-2 text-center text-xs text-gray-500">No goalie data available</td>
+                              <td colSpan={8} className="px-3 py-2 text-center text-xs text-gray-500">No goalie data available</td>
                             </tr>
                           )}
                         </tbody>
@@ -1700,8 +1705,8 @@ export function GameSheetModal({ game, open, onClose }: GameSheetModalProps) {
                               ? `${official.FirstName} ${official.LastName}`
                               : official.OfficialName || official.Name || 'N/A';
                             const role = official.OfficialRole || official.RoleName || official.PositionName || `Referee ${idx + 1}`;
-                            const signedAt = official.SignedDateTime
-                              ? new Date(official.SignedDateTime).toLocaleString('en-US', {
+                            const signedAt = (official.SignedDateTime || official.SignedTimestamp)
+                              ? new Date(official.SignedDateTime || official.SignedTimestamp).toLocaleString('en-US', {
                                   month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit'
                                 })
                               : '';

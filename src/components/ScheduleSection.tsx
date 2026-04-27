@@ -808,8 +808,17 @@ const convertedAllGames = allSeasonGames.map((apiGame) => ({
   };
 
   const convertedGames: Game[] = apiGames.map((apiGame) => {
-    const hasScores = apiGame.HomeScore !== undefined && apiGame.HomeScore !== null && 
+    const hasScores = apiGame.HomeScore !== undefined && apiGame.HomeScore !== null &&
                       apiGame.VisitorScore !== undefined && apiGame.VisitorScore !== null;
+
+    // Score logic: if both HomeScore and VisitorScore are 0, use BoxScore fields
+    // (BoxScoreHome/BoxScoreVisitor have the running score for in-progress games)
+    let homeScore: number | undefined = hasScores ? apiGame.HomeScore : undefined;
+    let awayScore: number | undefined = hasScores ? apiGame.VisitorScore : undefined;
+    if (hasScores && !homeScore && !awayScore) {
+      homeScore = apiGame.BoxScoreHome ?? homeScore;
+      awayScore = apiGame.BoxScoreVisistor ?? apiGame.BoxScoreVisitor ?? awayScore;
+    }
 
     return {
       id: apiGame.GameId.toString(),
@@ -818,14 +827,15 @@ const convertedAllGames = allSeasonGames.map((apiGame) => ({
       awayTeam: apiGame.VisitorTeamName || 'Away Team',
       homeTeamId: apiGame.HomeTeamId,
       visitorTeamId: apiGame.VisitorTeamId,
-      homeScore: hasScores ? apiGame.HomeScore : undefined,
-      awayScore: hasScores ? apiGame.VisitorScore : undefined,
+      homeScore,
+      awayScore,
       homeRecord: formatRecord(apiGame.HomeTeamId),
       awayRecord: formatRecord(apiGame.VisitorTeamId),
       date: formatGameDate(apiGame.GameDate),
       fullDate: apiGame.GameDate,
       time: parseGameTime(apiGame.StartTime) || parseGameTime(apiGame.GameDate),
-      status: (apiGame.GameStatus?.toLowerCase() === 'final' ||
+      status: (apiGame.StandingCategoryCode?.toLowerCase() === 'exhb') ? 'EXHIBITION'
+        : (apiGame.GameStatus?.toLowerCase() === 'final' ||
                 apiGame.GameStatus?.toLowerCase() === 'played' ||
                 apiGame.GameStatus?.toLowerCase() === 'completed' ||
                 apiGame.GameStatus?.toLowerCase() === 'postponed') ? 'FINAL'

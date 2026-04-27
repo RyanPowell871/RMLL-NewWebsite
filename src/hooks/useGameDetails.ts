@@ -72,8 +72,9 @@ export function useGameDetails({
           ScoringStats: gameObj.ScoringStats || rawResponse.ScoringStats || [],
           GoalieStats: gameObj.GoalieStats || rawResponse.GoalieStats || [],
           PenaltyStats: gameObj.PenaltyStats || rawResponse.PenaltyStats || [],
-          // Map RosterView to Roster if Roster is missing
-          Roster: gameObj.Roster || rawResponse.Roster || gameObj.RosterView || rawResponse.RosterView || [],
+          // Prefer RosterView (game-specific bench roster) over Roster (full team roster).
+          // RosterView contains only the players/staff actually on the game sheet.
+          Roster: gameObj.RosterView || rawResponse.RosterView || gameObj.Roster || rawResponse.Roster || [],
           // Officials data (ChildCode 'O')
           Officials: gameObj.Officials || rawResponse.Officials || gameObj.GameOfficials || rawResponse.GameOfficials || [],
           // TimeOuts data (ChildCode 'T')

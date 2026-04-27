@@ -466,7 +466,7 @@ export function useLeagueStats(seasonId: number | null, divisionIds?: number[] |
                        const assists = resolveNum(p, 'Assists', 'A');
                        const points = resolveNum(p, 'Points', 'Pts') || (goals + assists);
                        const pim = resolveNum(p, 'PenaltyMin', 'PIM');
-                       let minutes = resolveNum(p, 'MinutesPlayed', 'Min');
+                       let minutes = resolveNum(p, 'MinutesPlayed', 'MinPlayed', 'Min');
                        
                        // Calculate GAA and SV% from raw data if API didn't provide them
                        const rawGAA = resolveNum(p, 'GoalsAgainstAverage', 'GAA');
