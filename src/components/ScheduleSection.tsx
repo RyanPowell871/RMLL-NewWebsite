@@ -127,7 +127,7 @@ export function ScheduleSection() {
   const [selectedGame, setSelectedGame] = useState<Game | null>(null);
   const [filterSheetOpen, setFilterSheetOpen] = useState(false);
   const [exportModalOpen, setExportModalOpen] = useState(false);
-  const [sortColumn, setSortColumn] = useState<string | null>(null);
+  const [sortColumn, setSortColumn] = useState<string | null>('date');
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
   
   // Track previous season to detect actual season changes
