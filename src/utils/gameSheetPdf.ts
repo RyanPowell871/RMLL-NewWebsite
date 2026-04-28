@@ -688,8 +688,10 @@ export async function exportGameSheetPDF(data: GameSheetPDFData): Promise<void> 
   sz(3.5); bold(); setC(BLK);
   doc.text('Total on Bench', cx + 1.5, cy + 2.2);
   sz(4); setC(RED);
-  doc.text(String(data.homeRoster.length), cx + roleW + teamColW / 2, cy + 2.2, { align: 'center' });
-  doc.text(String(data.awayRoster.length), cx + roleW + teamColW + teamColW / 2, cy + 2.2, { align: 'center' });
+  const homeBenchCount = ((data.homeCoaching as any).allStaff || []).length || [data.homeCoaching.headCoach, ...data.homeCoaching.assistantCoaches, data.homeCoaching.trainer, data.homeCoaching.manager].filter(c => c && c !== 'TBD').length;
+  const awayBenchCount = ((data.awayCoaching as any).allStaff || []).length || [data.awayCoaching.headCoach, ...data.awayCoaching.assistantCoaches, data.awayCoaching.trainer, data.awayCoaching.manager].filter(c => c && c !== 'TBD').length;
+  doc.text(String(homeBenchCount), cx + roleW + teamColW / 2, cy + 2.2, { align: 'center' });
+  doc.text(String(awayBenchCount), cx + roleW + teamColW + teamColW / 2, cy + 2.2, { align: 'center' });
   cy += 3;
 
   // ── Referee Report ──

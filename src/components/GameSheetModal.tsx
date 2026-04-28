@@ -1130,18 +1130,18 @@ export function GameSheetModal({ game, open, onClose }: GameSheetModalProps) {
                       </thead>
                       <tbody>
                         <tr className="border-b border-gray-300 bg-gray-50">
-                          <td className="px-3 py-2 text-xs font-bold">{displayGame.awayTeam}</td>
-                          {periodScores.map((ps) => (
-                            <td key={ps.period} className="px-3 py-2 text-center text-xs font-bold">{ps.awayScore}</td>
-                          ))}
-                          <td className="px-3 py-2 text-center text-sm font-black bg-yellow-50">{displayGame.awayScore}</td>
-                        </tr>
-                        <tr className="bg-white">
                           <td className="px-3 py-2 text-xs font-bold">{displayGame.homeTeam}</td>
                           {periodScores.map((ps) => (
                             <td key={ps.period} className="px-3 py-2 text-center text-xs font-bold">{ps.homeScore}</td>
                           ))}
                           <td className="px-3 py-2 text-center text-sm font-black bg-yellow-50">{displayGame.homeScore}</td>
+                        </tr>
+                        <tr className="bg-white">
+                          <td className="px-3 py-2 text-xs font-bold">{displayGame.awayTeam}</td>
+                          {periodScores.map((ps) => (
+                            <td key={ps.period} className="px-3 py-2 text-center text-xs font-bold">{ps.awayScore}</td>
+                          ))}
+                          <td className="px-3 py-2 text-center text-sm font-black bg-yellow-50">{displayGame.awayScore}</td>
                         </tr>
                       </tbody>
                     </table>
@@ -1386,6 +1386,65 @@ export function GameSheetModal({ game, open, onClose }: GameSheetModalProps) {
               {/* Rosters Tab */}
               <TabsContent value="rosters" className="space-y-4 mt-4">
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                  {/* Home Roster */}
+                  <div className="bg-white rounded-lg border-2 border-gray-300 overflow-hidden">
+                    <div className="bg-black px-4 py-2 flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <img src={displayGame.homeLogo || rmllShieldLogo} alt="" className="w-6 h-6" onError={(e) => { (e.target as HTMLImageElement).src = rmllShieldLogo; }} />
+                        <h4 className="font-bold text-white text-xs">HOME — {displayGame.homeTeam}</h4>
+                      </div>
+                    </div>
+                    <div className="overflow-x-auto">
+                      <table className="w-full">
+                        <thead>
+                          <tr className="bg-white border-b-2 border-black">
+                            <th className="px-3 py-2 text-left font-bold text-xs">#</th>
+                            <th className="px-3 py-2 text-left font-bold text-xs">PLAYER (Family Name, First)</th>
+                            <th className="px-3 py-2 text-center font-bold text-xs w-12">POS</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {homeRoster.map((player, idx) => (
+                            <tr key={idx} className={`border-b border-gray-200 ${player.servingSuspension ? 'bg-amber-50' : idx % 2 === 0 ? 'bg-gray-50' : 'bg-white'}`}>
+                              <td className="px-3 py-2 text-xs font-bold">{player.number}</td>
+                              <td className="px-3 py-2 text-xs font-bold">
+                                {player.name}
+                                {player.servingSuspension && (
+                                  <span className="ml-2 text-[10px] font-semibold bg-amber-200 text-amber-800 px-1.5 py-0.5 rounded" title={player.suspensionNote || 'Serving suspension'}>SUSP</span>
+                                )}
+                              </td>
+                              <td className="px-3 py-2 text-center text-xs">
+                                {player.flag && (
+                                  <span className={`inline-block font-bold px-1.5 py-0.5 rounded text-[10px] ${
+                                    player.flag === 'AP' ? 'bg-purple-100 text-purple-800' :
+                                    player.flag === 'IN' ? 'bg-blue-100 text-blue-800' :
+                                    player.flag === 'C' || player.flag === 'A' ? 'bg-yellow-100 text-yellow-800' :
+                                    player.flag === 'GL' ? 'bg-green-100 text-green-800' :
+                                    player.flag === 'S' ? 'bg-amber-100 text-amber-800' :
+                                    'bg-gray-100 text-gray-700'
+                                  }`} title={
+                                    player.flag === 'AP' ? 'Affiliate Player' :
+                                    player.flag === 'IN' ? 'In-Home for Penalties' :
+                                    player.flag === 'C' ? 'Captain' :
+                                    player.flag === 'A' ? 'Alternate Captain' :
+                                    player.flag === 'GL' ? 'Goalie' :
+                                    player.flag === 'S' ? 'Serving Suspension' :
+                                    player.flag
+                                  }>{player.flag}</span>
+                                )}
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                    <div className="bg-black px-4 py-2">
+                      <p className="text-white text-xs">
+                        <span className="font-bold">Total Players on Bench:</span> {homeRoster.length}
+                      </p>
+                    </div>
+                  </div>
+
                   {/* Away Roster */}
                   <div className="bg-white rounded-lg border-2 border-gray-300 overflow-hidden">
                     <div className="bg-black px-4 py-2 flex items-center justify-between">
@@ -1442,65 +1501,6 @@ export function GameSheetModal({ game, open, onClose }: GameSheetModalProps) {
                     <div className="bg-black px-4 py-2">
                       <p className="text-white text-xs">
                         <span className="font-bold">Total Players on Bench:</span> {awayRoster.length}
-                      </p>
-                    </div>
-                  </div>
-
-                  {/* Home Roster */}
-                  <div className="bg-white rounded-lg border-2 border-gray-300 overflow-hidden">
-                    <div className="bg-black px-4 py-2 flex items-center justify-between">
-                      <div className="flex items-center gap-3">
-                        <img src={displayGame.homeLogo || rmllShieldLogo} alt="" className="w-6 h-6" onError={(e) => { (e.target as HTMLImageElement).src = rmllShieldLogo; }} />
-                        <h4 className="font-bold text-white text-xs">HOME — {displayGame.homeTeam}</h4>
-                      </div>
-                    </div>
-                    <div className="overflow-x-auto">
-                      <table className="w-full">
-                        <thead>
-                          <tr className="bg-white border-b-2 border-black">
-                            <th className="px-3 py-2 text-left font-bold text-xs">#</th>
-                            <th className="px-3 py-2 text-left font-bold text-xs">PLAYER (Family Name, First)</th>
-                            <th className="px-3 py-2 text-center font-bold text-xs w-12">POS</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {homeRoster.map((player, idx) => (
-                            <tr key={idx} className={`border-b border-gray-200 ${player.servingSuspension ? 'bg-amber-50' : idx % 2 === 0 ? 'bg-gray-50' : 'bg-white'}`}>
-                              <td className="px-3 py-2 text-xs font-bold">{player.number}</td>
-                              <td className="px-3 py-2 text-xs font-bold">
-                                {player.name}
-                                {player.servingSuspension && (
-                                  <span className="ml-2 text-[10px] font-semibold bg-amber-200 text-amber-800 px-1.5 py-0.5 rounded" title={player.suspensionNote || 'Serving suspension'}>SUSP</span>
-                                )}
-                              </td>
-                              <td className="px-3 py-2 text-center text-xs">
-                                {player.flag && (
-                                  <span className={`inline-block font-bold px-1.5 py-0.5 rounded text-[10px] ${
-                                    player.flag === 'AP' ? 'bg-purple-100 text-purple-800' :
-                                    player.flag === 'IN' ? 'bg-blue-100 text-blue-800' :
-                                    player.flag === 'C' || player.flag === 'A' ? 'bg-yellow-100 text-yellow-800' :
-                                    player.flag === 'GL' ? 'bg-green-100 text-green-800' :
-                                    player.flag === 'S' ? 'bg-amber-100 text-amber-800' :
-                                    'bg-gray-100 text-gray-700'
-                                  }`} title={
-                                    player.flag === 'AP' ? 'Affiliate Player' :
-                                    player.flag === 'IN' ? 'In-Home for Penalties' :
-                                    player.flag === 'C' ? 'Captain' :
-                                    player.flag === 'A' ? 'Alternate Captain' :
-                                    player.flag === 'GL' ? 'Goalie' :
-                                    player.flag === 'S' ? 'Serving Suspension' :
-                                    player.flag
-                                  }>{player.flag}</span>
-                                )}
-                              </td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                    </div>
-                    <div className="bg-black px-4 py-2">
-                      <p className="text-white text-xs">
-                        <span className="font-bold">Total Players on Bench:</span> {homeRoster.length}
                       </p>
                     </div>
                   </div>
