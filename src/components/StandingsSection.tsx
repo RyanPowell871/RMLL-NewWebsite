@@ -372,28 +372,38 @@ export function StandingsSection() {
             const teamLogoUrl = team?.PrimaryTeamLogoURL || team?.TeamLogoURL || item.PrimaryTeamLogoURL || teamInfo?.logoUrl;
             const divisionName = dynNames[divisionId] || DIVISION_NAMES[divisionId] || sd.DivisionName || 'Unknown';
 
-            // Extract stats — handle both field naming conventions
+            // Extract stats — all values come from the SportzSoft API
             const gp = item.GamesPlayed ?? item.GP ?? 0;
             const l = item.GamesLost ?? item.Losses ?? item.L ?? 0;
             const t = item.GamesTied ?? item.Ties ?? item.T ?? 0;
             const def = item.GamesDefaulted ?? item.Defaults ?? item.Def ?? 0;
-            const w = item.GamesWon ?? item.Wins ?? item.W ??
-                      (gp > 0 ? (gp - l - t - def) : 0);
+            const w = item.GamesWon ?? item.Wins ?? item.W ?? 0;
             const otl = item.OvertimeLosses ?? item.OTL ?? 0;
-            const pts = item.Points ?? item.Pts ?? ((w * 2) + t + otl);
+            const pts = item.Points ?? item.Pts ?? 0;
             const gf = item.GoalsFor ?? item.GF ?? 0;
             const ga = item.GoalsAgainst ?? item.GA ?? 0;
-            const diff = gf - ga;
+            const diff = item.GoalDifferential ?? item.GoalDiff ?? item.GD ?? (gf - ga);
             const pim = item.PenaltyMins ?? item.PIM ?? 0;
             const pct = item.PointsPercentage ?? null;
             const gAvg = pct !== null ? (typeof pct === 'number' ? pct : parseFloat(pct) || 0) :
               ((gf + ga) > 0 ? parseFloat((gf / (gf + ga)).toFixed(3)) : 0);
             const streak = item.StreakInfo ?? item.Streak ?? '-';
+            // Use rank from API (various field names), preserve API ordering
+            const apiRank = item.Rank ?? item.StandingRank ?? item.Position ?? item.R ?? 0;
 
             if (extractedStandings.length === 0) {
-              console.log('%c[Standings] First extraction! TeamId:', 'color: magenta; font-weight: bold', 
-                teamId, teamName, 'GP:', gp, 'W:', w, 'L:', l, 'T:', t, 'PTS:', pts, 'GF:', gf, 'GA:', ga, 'PIM:', pim);
+              console.log('%c[Standings] First extraction! TeamId:', 'color: magenta; font-weight: bold',
+                teamId, teamName, 'Rank:', apiRank, 'GP:', gp, 'W:', w, 'L:', l, 'T:', t, 'PTS:', pts, 'GF:', gf, 'GA:', ga, 'PIM:', pim);
               console.log('%c[Standings] Item keys:', 'color: magenta; font-weight: bold', Object.keys(item));
+              // Log rank-related fields to verify API provides rank
+              const rankCandidates: Record<string, any> = {};
+              Object.keys(item).forEach(k => {
+                const kl = k.toLowerCase();
+                if (kl.includes('rank') || kl.includes('position') || kl === 'r') {
+                  rankCandidates[k] = item[k];
+                }
+              });
+              console.log('%c[Standings] Rank candidates from API:', 'color: green; font-weight: bold', JSON.stringify(rankCandidates));
               // Log ALL fields that contain "pen" or "min" or "pim" (case-insensitive) to find PIM field
               const pimCandidates: Record<string, any> = {};
               Object.keys(item).forEach(k => {
@@ -406,7 +416,7 @@ export function StandingsSection() {
             }
 
             extractedStandings.push({
-              rank: 0, teamId, teamName, teamLogoUrl, divisionId, divisionName,
+              rank: apiRank, teamId, teamName, teamLogoUrl, divisionId, divisionName,
               gp, w, l, t, def, otl, pts, gf, ga, diff, pim,
               gAvg: typeof gAvg === 'number' ? gAvg : parseFloat(gAvg) || 0,
               streak: typeof streak === 'string' ? streak : (streak || '-')
@@ -505,12 +515,8 @@ export function StandingsSection() {
         // Use extracted standings or fall back to zero-stat team list
         let standings: TeamStanding[];
         if (extractedStandings.length > 0) {
-          standings = extractedStandings.sort((a, b) => {
-            if (b.pts !== a.pts) return b.pts - a.pts;
-            if (b.diff !== a.diff) return b.diff - a.diff;
-            return b.gf - a.gf;
-          });
-          console.log('[Standings] Using official standings from SportzSoft API');
+          standings = extractedStandings;
+          console.log('[Standings] Using official standings from SportzSoft API (API order + rank)');
         } else {
           console.warn('[Standings] No standings data available yet for "' + standingCode + '" — season may not have started. Showing teams with zero stats.');
           // Deduplicate teams by TeamId (same team can appear in multiple divisions)
@@ -637,10 +643,10 @@ export function StandingsSection() {
     return true;
   });
 
-  // Add ranks
+  // Use API rank if available (rank > 0), otherwise assign by position
   const rankedStandings = filteredStandings.map((team, index) => ({
     ...team,
-    rank: index + 1
+    rank: team.rank > 0 ? team.rank : index + 1
   }));
 
   const totalGamesPlayed = rankedStandings.reduce((sum, team) => sum + team.gp, 0);

@@ -1,6 +1,6 @@
 # SportzSoft API Documentation (RMLL)
 
-> **Unofficial documentation** — SportzSoft provides no public API docs. This was reverse-engineered from the RMLL website codebase and live API responses.
+> RMLL-specific documentation for the SportzSoft TeamRest API. Cross-referenced with official SportzSoft source documentation (`dm_TeamRest_API.md`).
 
 ---
 
@@ -8,13 +8,13 @@
 
 1. [Overview](#overview)
 2. [Authentication](#authentication)
-3. [Base URL & Headers](#base-url--headers)
+3. [Base URL & URL Structure](#base-url--url-structure)
 4. [LimiterCode & ChildCodes](#limitercode--childcodes)
-5. [Endpoints](#endpoints)
-6. [Caching](#caching)
-7. [Response Wrapper](#response-wrapper)
+5. [Response Wrapper](#response-wrapper)
+6. [Endpoints](#endpoints)
+7. [Caching](#caching)
 8. [Inconsistencies & Quirks](#inconsistencies--quirks)
-9. [Field Name Variants](#field-name-variants)
+9. [Confirmed Field Names](#confirmed-field-names)
 10. [Game Status Codes](#game-status-codes)
 11. [Standing Category Codes](#standing-category-codes)
 12. [Division Mapping](#division-mapping)
@@ -24,7 +24,9 @@
 
 ## Overview
 
-SportzSoft is a sports management platform that RMLL uses for scheduling, standings, rosters, drafts, and more. The API is a REST-like service hosted at `sportzsoft.com`. It follows loose conventions — responses vary in structure, field names are inconsistent, and some endpoints behave differently depending on which query parameters you include.
+SportzSoft is a Delphi-based REST service (`TsrsRestServer` in `dm_TeamRest.pas`) that serves as the back-end for the SportzSoft Member Portal, League/Club Portal, registration flows, and administrative operations. RMLL (Org ID `520`) uses it for scheduling, standings, rosters, drafts, and more.
+
+The API follows loose conventions — responses vary in structure, field names are inconsistent across endpoints, and some endpoints behave differently depending on which query parameters you include.
 
 **Organization ID**: `520` (RMLL)
 
@@ -32,7 +34,11 @@ SportzSoft is a sports management platform that RMLL uses for scheduling, standi
 
 ## Authentication
 
-Every request requires an `ApiKey` header. The key is not hardcoded — it's retrieved at runtime from a Supabase edge function:
+### How RMLL uses the API
+
+RMLL's public website uses the **API key** authentication mode. The `ApiKey` header bypasses session requirements — the server sets `FNoSessionOp = true` and uses a pseudo-session (`12345`). This limits RMLL to the `IsValidEntry` allow-list of endpoints.
+
+The API key is retrieved at runtime from a Supabase edge function:
 
 ```
 GET https://{supabase-project}.supabase.co/functions/v1/make-server-9a1ba23f/config/sportzsoft-key
@@ -54,6 +60,23 @@ The key is cached in-memory on the frontend (`window.__SPORTZSOFT_API_KEY__`) so
 | `TZO` | Timezone offset in minutes | `-420` (MST) |
 | `LocalTime` | ISO 8601 timestamp | `2026-04-17T10:30:00.000Z` |
 
+### Other authentication modes (not used by RMLL)
+
+The API supports 6 credential modes. RMLL only uses `apiKey`. The others exist for the Member Portal and admin tools:
+
+| Mode | Header / Query | Notes |
+|------|----------------|-------|
+| Session | `SessionId` HTTP header | Primary for logged-in users. Created by `POST /Login/{orgId}` or `GET /StartSession`. |
+| API key | `apiKey` header | **Used by RMLL.** Validates caller domain. Sets `FNoSessionOp = true`. |
+| Back-door refresh | `BackDoorPW: 84np` | Force-refreshes session. Admin only. |
+| Stripe webhook | `Stripe-Signature` | HMAC-SHA256 checked against webhook secrets. |
+| Magic sessions | `7Uec42tn3` / `7Uec42tn2` | Auto-creates or limited-access sessions. |
+| Query-string | `?SessionId=...` or `?pw=7Uec42tn2` | Fallback when no header supplied. |
+
+### Endpoints available with API key (`IsValidEntry` allow-list)
+
+`/organization` (certain queries), `/widget`, `/facilities`, `/startsession`, `/topscoringleaders`, `/uploadtournamentdoc`, `/uploadeventdoc`, `/gridlayout`, `/meetsinfo`, `/preparevideoaccess`, `/lookupdataset`, `/registrations`, `/exchangerate`, `/scorevideo`, `/functionalarea`, `/systemdoc`, `/applicationprospect`, `/product` (GET), `/login`, `/logapperror`, `/emailcheck`, `/member` (POST), `/playerstatscareer`, `/usagregistrations`, `/create-payment-intent`, `/validateloginpassword`, `/validatemeetjudgeaccess`, `/validatejudgepin`.
+
 ### Admin: Key Management
 
 **Update the key** (requires auth):
@@ -68,17 +91,50 @@ GET https://www.sportzsoft.com/ssRest/TeamRest.dll/getSeasons?OrgID=520
 Headers: { ApiKey: "key-to-test" }
 ```
 
-> **Note**: The test endpoint uses `/getSeasons?OrgID=520` — a different URL pattern than the standard `/Organization/520/Seasons` endpoint. This appears to be a legacy endpoint.
+> The test endpoint uses `/getSeasons?OrgID=520` — a legacy URL pattern that predates the standard `/Organization/520/Seasons` endpoint.
 
 ---
 
-## Base URL & Headers
+## Base URL & URL Structure
 
 ```
 https://www.sportzsoft.com/ssRest/TeamRest.dll
 ```
 
 All endpoints below are relative to this base.
+
+### URL parsing
+
+The server parses URLs into:
+```
+/{EndPoint}/{EndPointArg}[/{EndPointArg2}]/{SubEndPoint}[/{SubPointArg}]
+```
+
+- **EndPoint** — the primary resource (`Organization`, `Season`, `Team`, `Game`, etc.)
+- **EndPointArg** — typically a numeric ID. Values ≥32 characters are treated as AES-encrypted hex IDs and auto-decrypted via `SsDecryptFromHex`.
+- **EndPointArg2** — a secondary numeric key (e.g. `/Meet/123/456/levels`)
+- **SubEndPoint** — a sub-resource or action (`Seasons`, `Schedule`, `Team`, etc.)
+- **SubPointArg** — argument for the sub-endpoint
+
+### Case sensitivity
+
+Varies by handler. Most comparisons use `ToLower` but several routes use `AnsiSameText` or exact-case matching (e.g. `ActiveVideoStreams`, `EncryptID`). Always use the exact casing shown in this documentation.
+
+### Common query-string parameters
+
+| Parameter | Purpose |
+|-----------|---------|
+| `LimiterCode` | Field-set selector — limits which fields each record returns. Typical values: `B` (basic), `F` (full), `Q` (quick). |
+| `ChildCodes` | Single-letter flags instructing handlers to embed child datasets (e.g. `D` = divisions, `P` = player stats, `G` = games). |
+| `PrimaryKeyProperties` | Slash-separated field names used to decode composite keys embedded in the URL path. |
+| `tzo` | Client-side timezone offset in minutes. |
+| `LocalTime` | Client local time for session activity tracking. |
+
+### Date formatting
+
+- Date format: `yyyy-mm-dd` (used in `BindContentFields` with `'ymd'` mode)
+- DateTime format: `yyyy-mm-ddThh:nn:ss.zzz`
+- Currency fields are serialized as numbers unless added to `SendAsTextFields`
 
 ---
 
@@ -105,7 +161,7 @@ A string of single-character codes concatenated together (e.g. `"BIC"` = Basic +
 
 ### ChildCodes
 
-A string of single-character codes requesting related child objects.
+A string of single-character codes requesting related child objects. The `JsonProducer.AddDataSet` method inlines these into the parent response.
 
 | Code | Meaning | Returns |
 |------|---------|---------|
@@ -121,7 +177,7 @@ A string of single-character codes requesting related child objects.
 | **Y** | Penalty stats | `PenaltyStats[]` |
 | **L** | Links (social media, websites) | `TeamLinks[]` |
 | **B** | Bench personnel (TeamRoles) | `TeamRoles[]` |
-| **E** | Events | `Events[]` (experimental) |
+| **E** | Events | `Events[]` |
 | **O** | Officials | `GameOfficials[]` |
 | **T** | Timeouts | `GameTimeOuts[]` |
 
@@ -131,6 +187,54 @@ A string of single-character codes requesting related child objects.
 - `ChildCodes=GDC` → Groups + Divisions + StandingCodes (used with Seasons)
 - `ChildCodes=SGPROT` → Scoring + Goalie + Penalty + Roster + Officials + Timeouts (used with Game details)
 - `ChildCodes=HSYPG` → GamesPlayed + PlayerStats + Penalty + PlayerStats(?) + Goalie (used with Player profiles)
+
+---
+
+## Response Wrapper
+
+`TsrsRestServer.Execute` wraps handler output in a standard envelope unless the handler is flagged `bDirect`:
+
+**Success:**
+```json
+{
+  "Success": true,
+  "SessionId": "<current session id>",
+  "Response": { /* handler-produced JSON fragment */ }
+}
+```
+
+**Failure:**
+```json
+{
+  "Success": false,
+  "SessionId": "<id>",
+  "ErrorCode": "<code>",
+  "Error": "<HTML-encoded message>"
+}
+```
+
+### Direct endpoints (no wrapper)
+
+These endpoints skip the `{ Success, Response }` wrapper and return raw data:
+`EmailCheck`, `PeopleSearch`, `MeetsInfo`, `ValidateEmail`, `ValidateMeetJudgeAccess`, `TopScoringLeaders`, `Facilities`, `Facility` (GET), `ExchangeRate`, `SessionValue`, `MerchandiseSystemInfo`, `RegistrationStatsByProduct`, `USAGMeetScores`, `Meet/photogallery`.
+
+### Error codes
+
+| Code | Meaning |
+|------|---------|
+| `95` | Invalid EndPoint for TeamRest API |
+| `96` | Security violation / invalid apiKey |
+| `99` | Session has expired |
+| `100` | No REST EndPoint defined |
+| `102` | Endpoint argument required (PUT/DELETE) |
+| `109` | Invalid login / password |
+| `800` | No SessionId provided |
+
+### HTTP headers returned
+
+- `Content-Type: application/json; charset=UTF-8`
+- `Pragma: no-cache`
+- `Cache-Control: no-store, no-cache, must-revalidate`
 
 ---
 
@@ -153,8 +257,8 @@ GET /Organization/{organizationId}/Seasons
 {
   "Success": true,
   "Response": {
-    "Season": { ... },    // single season (when only one)
-    "Seasons": [ ... ]    // OR array of seasons
+    "Season": { ... },
+    "Seasons": [ ... ]
   }
 }
 ```
@@ -219,8 +323,7 @@ GET /Season/{seasonId}/Team
         "DivisionId": 81999,
         "PrimaryTeamLogoURL": "https://...",
         "SubDivision": "North",
-        "HomeFacilityName": "Okotoks Arena",
-        ...
+        "HomeFacilityName": "Okotoks Arena"
       }
     ]
   }
@@ -261,7 +364,7 @@ GET /Season/{seasonId}?LimiterCode=B&ChildCodes=TS&StandingsCode=regu
 }
 ```
 
-> **Inconsistency**: The division-level endpoint may NOT wrap the response in `{ Success, Response }`. If `Success` is undefined, treat the entire response body as the data.
+> **Inconsistency**: The division-level endpoint may NOT wrap the response in `{ Success, Response }`. If `Success` is undefined, treat the entire response body as the data. This endpoint may also be a "Direct" endpoint that skips the wrapper.
 
 ---
 
@@ -352,8 +455,6 @@ GET /Team/{teamId}
 }
 ```
 
-> **Note**: The `G` child code on the Player endpoint returns basic goalie fields (GP, G, A, PTS, PIM) but NOT saves, GA, minutes, GAA, SV%. Those must come from the `/PlayerStats` endpoint.
-
 ---
 
 ### 8. Team Raw (No Filters)
@@ -441,8 +542,7 @@ GET /TeamFranchiseTransaction
     "FranchiseTransactions": [
       {
         "FranchiseTransactionId": 123,
-        "TrasactionTypeName": "Trade",
-        ...
+        "TrasactionTypeName": "Trade"
       }
     ]
   }
@@ -477,8 +577,7 @@ GET /TeamFranchise/{franchiseId}?LimiterCode=C&ChildCodes=P
       "TeamFranchiseRoles": [
         {
           "FranchiseRoleCd": "PROT",
-          "Name": "John Smith",
-          ...
+          "Name": "John Smith"
         }
       ]
     }
@@ -510,16 +609,16 @@ GET /DivisionDraft
 
 ---
 
-### 14. Team Events (Experimental)
+### 14. Team Events
 
-The correct SportzSoft events endpoint is unknown. The code tries four patterns:
+The code tries multiple URL patterns to find team events:
 
 1. `/Team/{teamId}?LimiterCode={code}&ChildCodes=E`
 2. `/Team/{teamId}/Event?LimiterCode={code}`
 3. `/Team/{teamId}/Schedule?Games=false&Practices=false&LimiterCode={code}&ChildCodes=E`
 4. `/TeamEvent?TeamId={teamId}&LimiterCode={code}`
 
-All four are called and results collected. This is exploratory — not for production use.
+All four are called and results collected.
 
 ---
 
@@ -557,7 +656,17 @@ GET /Team/{teamId}?LimiterCode={code}&ChildCodes=C
 GET /Facilities/{organizationId}
 ```
 
-**Response**: The facilities array may be under `Data`, `Facilities`, `Result`, or any array-valued key.
+**Response**: The facilities array may be under `Data`, `Facilities`, `Result`, or any array-valued key. This is a **Direct** endpoint — it skips the `{ Success, Response }` wrapper.
+
+---
+
+### 18. Top Scoring Leaders
+
+```
+GET /TopScoringLeaders
+```
+
+**Direct** endpoint — skips the response wrapper. Available via API key (in `IsValidEntry` allow-list).
 
 ---
 
@@ -588,29 +697,6 @@ The RMLL app implements a centralized in-memory cache with these features:
 
 ---
 
-## Response Wrapper
-
-Most endpoints wrap responses in a standard structure:
-
-```json
-{
-  "Success": true,
-  "Response": { ... }
-}
-```
-
-**But not always.** The division-level standings endpoint may return data directly without the wrapper. If `Success` is `undefined`, treat the entire response as the data.
-
-Failed requests return:
-```json
-{
-  "Success": false,
-  "Response": "Error message here"
-}
-```
-
----
-
 ## Inconsistencies & Quirks
 
 ### Critical (will break your code if unhandled)
@@ -618,120 +704,130 @@ Failed requests return:
 | # | Issue | Affected Endpoints | Workaround |
 |---|-------|--------------------|------------|
 | 1 | **`Season` vs `Seasons`** | `/Seasons` | Check both `Response.Season` and `Response.Seasons` |
-| 2 | **Missing response wrapper** | `/SportsDivision` (standings) | If `Success === undefined`, treat entire body as data |
+| 2 | **Missing response wrapper** | `/SportsDivision` (standings), `/Facilities` | Some endpoints are "Direct" and skip the wrapper. If `Success` is undefined, treat entire body as data. |
 | 3 | **Nested vs top-level stats** | `/Game/{id}` | Stats may be under `Response.Game.*` or `Response.*` |
 | 4 | **Player stats response keys** | `/PlayerStats` | Check 7+ possible key names (see endpoint docs) |
 | 5 | **API typo `TrasactionTypeName`** | `/TeamFranchiseTransaction` | Check both `TrasactionTypeName` and `TransactionTypeName` |
 | 6 | **`"Trade Date"` with space** | `/DivisionDraft` | Access with bracket notation: `obj["Trade Date"]` |
+| 7 | **Encrypted IDs** | Any `EndPointArg` ≥32 chars | Auto-decrypted by the server. Don't try to parse encrypted IDs client-side — just pass them through. |
 
 ### Moderate (annoying but predictable)
 
 | # | Issue | Details |
 |---|-------|---------|
-| 7 | **Roster field name varies** | `Roster` or `RosterView` |
-| 8 | **Officials field name varies** | `GameOfficials` or `Officials` |
-| 9 | **Timeouts field name varies** | `GameTimeOuts` or `TimeOuts` |
-| 10 | **Player ID vs Person ID** | The `Player` endpoint uses `PlayerId`; game stats use `PersonId`. Different IDs for the same person. |
-| 11 | **Goalie stats are per-period** | Must aggregate across period entries to get game totals |
-| 12 | **Protected list `IsActive` missing** | `IsActive === undefined` means active |
-| 13 | **Boolean field variants** | `true`, `"true"`, `"True"`, `1`, `"1"`, `"Y"`, `"Yes"` are all valid truthy values |
-| 14 | **StandingCategoryCode variations** | 25+ variants: `regu`, `REG`, `plyo`, `PLAYOFFS`, `prov`, `PROSS`, `(PROVINCIAL)`, etc. |
+| 8 | **Roster field name varies** | `Roster` or `RosterView` |
+| 9 | **Officials field name varies** | `GameOfficials` or `Officials` |
+| 10 | **Timeouts field name varies** | `GameTimeOuts` or `TimeOuts` |
+| 11 | **Player ID vs Person ID** | The `Player` endpoint uses `PlayerId`; game stats use `PersonId`. Different IDs for the same person. |
+| 12 | **Goalie stats are per-period** | Must aggregate across period entries to get game totals |
+| 13 | **Protected list `IsActive` missing** | `IsActive === undefined` means active |
+| 14 | **Boolean field variants** | `true`, `"true"`, `"True"`, `1`, `"1"`, `"Y"`, `"Yes"` are all valid truthy values |
+| 15 | **StandingCategoryCode variations** | 25+ variants: `regu`, `REG`, `plyo`, `PLAYOFFS`, `prov`, `PROSS`, `(PROVINCIAL)`, etc. |
+| 16 | **Case sensitivity varies by endpoint** | Most use case-insensitive matching, but some require exact case (e.g. `ActiveVideoStreams`, `EncryptID`) |
 
 ### Minor (worth knowing)
 
 | # | Issue | Details |
 |---|-------|---------|
-| 15 | **`fetchTeamRaw` bypasses cache** | Always hits the live API — use sparingly |
-| 16 | **LimiterCode double-append** | `fetchPlayerCareerStats` appends `I` to limiterCode. Passing `"BI"` becomes `"BII"`. |
-| 17 | **Legacy endpoint exists** | `/getSeasons?OrgID=520` works alongside `/Organization/520/Seasons` |
-| 18 | **Goalie child code missing real goalie stats** | The `G` child code on Player endpoint returns only basic fields, not saves/GA/GAA/SV% |
-| 19 | **Game status code overlap** | Codes 114–115 both mean "In Progress"; 116–117 both "Completed"; 118–120 both "Final" |
+| 17 | **`fetchTeamRaw` bypasses cache** | Always hits the live API — use sparingly |
+| 18 | **LimiterCode double-append** | `fetchPlayerCareerStats` appends `I` to limiterCode. Passing `"BI"` becomes `"BII"`. |
+| 19 | **Legacy endpoint exists** | `/getSeasons?OrgID=520` works alongside `/Organization/520/Seasons` |
+| 20 | **Goalie child code missing real goalie stats** | The `G` child code on Player endpoint returns only basic fields, not saves/GA/GAA/SV% |
+| 21 | **Game status code overlap** | Codes 114–115 both mean "In Progress"; 116–117 both "Completed"; 118–120 both "Final" |
+| 22 | **API key domain validation** | The server validates the caller domain against the `apiKeys` table. Failures are logged to `apiKeyFailures`. |
+| 23 | **API request logging** | When `rAPILogEnabled` is set, every request inserts a `RestAPILog` row capturing session, method, endpoint, query, thread id, and client org. Payment endpoints redact data values. |
 
 ---
 
-## Confirmed vs. Speculative Field Names
+## Confirmed Field Names
 
-The RMLL codebase was partly generated by Figma Make's AI, which used a "shotgun approach" — trying every plausible field name variant to discover API shapes at runtime. Many of these variants are **speculative guesses that the API never actually returns**. This section separates what's confirmed from what's likely AI-generated noise.
-
-### How to Read This
-
-- **Confirmed** — Seen in real API responses, verified by explicit "API uses X" code comments, or the only field name used in direct access patterns (no fallback chain).
-- **Speculative** — Appears deep in `resolveStr`/`resolveNum`/`deepResolveStr` fallback chains with no corroborating evidence. Likely AI-generated.
-
----
+The RMLL codebase was partly generated by Figma Make's AI, which used a "shotgun approach" — trying every plausible field name variant to discover API shapes at runtime. The speculative variants have been removed from the codebase. This section documents the confirmed API field names only.
 
 ### Player Stats Fields
 
-| Concept | Confirmed API Field | Speculative Variants in Codebase |
-|---------|--------------------|---------------------------------|
-| Games Played | `GamesPlayed` | `GP`, `Games`, `GamesPlayedCount` |
-| Goals | `Goals` | `G`, `Goal`, `GoalsTotal` |
-| Assists | `Assists` | `A`, `Assist`, `AssistsTotal` |
-| Points | `Points` | `PTS`, `Pts`, `PointTotal` |
-| PIM | `PenaltyMin` | `PenaltyMinutes`, `PIM`, `Min`, `PIMTotal`, `Penalties`, `TM_PIM`, `PenMin` |
-| Plus/Minus | `PlusMinus` | `Plus_Minus`, `PLMI`, `PM` |
-| Game Winning Goals | `GameWinningGoals` | `GWG`, `GameWinning` |
-| Power Play Goals | `PPGoals` | `PowerPlayGoals`, `PPG`, `PP` |
-| Short Handed Goals | `SHGoals` | `ShortHandedGoals`, `SHG`, `SH` |
-| Overtime Goals | `OTGoals` | `OvertimeGoals`, `OTG` |
-| Shots | `Shots` | `SOG`, `ShotsOnGoal` |
-| Jersey Number | `PlayerNo` | `JerseyNumber`, `No`, `Jersey`, `Number`, `Num`, `JerseyNo` |
-| Position | `SportPositionName` | `Position`, `PositionName`, `Pos` |
+| Concept | Confirmed API Field | Notes |
+|---------|--------------------|-------|
+| Games Played | `GamesPlayed` | — |
+| Goals | `Goals` | — |
+| Assists | `Assists` | — |
+| Points | `Points` | — |
+| PIM | `PenaltyMin` | API truncates "Minutes" to "Min" |
+| Plus/Minus | `PlusMinus` | — |
+| Game Winning Goals | `GameWinningGoals` | — |
+| Power Play Goals | `PPGoals` | API uses abbreviation |
+| Short Handed Goals | `SHGoals` | API uses abbreviation |
+| Shots | `Shots` | — |
+| Position | `SportPositionName` | API uses specific name; `Position` also seen |
+| Position Code | `PositionCode` | — |
 
 ### Goalie Stats Fields (varies by endpoint)
 
 | Concept | PlayerStats Bulk Endpoint | Game Detail Per-Period |
 |---------|--------------------------|----------------------|
-| Saves | `SaversTotal` | `ShotsStopped` |
-| Shots Against | `ShotsTotal` | `TotalShots` |
+| Saves | `SaversTotal` / `Saves` | `ShotsStopped` / `Saves` |
+| Shots Against | `ShotsTotal` / `ShotsAgainst` | `TotalShots` / `ShotsTotal` / `ShotsAgainst` |
 | Goals Against | `GoalsAgainst` | (same) |
 | GAA | `GoalsAgainstAverage` / `GAA` | (computed) |
 | Save Percentage | `SavePercentage` | (computed) |
-| Minutes Played | `MinutesPlayed` | `MinutesPlayed` |
+| Minutes Played | `MinutesPlayed` / `Min` | `MinutesPlayed` / `Min` |
+| Games Dressed | `GamesDressed` / `GD` | — |
+| Wins | `Wins` / `W` | — |
+| Losses | `Losses` / `L` | — |
+| Ties | `Ties` | — |
+| Overtime Losses | `OvertimeLosses` | — |
+| Shutouts | `Shutouts` | — |
 
-| Concept | Speculative Variants |
-|---------|---------------------|
-| Saves | `SV`, `Svs`, `SVS`, `SavesMade`, `TotalSaves`, `SavesTotal`, `Saves` |
-| Shots Against | `ShotsAgainst`, `SA`, `ShotAgainst`, `ShotsReceived` |
-| Save Percentage | `SavePct`, `SvPct`, `SVPct`, `SV_PCT`, `Svpct`, `SavePctg`, `SVPCT`, `SavePercent`, `Sv_Pct` |
-| Minutes Played | `Min`, `Minutes`, `Mins`, `MP`, `TOI`, `TimeOnIce`, `TotalMinutes`, `TimePlayed` |
-| Goals Against | `GA`, `GATotal` |
-| Games Dressed | `GD`, `Dressed` (after confirmed `GamesDressed`) |
+> **Key difference**: The bulk `PlayerStats` endpoint uses `SaversTotal`/`ShotsTotal`, while the per-period `Game` detail endpoint uses `ShotsStopped`/`TotalShots`. Your resolver functions must check both sets.
 
 ### Penalty Stats Fields (Game Detail)
 
-| Concept | Confirmed | Speculative |
-|---------|-----------|-------------|
-| Penalty Name | `PenaltyName` | `OffenseName`, `Offense`, `Penalty`, `PenaltyType`, `PenaltyDescription`, `InfractionName`, `Infraction`, `OffenseDescription`, `PenaltyCode`, `OffenseCode`, `Description` |
-| Penalty Minutes | `PenaltyMin` | (same PIM variants as above) |
-| Team ID | `PenaltyTeamId` | `TeamId` (confirmed to be WRONG — the API uses `PenaltyTeamId`, not `TeamId`) |
-| Time In | `TimeIn` | `TimeOff`, `Time`, `Start`, `StartTime`, `PenaltyTime`, `InfractionTime`, etc. |
-| Time Out | `TimeOut` | `TimeOn`, `End`, `EndTime`, `TimeServed`, `ReleaseTime`, etc. |
+| Concept | Confirmed |
+|---------|-----------|
+| Penalty Name | `PenaltyName` |
+| Penalty Minutes | `PenaltyMin` |
+| Team ID | `PenaltyTeamId` (NOT `TeamId`) |
+| Time In | `TimeIn` |
+| Time Out | `TimeOut` |
+| Minor/Major | `MinorMajor` |
 
 ### Contact & Social Fields (Team Raw Endpoint)
 
 The raw Team endpoint (no LimiterCode) returns social fields. Confirmed names use non-standard capitalization.
 
-| Concept | Confirmed | Speculative |
-|---------|-----------|-------------|
-| Facebook | `FaceBookAccount` | `FacebookAccount`, `FacebookUrl`, `FacebookURL`, `Facebook`, `FacebookPage`, `FacebookLink`, `SocialFacebook` |
-| Twitter/X | `TwitterAccount` | `TwitterUrl`, `TwitterURL`, `Twitter`, `TwitterHandle`, `TwitterLink`, `XUrl`, `XURL`, `SocialTwitter`, `SocialX` |
-| Instagram | `InstagramAccount` | `InstagramUrl`, `InstagramURL`, `Instagram`, `InstagramHandle`, `InstagramLink`, `SocialInstagram` |
-| YouTube | `YouTubeUrl` / `YoutubeUrl` | `YouTubeURL`, `YoutubeURL`, `YouTube`, `Youtube`, `YouTubeChannel`, `SocialYouTube` |
-| TikTok | (none confirmed) | `TikTokUrl`, `TiktokUrl`, `TikTokURL`, `TikTok`, `Tiktok`, `TikTokLink`, `SocialTikTok` |
-| Website | `WebSite` (capital S) | `WebsiteUrl`, `TeamWebsiteUrl`, `Website`, `TeamUrl`, `TeamWebsite`, `Url`, `WebsiteURL`, `WebAddress`, `HomePage`, `HomePageUrl` |
-| Home Sweater Color | `HomeSweaterColor` | `TeamColor1`, `TeamColour1`, `HomeColor`, `HomeColour1`, `PrimaryColor` |
-| Away Sweater Color | `AwaySweaterColor` | `TeamColor2`, `TeamColour2`, `AwayColor`, `AwayColour1`, `SecondaryColor` |
-| Home Facility | `HomeFacilityName` | `HomeFacility1Name`, `HomeFacility2Name`, `HomeFacility`, `HomeArena`, `HomeVenue` |
+| Concept | Confirmed | Notes |
+|---------|-----------|-------|
+| Facebook | `FaceBookAccount` | Capital B is correct |
+| Twitter/X | `TwitterAccount` | — |
+| Instagram | `InstagramAccount` | — |
+| YouTube | `YouTubeUrl` / `YoutubeUrl` | — |
+| TikTok | (none confirmed) | — |
+| Website | `WebSite` | Capital S is correct |
+| Home Sweater Color | `HomeSweaterColor` / `TeamColor1` | Both used |
+| Away Sweater Color | `AwaySweaterColor` / `TeamColor2` | Both used |
+| Home Facility | `HomeFacilityName` / `HomeFacility1Name` / `HomeFacility2Name` | All used |
+| Contact Name | `ContactName` | — |
+| Contact Email | `ContactEmail` | — |
+| Contact Phone | `ContactPhone` | — |
+| Head Coach | `HeadCoach` | — |
+| City | `City` | — |
 
 ### Team/Player Identity Fields
 
-| Concept | Confirmed | Speculative |
-|---------|-----------|-------------|
-| Player ID | `PlayerId` (registration-level) | `Id`, `MemberId`, `MemberPlayerId` |
-| Person ID | `PersonId` (person-level, used in Game API) | — |
-| Team Name | `TeamName` / `TeamShortName` / `FullTeamName` | — |
-| Standing Code | `StandingCategoryCode` | `StandingCode`, `CategoryCode` |
+| Concept | Confirmed | Notes |
+|---------|-----------|-------|
+| Player ID | `PlayerId` | Registration-level |
+| Person ID | `PersonId` | Person-level, used in Game API |
+| Team Player ID | `TeamPlayerId` | — |
+| Team ID | `TeamId` | — |
+| Home Team ID | `HomeTeamId` | — |
+| Visitor Team ID | `VisitorTeamId` | — |
+| Game ID | `GameId` | — |
+| Season ID | `SeasonId` | — |
+| Division ID | `DivisionId` | — |
+| Team Name | `TeamName` / `TeamShortName` / `FullTeamName` | Context-dependent |
+| Standing Code | `StandingCategoryCode` | — |
+| Division Name | `DivisionName` | — |
+| Photo Doc ID | `PhotoDocId` | — |
 
 ### Roster Entry Fields (Game Detail)
 
@@ -741,51 +837,62 @@ The raw Team endpoint (no LimiterCode) returns social fields. Confirmed names us
 | Person ID | `PersonId` | — |
 | Team Player ID | `TeamPlayerId` | — |
 | Jersey Number | `JerseyNumber` / `PlayerNumber` | Both used |
+| Position | `SportPositionName` | — |
 | Serving Suspension | `ServingSuspension` | — |
 | Suspension Note | `SuspensionNote` | — |
+| Alternate Captain | `IsAlternate` / `IsAssistantCaptain` | Both used |
+| Affiliate | `IsAffiliate` / `AffiliateFlag` | Both used |
 
-### Nested Container Searches (Highly Speculative)
+### Game Detail Fields
 
-The `deepResolveStr` function in `TeamsPageV1.tsx` searches through 15+ nested container names for contact data. **None of these are confirmed to exist** — they were AI-generated guesses:
+| Concept | Confirmed | Notes |
+|---------|-----------|-------|
+| Game Status | `GameStatus` | String: "Final", "In Progress", "Scheduled", etc. |
+| Home Score | `HomeScore` | Populated when `S` in LimiterCode |
+| Visitor Score | `VisitorScore` | Populated when `S` in LimiterCode |
+| Home Team Name | `HomeTeamName` | — |
+| Visitor Team Name | `VisitorTeamName` | — |
+| Opposing Team | `OpposingTeam` / `OpponentName` | Both used |
+| Is Home | `IsHome` | Boolean |
+| Shutout | `Shutout` | Boolean |
+| Power Play | `PowerPlay` | Boolean |
+| Standing Category | `StandingCategoryCode` | `regu`, `plyo`, `exhb`, etc. |
+| Game Score Info | `GameScoreInfo` | Formatted score string |
+| Decision | `Decision` | Goalie decision (W/L/T) |
 
-```
-TeamContacts, Contacts, Contact, ContactInfo, TeamContact,
-TeamLinks, Links, Link, TeamLink, SocialMedia, Social,
-TeamInfo, Info, Details, TeamDetails, TeamData,
-TeamWebLinks, WebLinks, ExternalLinks
-```
+### Player Bio Fields
 
-The `findLinkByType` function searches 9 array containers for typed link objects. **Also unconfirmed**:
-
-```
-TeamLinks, Links, Link, WebLinks, TeamWebLinks, ExternalLinks,
-SocialMediaLinks, SocialLinks, TeamContacts, Contacts
-```
+| Concept | Confirmed | Notes |
+|---------|-----------|-------|
+| First Name | `FirstName` | — |
+| Last Name | `LastName` | — |
+| Player Name | `PlayerName` / `Name` | Both used |
+| Birth Date | `BirthDate` | — |
+| Birth Year | `BirthYear` | — |
+| Age | `Age` | — |
+| Height | `Height` | — |
+| Weight | `Weight` | — |
+| Shoots | `Shoots` | — |
+| Home City | `HomeCityName` | — |
+| Home Province | `HomeProvStateCd` | — |
 
 ### Standings Fields
 
-| Concept | Confirmed | Speculative |
-|---------|-----------|-------------|
-| Games Won | `GamesWon` / `Wins` / `W` | `MatchesWon` |
-| Games Lost | `GamesLost` / `Losses` / `L` | `MatchesLost` |
-| Games Tied | `GamesTied` / `Ties` / `T` | `MatchesTied` |
-| Goals For | `GoalsFor` / `GF` | — |
-| Goals Against | `GoalsAgainst` / `GA` | — |
-| Overtime Losses | `OvertimeLosses` / `OTL` | `OTLosses` |
-| Games Defaulted | `GamesDefaulted` / `Defaults` / `Def` | — |
-| Points | `Points` / `Pts` | — |
-| Goal Differential | (none confirmed) | `GoalDifference`, `GoalsDifference`, `GoalDifferential`, `Diff` |
-| PIM | (unconfirmed — codebase logs at runtime to discover) | `PenaltyMins`, `PenaltyMinutes`, `Penalties`, `PIM` |
-
-### Franchise Certificate Fields
-
-The `FranchiseCertificate` component tries many variants for financial fields. **All are speculative** — none confirmed:
-
-| Concept | Variants Tried |
-|---------|----------------|
-| Cheque Payable To | `ChequePayableTo`, `PayableTo`, `ChequesPayable`, `ChequePayable`, `PayableToName`, `ChqPayableTo` |
-| E-Transfer Email | `EtransferEmail`, `EFTEMailAddress`, `EFTEmailAddress`, `EftEmail`, `EFTEmail`, `EFT_Email`, `EftEMailAddress`, `EFTEMail` |
-| Member Since | `MemberSinceYear`, `MemberSince`, `RMLLMemberSince`, `MemberYear` |
+| Concept | Confirmed | Notes |
+|---------|-----------|-------|
+| Rank | `Rank` / `StandingRank` / `Position` / `R` | From API, not calculated locally |
+| Games Won | `GamesWon` / `Wins` / `W` | All used |
+| Games Lost | `GamesLost` / `Losses` / `L` | All used |
+| Games Tied | `GamesTied` / `Ties` | Both used |
+| Goals For | `GoalsFor` / `GF` | Both used |
+| Goals Against | `GoalsAgainst` / `GA` | Both used |
+| Overtime Losses | `OvertimeLosses` | — |
+| Games Defaulted | `GamesDefaulted` / `Defaults` / `Def` | All used |
+| Points | `Points` / `Pts` | Both used — no local fallback |
+| PIM | `PenaltyMins` / `PIM` | Both used |
+| Points Percentage | `PointsPercentage` | — |
+| Streak | `StreakInfo` / `Streak` | Both used |
+| Goal Differential | `GoalDifferential` / `GoalDiff` / `GD` / computed | API field preferred, fallback to `gf - ga` |
 
 ### TypeScript Interface vs. Raw API Names
 
@@ -799,7 +906,7 @@ The `PlayerSeasonStats` interface in `types.ts` uses **normalized** field names 
 | `JerseyNumber` | `PlayerNo` | Interface uses conventional name; API uses different term |
 | `Position` | `SportPositionName` | Interface uses generic name; API uses specific |
 
-This mismatch means the resolver functions must exist to bridge `types.ts` names to API names — but most of the extra variants beyond the confirmed fields are unnecessary.
+This mismatch means the resolver functions must exist to bridge `types.ts` names to API names.
 
 ---
 
@@ -837,7 +944,7 @@ The API uses numeric status codes on game objects.
 
 ## Standing Category Codes
 
-The API returns standing category codes in many formats. Here are the known variants:
+The API returns standing category codes in many formats:
 
 | Standard Code | API Variants | Meaning |
 |---------------|-------------|---------|
@@ -879,13 +986,13 @@ https://www.sportzsoft.com/admin/webAdmin.dll/GetImageDoc?DocId={docId}
 
 The `DocId` comes from fields like:
 - `PrimaryTeamLogoURL` (teams) — may be a full URL or just a DocId
-- `PhotoDocId` or `PersonPhotoDocId` (players)
+- `PhotoDocId` (players)
 
 Team logos may also be provided as full URLs via the `PrimaryTeamLogoURL` field on the Team object. The code checks whether the value is already a full URL before prepending the image server base.
 
 ---
 
-## Quick Reference: All Endpoints
+## Quick Reference: All RMLL Endpoints
 
 | Method | Path | Purpose |
 |--------|------|---------|
@@ -899,8 +1006,10 @@ Team logos may also be provided as full URLs via the `PrimaryTeamLogoURL` field 
 | GET | `/Team/{id}/Schedule` | Team-specific schedule |
 | GET | `/Player/{id}` | Player profile with career stats |
 | GET | `/PlayerStats` | Bulk player/goalie stats |
+| GET | `/PlayerStatsCareer` | Career stats summary |
 | GET | `/TeamFranchiseTransaction` | Trades, signings, releases |
 | GET | `/TeamFranchise/{id}` | Franchise details, protected list |
 | GET | `/DivisionDraft` | Draft picks and entries |
-| GET | `/Facilities/{id}` | Organization facilities |
+| GET | `/Facilities/{id}` | Organization facilities (Direct) |
+| GET | `/TopScoringLeaders` | Scoring leaders (Direct) |
 | GET | `/getSeasons?OrgID={id}` | Legacy seasons endpoint |
