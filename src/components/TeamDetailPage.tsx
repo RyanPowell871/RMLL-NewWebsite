@@ -1136,7 +1136,7 @@ export function TeamDetailPage({ teamId, teamName, season, teamLogo, divisionId,
       status: isExhibition ? 'EXHIBITION' as const : isGameFinal ? 'FINAL' : isGameLive ? 'LIVE' : 'UPCOMING',
       homeLogo: game.HomeTeamLogoURL || teamLogosMap[game.HomeTeamId] || '',
       awayLogo: game.VisitorTeamLogoURL || teamLogosMap[game.VisitorTeamId] || '',
-      division: game.DivisionName || divisionName,
+      division: game.DivisionName || (game.DivisionId && DIVISION_NAMES[game.DivisionId]) || divisionName,
       location: game.FacilityName,
       venue: game.FacilityName
     };

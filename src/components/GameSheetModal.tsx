@@ -7,7 +7,7 @@ import { exportGameToCalendar, type GameForCalendar } from '../utils/calendar';
 import { exportGameSheetPDF, type GameSheetPDFData } from '../utils/gameSheetPdf';
 import rmllShieldLogo from '../assets/mainlogo.png';
 import { useGameDetails } from '../hooks/useGameDetails';
-import { parseDateAsLocal, type ScoringStats, type GoalieStats, type PenaltyStats, type RosterPlayer as APIRosterPlayer } from '../services/sportzsoft';
+import { parseDateAsLocal, DIVISION_NAMES, type ScoringStats, type GoalieStats, type PenaltyStats, type RosterPlayer as APIRosterPlayer } from '../services/sportzsoft';
 
 // Parse a datetime string's TIME portion as local (avoids UTC timezone shift).
 // SportzSoft returns e.g. "2025-06-15T19:00:00" or "2025-06-15T19:00:00.000Z"
@@ -681,9 +681,16 @@ export function GameSheetModal({ game, open, onClose }: GameSheetModalProps) {
       ? ((details as any).BoxScoreVisistor ?? awayScoreRaw)
       : awayScoreRaw;
 
+    // Resolve division name: prefer existing, then API DivisionName, then lookup by DivisionId
+    const division = game.division
+      || (details as any).DivisionName
+      || ((details as any).DivisionId && DIVISION_NAMES[(details as any).DivisionId as number])
+      || '';
+
     return {
       ...game,
       status,
+      division,
       homeScore,
       awayScore,
       homeTeam: details.HomeTeamName || game.homeTeam,
