@@ -882,12 +882,39 @@ export function TeamDetailPage({ teamId, teamName, season, teamLogo, divisionId,
       .slice(0, 4);
   }, [apiGames]);
 
+  // Build dynamic division name lookup from season structure (same pattern as useScheduleData)
+  const dynamicDivisionNames = useMemo(() => {
+    const map: Record<number, string> = {};
+    seasons.forEach(season => {
+      if (season.Groups) {
+        season.Groups.forEach((group: any) => {
+          const groupName = group.DivGroupName || group.SeasonGroupName || '';
+          group.Divisions?.forEach((div: any) => {
+            if (div.DivisionId && !map[div.DivisionId]) {
+              map[div.DivisionId] = div.DivisionName || div.DivisionDescription || groupName;
+            }
+          });
+        });
+      }
+    });
+    return map;
+  }, [seasons]);
+
+  // Resolve a division name from any DivisionId using dynamic lookup + static fallback
+  const resolveDivisionName = (divId: number | undefined | null): string => {
+    if (!divId) return '';
+    return dynamicDivisionNames[divId] || DIVISION_NAMES[divId] || '';
+  };
+
   // Determine Division Name (from prop or from data)
   const divisionName = useMemo(() => {
-    if (divisionId && DIVISION_NAMES[divisionId]) return DIVISION_NAMES[divisionId];
+    if (divisionId) {
+      const resolved = resolveDivisionName(divisionId);
+      if (resolved) return resolved;
+    }
     if (fullResponse?.DivisionName) return fullResponse.DivisionName;
     return '';
-  }, [divisionId, fullResponse]);
+  }, [divisionId, fullResponse, dynamicDivisionNames]);
 
   // --- New Enhancements ---
   
@@ -1136,7 +1163,7 @@ export function TeamDetailPage({ teamId, teamName, season, teamLogo, divisionId,
       status: isExhibition ? 'EXHIBITION' as const : isGameFinal ? 'FINAL' : isGameLive ? 'LIVE' : 'UPCOMING',
       homeLogo: game.HomeTeamLogoURL || teamLogosMap[game.HomeTeamId] || '',
       awayLogo: game.VisitorTeamLogoURL || teamLogosMap[game.VisitorTeamId] || '',
-      division: game.DivisionName || (game.DivisionId && DIVISION_NAMES[game.DivisionId]) || divisionName,
+      division: game.DivisionName || resolveDivisionName(game.DivisionId) || divisionName,
       location: game.FacilityName,
       venue: game.FacilityName
     };

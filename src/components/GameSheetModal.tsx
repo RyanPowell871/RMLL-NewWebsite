@@ -7,6 +7,7 @@ import { exportGameToCalendar, type GameForCalendar } from '../utils/calendar';
 import { exportGameSheetPDF, type GameSheetPDFData } from '../utils/gameSheetPdf';
 import rmllShieldLogo from '../assets/mainlogo.png';
 import { useGameDetails } from '../hooks/useGameDetails';
+import { useSeasons } from '../hooks/useSeasons';
 import { parseDateAsLocal, DIVISION_NAMES, type ScoringStats, type GoalieStats, type PenaltyStats, type RosterPlayer as APIRosterPlayer } from '../services/sportzsoft';
 
 // Parse a datetime string's TIME portion as local (avoids UTC timezone shift).
@@ -631,15 +632,39 @@ function transformGoalieStats(
 }
 
 export function GameSheetModal({ game, open, onClose }: GameSheetModalProps) {
+  // Build dynamic division name lookup from season structure (for resolving division from DivisionId)
+  const { seasons } = useSeasons();
+  const dynamicDivisionNames = useMemo(() => {
+    const map: Record<number, string> = {};
+    seasons.forEach(season => {
+      if (season.Groups) {
+        season.Groups.forEach((group: any) => {
+          const groupName = group.DivGroupName || group.SeasonGroupName || '';
+          group.Divisions?.forEach((div: any) => {
+            if (div.DivisionId && !map[div.DivisionId]) {
+              map[div.DivisionId] = div.DivisionName || div.DivisionDescription || groupName;
+            }
+          });
+        });
+      }
+    });
+    return map;
+  }, [seasons]);
+
+  const resolveDivisionName = (divId: number | undefined | null): string => {
+    if (!divId) return '';
+    return dynamicDivisionNames[divId] || DIVISION_NAMES[divId] || '';
+  };
+
   // Fetch game details from API when modal opens
   // The game.id is the actual numeric GameId from the API (stored as string)
   // The game.gameNumber is the display number like "31-Apr"
   const gameId = game?.id ? parseInt(game.id) : null;
-  
+
   // Only fetch if we have a valid game ID and it's not an exhibition game
   const isExhibition = game?.status === 'EXHIBITION';
   const shouldFetch = open && gameId !== null && !isNaN(gameId as number) && !isExhibition;
-  
+
   const { gameDetails, loading, error } = useGameDetails({ 
     gameId: shouldFetch ? gameId as number : null,
     homeTeamId: game?.homeTeamId,
@@ -681,10 +706,10 @@ export function GameSheetModal({ game, open, onClose }: GameSheetModalProps) {
       ? ((details as any).BoxScoreVisistor ?? awayScoreRaw)
       : awayScoreRaw;
 
-    // Resolve division name: prefer existing, then API DivisionName, then lookup by DivisionId
+    // Resolve division name: prefer existing, then API DivisionName, then dynamic/static lookup by DivisionId
     const division = game.division
       || (details as any).DivisionName
-      || ((details as any).DivisionId && DIVISION_NAMES[(details as any).DivisionId as number])
+      || resolveDivisionName((details as any).DivisionId)
       || '';
 
     return {
@@ -717,7 +742,7 @@ export function GameSheetModal({ game, open, onClose }: GameSheetModalProps) {
       officialShotTimerName: (details as any).OfficialShotTimerName || '',
       officialAlternateRefereeName: (details as any).OfficialAlternateRefereeName || '',
     };
-  }, [game, gameDetails]);
+  }, [game, gameDetails, dynamicDivisionNames]);
 
   if (!game || !displayGame) return null;
 
