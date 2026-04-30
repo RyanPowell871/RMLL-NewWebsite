@@ -10,7 +10,7 @@ import { ImageWithFallback } from './figma/ImageWithFallback';
 
 const TOP_N = 5;
 const MIN_GP_SKATERS = 1;
-const MIN_GP_GOALIES = 2;
+const MIN_GP_GOALIES = 1;
 
 interface LeaderEntry {
   rank: number;

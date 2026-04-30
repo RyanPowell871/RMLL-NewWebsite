@@ -685,7 +685,17 @@ export default function PlayerProfilePage() {
                         <Calendar className="w-5 h-5" style={{ color: primaryColor }} />
                         Game Log
                     </h3>
-                    <span className="text-xs font-bold text-gray-500 uppercase tracking-wider">{profile.gameLog.length} Games Played</span>
+                    {isGoalieView ? (() => {
+                        const gamesDressed = profile.gameLog.length;
+                        const gamesPlayed = profile.gameLog.filter(g => (g.minutes || 0) > 0).length;
+                        return (
+                            <span className="text-xs font-bold text-gray-500 uppercase tracking-wider">
+                                GP: {gamesPlayed} | GD: {gamesDressed}
+                            </span>
+                        );
+                    })() : (
+                        <span className="text-xs font-bold text-gray-500 uppercase tracking-wider">{profile.gameLog.length} Games Played</span>
+                    )}
                  </div>
                  
                  {profile.gameLog.length > 0 ? (

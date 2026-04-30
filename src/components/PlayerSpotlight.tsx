@@ -46,8 +46,8 @@ export function PlayerSpotlight() {
     const result: SpotlightPlayer[] = [];
     const usedPlayerIds = new Set<number>();
 
-    // Minimum GP filter for meaningful stats
-    const minGP = 3;
+    // Minimum GP filter — set low to include players early in the season
+    const minGP = 1;
     const qualifiedPlayers = players.filter(p => p.gamesPlayed >= minGP);
     const qualifiedGoalies = goalies.filter(g => g.gamesPlayed >= minGP);
 
