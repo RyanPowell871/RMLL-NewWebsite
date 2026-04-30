@@ -494,19 +494,38 @@ function extractCoachingFromGameRoster(roster: any[], teamId: number): CoachingS
     return 'STAFF';
   }
 
-  const allStaff = staff.map(p => ({ role: inferRole(p), name: cleanName(p) }));
+  const allStaff = staff.map(p => ({ role: inferRole(p), name: cleanName(p), personId: p.PersonId }));
 
-  const headCoach = allStaff.find(s => s.role === 'COACH');
-  const assistantCoaches = allStaff.filter(s => s.role === 'ASST_COACH' || (s.role === 'COACH' && s !== headCoach));
-  const trainer = allStaff.find(s => s.role === 'TRAINER');
-  const manager = allStaff.find(s => s.role === 'MANAGER');
+  // Deduplicate: a player-coach has two roster entries (player + coach).
+  // If someone appears in both player and staff lists, keep only the staff entry.
+  // Group by PersonId (most reliable) or by name (fallback) and keep only one entry per person.
+  const seen = new Map<string, typeof allStaff[0]>();
+  for (const entry of allStaff) {
+    const key = entry.personId ? `pid-${entry.personId}` : entry.name;
+    const existing = seen.get(key);
+    // If we already have this person, prefer the coaching role entry
+    if (existing && existing.role === entry.role) continue; // exact duplicate
+    if (existing && (existing.role === 'COACH' || existing.role === 'ASST_COACH')) continue; // already have a coaching entry
+    if (existing && (entry.role === 'COACH' || entry.role === 'ASST_COACH')) {
+      // Prefer coaching entry over other staff types
+      seen.set(key, entry);
+      continue;
+    }
+    if (!existing) seen.set(key, entry);
+  }
+  const dedupedStaff = Array.from(seen.values());
+
+  const headCoach = dedupedStaff.find(s => s.role === 'COACH');
+  const assistantCoaches = dedupedStaff.filter(s => s.role === 'ASST_COACH' || (s.role === 'COACH' && s !== headCoach));
+  const trainer = dedupedStaff.find(s => s.role === 'TRAINER');
+  const manager = dedupedStaff.find(s => s.role === 'MANAGER');
 
   return {
     headCoach: headCoach?.name || 'TBD',
     assistantCoaches: assistantCoaches.map(ac => ac.name),
     trainer: trainer?.name || '',
     manager: manager?.name || '',
-    allStaff
+    allStaff: dedupedStaff
   };
 }
 
