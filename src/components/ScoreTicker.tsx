@@ -520,7 +520,7 @@ export function ScoreTicker() {
                           ? 'text-gray-900'
                           : 'text-gray-500'
                       }`}>
-                        {!hasScores(game.status) ? '-' : game.awayScore}
+                        {!hasScores(game.status) ? '-' : game.awayScore ?? 0}
                       </span>
                     </div>
 
@@ -542,7 +542,7 @@ export function ScoreTicker() {
                           ? 'text-gray-900'
                           : 'text-gray-500'
                       }`}>
-                        {!hasScores(game.status) ? '-' : game.homeScore}
+                        {!hasScores(game.status) ? '-' : game.homeScore ?? 0}
                       </span>
                     </div>
                   </div>

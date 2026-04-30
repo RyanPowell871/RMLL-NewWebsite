@@ -20,24 +20,26 @@ export type GameStatusEnum = 'FINAL' | 'LIVE' | 'UPCOMING' | 'EXHIBITION' | 'SUS
  * @param isExhibition - Optional boolean if exhibition is already determined
  */
 export function resolveGameStatus(
-  gameStatus: string | undefined | null,
+  gameStatus: string | number | undefined | null,
   standingCategoryCode?: string | undefined | null,
 ): GameStatusEnum {
   // Exhibition takes priority
   if (standingCategoryCode?.toLowerCase() === 'exhb') return 'EXHIBITION';
 
+  // If a numeric GameStatusCodeId is passed, convert to string first
+  if (typeof gameStatus === 'number') {
+    return resolveGameStatusFromCode(gameStatus);
+  }
+
   const s = (gameStatus || '').toLowerCase().trim();
 
-  // Final / completed / played
-  if (s === 'final' || s === 'played' || s === 'completed' || s === 'final (ot)' || s === 'final (so)') {
+  // Final / completed / played / defaulted
+  if (s === 'final' || s === 'played' || s === 'completed' || s === 'final (ot)' || s === 'final (so)' || s === 'defaulted' || s === 'default') {
     return 'FINAL';
   }
 
-  // In progress (various period codes from API)
-  if (s === 'in progress' || s === 'live' || s === 'in-progress' ||
-      s === 'pre-game' || s === 'period 1' || s === 'period 1 intermission' ||
-      s === 'period 2' || s === 'period 2 intermission' ||
-      s === 'period 3' || s === 'overtime' || s === 'shootout') {
+  // In progress (various period codes from Game Detail API)
+  if (s === 'in progress' || s === 'live' || s === 'in-progress') {
     return 'LIVE';
   }
 
@@ -50,13 +52,41 @@ export function resolveGameStatus(
   // Forfeit
   if (s === 'forfeit') return 'FORFEIT';
 
-  // Default (SportzSoft uses this for forfeit/default losses)
-  if (s === 'default') return 'DEFAULT';
-
   // Postponed — treat as a final-like completed state
   if (s === 'postponed') return 'FINAL';
 
   // Everything else (Not Played, Scheduled, empty, unknown) → UPCOMING
+  return 'UPCOMING';
+}
+
+/**
+ * Resolve status from numeric GameStatusCodeId.
+ * Only maps codes that the Schedule endpoint actually returns.
+ * Period-level codes (100-109) from the Game Detail endpoint default to UPCOMING.
+ */
+function resolveGameStatusFromCode(code: number): GameStatusEnum {
+  // Final codes
+  if (code === 110 || code === 111 || code === 112 || code === 118 || code === 120 || code === 121) {
+    return 'FINAL';
+  }
+  // In progress
+  if (code === 114 || code === 115) {
+    return 'LIVE';
+  }
+  // Completed (treat as Final)
+  if (code === 116 || code === 117) {
+    return 'FINAL';
+  }
+  // Suspended
+  if (code === 113) return 'SUSPENDED';
+  // Forfeit
+  if (code === 119) return 'FORFEIT';
+  // Cancelled
+  if (code === 122) return 'CANCELLED';
+  // Postponed
+  if (code === 123) return 'FINAL';
+
+  // All other codes (100-109, 0, undefined, etc.) → UPCOMING
   return 'UPCOMING';
 }
 

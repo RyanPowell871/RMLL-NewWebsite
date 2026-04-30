@@ -404,7 +404,7 @@ export function ScheduleSection() {
       game.division,
       game.homeTeam,
       game.awayTeam,
-      hasScores(game.status) ? `${game.homeScore}-${game.awayScore}` : '-',
+      hasScores(game.status) ? `${game.homeScore ?? 0}-${game.awayScore ?? 0}` : '-',
       game.venue,
       game.status,
       `"${(game.schedulingComments || '').replace(/"/g, '""')}"`,
@@ -1770,7 +1770,7 @@ const convertedAllGames = allSeasonGames.map((apiGame) => ({
                             </div>
                           </td>
                           <td className="px-3 py-3 text-xs font-semibold text-gray-700">
-                            {hasScores(game.status) ? `${game.homeScore} - ${game.awayScore}` : '-'}
+                            {hasScores(game.status) ? `${game.homeScore ?? 0} - ${game.awayScore ?? 0}` : '-'}
                           </td>
                           <td className="px-3 py-3">
                             <span className={`text-xs font-bold px-2 py-1 rounded ${getStatusBadgeStyle(game.status)}`}>
