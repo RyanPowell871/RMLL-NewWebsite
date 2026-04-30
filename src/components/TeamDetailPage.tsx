@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect, Fragment } from 'react';
+import { useState, useMemo, useEffect, useRef, Fragment } from 'react';
 import { MapPin, ArrowLeft, Download, Calendar as CalendarIcon, Trophy, Shield, Users, Info, ChevronLeft, ChevronRight, Loader2, ExternalLink, TrendingUp, Clock, User, Facebook, Instagram, Youtube, Globe, MessageSquare, FileText, FileSpreadsheet } from 'lucide-react';
 import { GameSheetModal } from './GameSheetModal';
 import { FacilityMapLink } from './FacilityMapLink';
@@ -882,6 +882,23 @@ export function TeamDetailPage({ teamId, teamName, season, teamLogo, divisionId,
       .slice(0, 4);
   }, [apiGames]);
 
+  // Auto-scroll past completed games on initial load — they stay in the list but scroll out of view
+  const gameTickerRef = useRef<HTMLDivElement>(null);
+  const hasScrolledToCurrent = useRef(false);
+  useEffect(() => {
+    if (hasScrolledToCurrent.current || apiGames.length === 0) return;
+    const now = new Date();
+    now.setHours(0, 0, 0, 0);
+    const firstCurrentIdx = apiGames.findIndex(g => new Date(g.GameDate) >= now);
+    if (firstCurrentIdx <= 0) return; // no past games or already at start
+    hasScrolledToCurrent.current = true;
+    // Each card is roughly 296px (280 + 16 gap) — scroll so last completed game peeks from left
+    const scrollTo = Math.max(0, (firstCurrentIdx - 1) * 296);
+    setTimeout(() => {
+      gameTickerRef.current?.scrollTo({ left: scrollTo, behavior: 'smooth' });
+    }, 100);
+  }, [apiGames]);
+
   // Build dynamic division name lookup from season structure (same pattern as useScheduleData)
   const dynamicDivisionNames = useMemo(() => {
     const map: Record<number, string> = {};
@@ -1649,7 +1666,7 @@ export function TeamDetailPage({ teamId, teamName, season, teamLogo, divisionId,
       {/* Upcoming Games Ticker */}
       <div className="bg-white border-b-2 border-gray-200 py-3 overflow-hidden">
         <div className="max-w-[1600px] mx-auto px-4 sm:px-6">
-          <div className="flex gap-6 overflow-x-auto scrollbar-hide">
+          <div ref={gameTickerRef} className="flex gap-6 overflow-x-auto scrollbar-hide">
             {apiGames.map((game, i) => {
               const isHomeTeam = game.HomeTeamId === currentTeamId;
               const opponentId = isHomeTeam ? game.VisitorTeamId : game.HomeTeamId;

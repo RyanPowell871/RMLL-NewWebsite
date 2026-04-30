@@ -175,18 +175,11 @@ export function ScoreTicker() {
   
   // Filter games for the ticker:
   // 1. Remove exhibition games that are complete and have no scores
-  // 2. Only show games from today or future (completed games disappear at midnight on game day)
-  // 3. Sort chronologically (ascending by date)
+  // 2. Show ALL season games in chronological order — completed games are scrolled out of view
   const apiGames = useMemo(() => {
     if (divisionFilteredGames.length === 0) return [];
 
-    const now = new Date();
-    now.setHours(0, 0, 0, 0);
-
     const filtered = divisionFilteredGames.filter((game) => {
-      const gameDate = new Date(game.GameDate);
-      gameDate.setHours(0, 0, 0, 0);
-
       const isExhibition = game.StandingCategoryCode?.toLowerCase() === 'exhb';
       const resolvedStatus = resolveGameStatus(game.GameStatus, game.StandingCategoryCode);
       const isComplete = isGameComplete(resolvedStatus);
@@ -199,8 +192,7 @@ export function ScoreTicker() {
         return false;
       }
 
-      // Drop games at midnight of the day they took place
-      return gameDate >= now;
+      return true;
     });
 
     // Sort chronologically (ascending)
@@ -209,13 +201,14 @@ export function ScoreTicker() {
     );
   }, [divisionFilteredGames]);
 
-  // Auto-scroll to the "current" region on load: find the first game that is today or in the future
+  // Auto-scroll past completed games on load: find the first game that is today or in the future
+  // This keeps completed games in the list but scrolls them out of view at midnight
   const initialScrollIndex = useMemo(() => {
     const now = new Date();
     now.setHours(0, 0, 0, 0);
     const idx = apiGames.findIndex(g => new Date(g.GameDate) >= now);
-    // If found, back up a couple so user can see upcoming games too
-    return idx > 0 ? Math.max(0, idx - 2) : 0;
+    // If found, back up 1 so the last completed game peeks in from the left
+    return idx > 0 ? Math.max(0, idx - 1) : 0;
   }, [apiGames]);
 
   // Update local division when favorite changes
