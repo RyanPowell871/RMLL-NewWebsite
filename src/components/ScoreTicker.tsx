@@ -174,50 +174,48 @@ export function ScoreTicker() {
 
   
   // Filter games for the ticker:
-  // 1. Remove exhibition games that are FINAL and have no scores
-  // 2. Show ALL games (past, today, future) — completed games stay visible
-  // 3. Sort: completed games first (newest→oldest), then upcoming games (soonest→later)
+  // 1. Remove exhibition games that are complete and have no scores
+  // 2. Only show games from today or future (completed games disappear at midnight on game day)
+  // 3. Sort chronologically (ascending by date)
   const apiGames = useMemo(() => {
     if (divisionFilteredGames.length === 0) return [];
 
+    const now = new Date();
+    now.setHours(0, 0, 0, 0);
+
     const filtered = divisionFilteredGames.filter((game) => {
+      const gameDate = new Date(game.GameDate);
+      gameDate.setHours(0, 0, 0, 0);
+
       const isExhibition = game.StandingCategoryCode?.toLowerCase() === 'exhb';
       const resolvedStatus = resolveGameStatus(game.GameStatus, game.StandingCategoryCode);
-      const isFinal = resolvedStatus === 'FINAL' || resolvedStatus === 'FORFEIT' || resolvedStatus === 'DEFAULT';
+      const isComplete = isGameComplete(resolvedStatus);
       const hasScoreData = game.HomeScore !== undefined && game.HomeScore !== null &&
                        game.VisitorScore !== undefined && game.VisitorScore !== null;
       const bothScoresZero = hasScoreData && game.HomeScore === 0 && game.VisitorScore === 0;
 
-      // Filter out exhibition games that are FINAL and have no scores
-      if (isExhibition && isFinal && (!hasScoreData || bothScoresZero)) {
+      // Filter out exhibition games that are complete and have no scores
+      if (isExhibition && isComplete && (!hasScoreData || bothScoresZero)) {
         return false;
       }
 
-      return true;
+      // Drop games at midnight of the day they took place
+      return gameDate >= now;
     });
 
-    // Separate completed and upcoming games, then sort each group
-    const completed = filtered.filter(g => {
-      const status = resolveGameStatus(g.GameStatus, g.StandingCategoryCode);
-      return isGameComplete(status);
-    }).sort((a, b) => new Date(b.GameDate).getTime() - new Date(a.GameDate).getTime()); // newest first
-
-    const upcoming = filtered.filter(g => {
-      const status = resolveGameStatus(g.GameStatus, g.StandingCategoryCode);
-      return !isGameComplete(status);
-    }).sort((a, b) => new Date(a.GameDate).getTime() - new Date(b.GameDate).getTime()); // soonest first
-
-    return [...completed, ...upcoming];
+    // Sort chronologically (ascending)
+    return filtered.sort(
+      (a, b) => new Date(a.GameDate).getTime() - new Date(b.GameDate).getTime()
+    );
   }, [divisionFilteredGames]);
-  
-  // Auto-scroll to the first upcoming game on load (completed games are before it)
+
+  // Auto-scroll to the "current" region on load: find the first game that is today or in the future
   const initialScrollIndex = useMemo(() => {
-    const idx = apiGames.findIndex(g => {
-      const status = resolveGameStatus(g.GameStatus, g.StandingCategoryCode);
-      return !isGameComplete(status);
-    });
-    // If found, back up 1 so the last completed game is partially visible
-    return idx > 0 ? Math.max(0, idx - 1) : 0;
+    const now = new Date();
+    now.setHours(0, 0, 0, 0);
+    const idx = apiGames.findIndex(g => new Date(g.GameDate) >= now);
+    // If found, back up a couple so user can see upcoming games too
+    return idx > 0 ? Math.max(0, idx - 2) : 0;
   }, [apiGames]);
 
   // Update local division when favorite changes
@@ -459,14 +457,13 @@ export function ScoreTicker() {
                 const isAwayWin = game.awayScore > game.homeScore && isGameComplete(game.status);
                 const isHomeWin = game.homeScore > game.awayScore && isGameComplete(game.status);
                 const isInProgress = inProgressDivisionIds.has(game.divisionId);
-                const isCompleted = isGameComplete(game.status);
 
                 return (
                   <div
                     key={`${game.id}-${index}`}
                     className={`group flex-shrink-0 bg-white hover:bg-gray-50 rounded-lg px-3 sm:px-4 py-2.5 sm:py-3 cursor-pointer transition-all border-2 hover:border-red-600 hover:shadow-lg min-w-[260px] sm:min-w-[280px] lg:min-w-[320px] snap-start ${
                       isInProgress ? 'border-yellow-300' : 'border-gray-200'
-                    } ${isCompleted ? 'opacity-75' : ''}`}
+                    }`}
                     onClick={() => setSelectedGame(game)}
                   >
                     {/* Date, Location and Status */}
