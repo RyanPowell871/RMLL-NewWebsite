@@ -280,7 +280,7 @@ export function ScoreTicker() {
       awayRecord: '',
       date: formatGameDate(apiGame.GameDate),
       fullDate: apiGame.GameDate, // Pass full date for API lookups
-      time: (() => { const s = resolveGameStatus(apiGame.GameStatus, apiGame.StandingCategoryCode); return s === 'FINAL' || s === 'FORFEIT' || s === 'DEFAULT' || s === 'DOUBLE_DEFAULT' || s === 'CANCELLED' ? 'FINAL' : s === 'LIVE' ? 'LIVE' : (parseGameTime(apiGame.StartTime) || parseGameTime(apiGame.GameDate)); })(),
+      time: (() => { const s = resolveGameStatus(apiGame.GameStatus, apiGame.StandingCategoryCode); return s === 'FINAL' ? 'FINAL' : s === 'FORFEIT' ? 'FORFEIT' : s === 'DEFAULT' ? 'DEFAULT' : s === 'DOUBLE_DEFAULT' ? 'DBL DEF' : s === 'CANCELLED' ? 'CANCELLED' : s === 'LIVE' ? 'LIVE' : (parseGameTime(apiGame.StartTime) || parseGameTime(apiGame.GameDate)); })(),
       status: resolveGameStatus(apiGame.GameStatus, apiGame.StandingCategoryCode),
       homeLogo: apiGame.HomeTeamLogoURL || rockiesLogo, // Use API logo URL or fallback to default
       awayLogo: apiGame.VisitorTeamLogoURL || shamrocksLogo, // Use API logo URL or fallback to default
@@ -525,8 +525,14 @@ export function ScoreTicker() {
                           className={`text-[10px] sm:text-xs font-bold px-2 sm:px-2.5 py-0.5 rounded tracking-wider ${
                             game.status === 'LIVE'
                               ? 'bg-red-600 text-white animate-pulse'
-                              : game.status === 'FINAL' || game.status === 'FORFEIT' || game.status === 'DEFAULT' || game.status === 'DOUBLE_DEFAULT'
+                              : game.status === 'FINAL'
                               ? 'bg-gray-800 text-white'
+                              : game.status === 'FORFEIT'
+                              ? 'bg-orange-700 text-white'
+                              : game.status === 'DEFAULT'
+                              ? 'bg-orange-600 text-white'
+                              : game.status === 'DOUBLE_DEFAULT'
+                              ? 'bg-orange-500 text-white'
                               : game.status === 'EXHIBITION'
                               ? 'bg-amber-600 text-white'
                               : game.status === 'SUSPENDED'
