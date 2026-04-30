@@ -96,6 +96,7 @@ interface Game {
   homeTeamDivisionId?: number; // Home team's division — for crossover game detection
   visitorTeamDivisionId?: number; // Visitor team's division — for crossover game detection
   hasScoreData?: boolean; // Whether actual score data exists (not null→0 conversion)
+  defaultingTeamId?: number; // Team that takes the loss in a forfeit/default
 }
 
 // Status badge styling and labels
@@ -127,9 +128,28 @@ function getStatusLabel(status: string): string {
   }
 }
 
-/** Returns true if the game has a definitive winner (has score data, not double default). */
-function hasWinner(status: string, hasScoreData?: boolean): boolean {
-  return isGameComplete(status) && status !== 'DOUBLE_DEFAULT' && (hasScoreData !== false);
+/** Determine if away team won, considering DefaultingTeamId for default/forfeit games. */
+function isAwayWinner(game: { status: string; awayScore: number; homeScore: number; homeTeamId?: number; visitorTeamId?: number; defaultingTeamId?: number; hasScoreData?: boolean }): boolean {
+  if (game.status === 'DOUBLE_DEFAULT') return false;
+  if (!isGameComplete(game.status)) return false;
+  // For DEFAULT/FORFEIT games, use DefaultingTeamId (the team that took the loss)
+  if ((game.status === 'DEFAULT' || game.status === 'FORFEIT') && game.defaultingTeamId) {
+    return game.defaultingTeamId === game.homeTeamId; // Away wins if home defaulted
+  }
+  // For other complete games, use score comparison
+  return (game.hasScoreData !== false) && game.awayScore > game.homeScore;
+}
+
+/** Determine if home team won, considering DefaultingTeamId for default/forfeit games. */
+function isHomeWinner(game: { status: string; awayScore: number; homeScore: number; homeTeamId?: number; visitorTeamId?: number; defaultingTeamId?: number; hasScoreData?: boolean }): boolean {
+  if (game.status === 'DOUBLE_DEFAULT') return false;
+  if (!isGameComplete(game.status)) return false;
+  // For DEFAULT/FORFEIT games, use DefaultingTeamId (the team that took the loss)
+  if ((game.status === 'DEFAULT' || game.status === 'FORFEIT') && game.defaultingTeamId) {
+    return game.defaultingTeamId === game.visitorTeamId; // Home wins if visitor defaulted
+  }
+  // For other complete games, use score comparison
+  return (game.hasScoreData !== false) && game.homeScore > game.awayScore;
 }
 
 export function ScheduleSection() {
@@ -885,6 +905,7 @@ const convertedAllGames = allSeasonGames.map((apiGame) => ({
       homeTeamDivisionId: apiGame.HomeTeamDivisionId || teamDivisionMap.get(apiGame.HomeTeamId),
       visitorTeamDivisionId: apiGame.VisitorTeamDivisionId || teamDivisionMap.get(apiGame.VisitorTeamId),
       hasScoreData: hasScores,
+      defaultingTeamId: apiGame.DefaultingTeamId || undefined,
     };
   });
 
@@ -1738,8 +1759,8 @@ const convertedAllGames = allSeasonGames.map((apiGame) => ({
                   </thead>
                   <tbody>
                     {filteredGames.map((game, index) => {
-                      const awayWon = hasWinner(game.status, game.hasScoreData) && game.awayScore > game.homeScore;
-                      const homeWon = hasWinner(game.status, game.hasScoreData) && game.homeScore > game.awayScore;
+                      const awayWon = isAwayWinner(game);
+                      const homeWon = isHomeWinner(game);
                       const showGameComment = !!(game.gameComments && game.gameComments.trim());
                       const showSchedulingComment = !!(isViewingCurrentSeason && game.schedulingComments && game.schedulingComments.trim());
                       const showComment = showGameComment || showSchedulingComment;
@@ -2026,8 +2047,8 @@ const convertedAllGames = allSeasonGames.map((apiGame) => ({
                           {effectiveLayoutMode === 'grid' && (
                             <div className="hidden lg:grid lg:grid-cols-2 xl:grid-cols-3 gap-4 p-4">
                               {divisionGamesByDate[date].map((game) => {
-                                const awayWon = hasWinner(game.status, game.hasScoreData) && game.awayScore > game.homeScore;
-                                const homeWon = hasWinner(game.status, game.hasScoreData) && game.homeScore > game.awayScore;
+                                const awayWon = isAwayWinner(game);
+                                const homeWon = isHomeWinner(game);
                                 
                                 return (
                                   <div 
@@ -2131,8 +2152,8 @@ const convertedAllGames = allSeasonGames.map((apiGame) => ({
                           {/* Card View */}
                           <div className={effectiveLayoutMode === 'grid' ? 'lg:hidden divide-y divide-gray-200' : 'divide-y divide-gray-200'}>
                             {divisionGamesByDate[date].map((game) => {
-                              const awayWon = hasWinner(game.status, game.hasScoreData) && game.awayScore > game.homeScore;
-                              const homeWon = hasWinner(game.status, game.hasScoreData) && game.homeScore > game.awayScore;
+                              const awayWon = isAwayWinner(game);
+                              const homeWon = isHomeWinner(game);
                               
                               return (
                                 <div 
@@ -2283,8 +2304,8 @@ const convertedAllGames = allSeasonGames.map((apiGame) => ({
                 {effectiveLayoutMode === 'grid' && (
                   <div className="hidden lg:grid lg:grid-cols-2 xl:grid-cols-3 gap-4 p-4">
                     {gamesByDate![date].map((game) => {
-                      const awayWon = hasWinner(game.status, game.hasScoreData) && game.awayScore > game.homeScore;
-                      const homeWon = hasWinner(game.status, game.hasScoreData) && game.homeScore > game.awayScore;
+                      const awayWon = isAwayWinner(game);
+                      const homeWon = isHomeWinner(game);
                       
                       return (
                         <div 
@@ -2391,8 +2412,8 @@ const convertedAllGames = allSeasonGames.map((apiGame) => ({
                 {/* Card View - Mobile & Desktop */}
                 <div className={effectiveLayoutMode === 'grid' ? 'lg:hidden divide-y divide-gray-200' : 'divide-y divide-gray-200'}>
                   {gamesByDate![date].map((game) => {
-                    const awayWon = hasWinner(game.status, game.hasScoreData) && game.awayScore > game.homeScore;
-                    const homeWon = hasWinner(game.status, game.hasScoreData) && game.homeScore > game.awayScore;
+                    const awayWon = isAwayWinner(game);
+                    const homeWon = isHomeWinner(game);
                     
                     return (
                       <div 

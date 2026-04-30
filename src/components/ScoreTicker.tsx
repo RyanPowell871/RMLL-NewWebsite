@@ -39,6 +39,7 @@ interface Game {
   location: string;
   conference?: string; // For Junior B Tier I and II
   hasScoreData?: boolean; // Whether actual score data exists (not null→0 conversion)
+  defaultingTeamId?: number; // Team that takes the loss in a forfeit/default
 }
 
 // Helper function to format game date
@@ -287,6 +288,7 @@ export function ScoreTicker() {
       location: apiGame.FacilityCode || apiGame.FacilityName,
       conference: undefined, // Would need to extract from DivisionName if needed
       hasScoreData: hasScores,
+      defaultingTeamId: apiGame.DefaultingTeamId || undefined,
     };
   });
 
@@ -449,8 +451,20 @@ export function ScoreTicker() {
               </div>
             ) : (
               games.map((game, index) => {
-                const isAwayWin = game.hasScoreData && game.awayScore > game.homeScore && isGameComplete(game.status) && game.status !== 'DOUBLE_DEFAULT';
-                const isHomeWin = game.hasScoreData && game.homeScore > game.awayScore && isGameComplete(game.status) && game.status !== 'DOUBLE_DEFAULT';
+                const isAwayWin = (() => {
+                  if (game.status === 'DOUBLE_DEFAULT' || !isGameComplete(game.status)) return false;
+                  if ((game.status === 'DEFAULT' || game.status === 'FORFEIT') && game.defaultingTeamId) {
+                    return game.defaultingTeamId === game.homeTeamId;
+                  }
+                  return (game.hasScoreData !== false) && game.awayScore > game.homeScore;
+                })();
+                const isHomeWin = (() => {
+                  if (game.status === 'DOUBLE_DEFAULT' || !isGameComplete(game.status)) return false;
+                  if ((game.status === 'DEFAULT' || game.status === 'FORFEIT') && game.defaultingTeamId) {
+                    return game.defaultingTeamId === game.visitorTeamId;
+                  }
+                  return (game.hasScoreData !== false) && game.homeScore > game.awayScore;
+                })();
                 const isInProgress = inProgressDivisionIds.has(game.divisionId);
 
                 return (

@@ -779,8 +779,23 @@ export function GameSheetModal({ game, open, onClose }: GameSheetModalProps) {
     
   const periodScores = computePeriodScores(gameDetails?.ScoringStats, homeTeamId, visitorTeamId, gameDetails?.Roster);
   
-  const isAwayWin = isGameComplete(displayGame.status) && displayGame.status !== 'DOUBLE_DEFAULT' && displayGame.awayScore > displayGame.homeScore;
-  const isHomeWin = isGameComplete(displayGame.status) && displayGame.status !== 'DOUBLE_DEFAULT' && displayGame.homeScore > displayGame.awayScore;
+  // Get DefaultingTeamId from game details (available from Game Detail API)
+  const defaultingTeamId = (gameDetails?.Game as any)?.DefaultingTeamId || undefined;
+
+  const isAwayWin = (() => {
+    if (displayGame.status === 'DOUBLE_DEFAULT' || !isGameComplete(displayGame.status)) return false;
+    if ((displayGame.status === 'DEFAULT' || displayGame.status === 'FORFEIT') && defaultingTeamId) {
+      return defaultingTeamId === homeTeamId;
+    }
+    return displayGame.awayScore > displayGame.homeScore;
+  })();
+  const isHomeWin = (() => {
+    if (displayGame.status === 'DOUBLE_DEFAULT' || !isGameComplete(displayGame.status)) return false;
+    if ((displayGame.status === 'DEFAULT' || displayGame.status === 'FORFEIT') && defaultingTeamId) {
+      return defaultingTeamId === visitorTeamId;
+    }
+    return displayGame.homeScore > displayGame.awayScore;
+  })();
   
   // Prefer the formatted date; only use fullDate if it's already human-readable (not raw ISO)
   const displayDate = (displayGame.fullDate && !displayGame.fullDate.includes('T'))
