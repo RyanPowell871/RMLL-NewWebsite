@@ -31,7 +31,7 @@ interface Game {
   awayRecord: string;
   date: string;
   time: string;
-  status: 'FINAL' | 'LIVE' | 'UPCOMING' | 'EXHIBITION';
+  status: 'FINAL' | 'LIVE' | 'UPCOMING' | 'EXHIBITION' | 'SUSPENDED' | 'CANCELLED' | 'FORFEIT' | 'DEFAULT' | 'DOUBLE_DEFAULT';
   homeLogo: string;
   awayLogo: string;
   division: string;
@@ -277,7 +277,7 @@ export function ScoreTicker() {
       awayRecord: '',
       date: formatGameDate(apiGame.GameDate),
       fullDate: apiGame.GameDate, // Pass full date for API lookups
-      time: (() => { const s = resolveGameStatus(apiGame.GameStatus, apiGame.StandingCategoryCode); return s === 'FINAL' || s === 'FORFEIT' || s === 'DEFAULT' || s === 'CANCELLED' ? 'FINAL' : s === 'LIVE' ? 'LIVE' : (parseGameTime(apiGame.StartTime) || parseGameTime(apiGame.GameDate)); })(),
+      time: (() => { const s = resolveGameStatus(apiGame.GameStatus, apiGame.StandingCategoryCode); return s === 'FINAL' || s === 'FORFEIT' || s === 'DEFAULT' || s === 'DOUBLE_DEFAULT' || s === 'CANCELLED' ? 'FINAL' : s === 'LIVE' ? 'LIVE' : (parseGameTime(apiGame.StartTime) || parseGameTime(apiGame.GameDate)); })(),
       status: resolveGameStatus(apiGame.GameStatus, apiGame.StandingCategoryCode),
       homeLogo: apiGame.HomeTeamLogoURL || rockiesLogo, // Use API logo URL or fallback to default
       awayLogo: apiGame.VisitorTeamLogoURL || shamrocksLogo, // Use API logo URL or fallback to default
@@ -447,8 +447,8 @@ export function ScoreTicker() {
               </div>
             ) : (
               games.map((game, index) => {
-                const isAwayWin = game.awayScore > game.homeScore && isGameComplete(game.status);
-                const isHomeWin = game.homeScore > game.awayScore && isGameComplete(game.status);
+                const isAwayWin = game.awayScore > game.homeScore && isGameComplete(game.status) && game.status !== 'DOUBLE_DEFAULT';
+                const isHomeWin = game.homeScore > game.awayScore && isGameComplete(game.status) && game.status !== 'DOUBLE_DEFAULT';
                 const isInProgress = inProgressDivisionIds.has(game.divisionId);
 
                 return (
@@ -479,7 +479,7 @@ export function ScoreTicker() {
                           className={`text-[10px] sm:text-xs font-bold px-2 sm:px-2.5 py-0.5 rounded tracking-wider ${
                             game.status === 'LIVE'
                               ? 'bg-red-600 text-white animate-pulse'
-                              : game.status === 'FINAL' || game.status === 'FORFEIT' || game.status === 'DEFAULT'
+                              : game.status === 'FINAL' || game.status === 'FORFEIT' || game.status === 'DEFAULT' || game.status === 'DOUBLE_DEFAULT'
                               ? 'bg-gray-800 text-white'
                               : game.status === 'EXHIBITION'
                               ? 'bg-amber-600 text-white'

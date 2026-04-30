@@ -10,14 +10,15 @@ import {
 // Single source of truth for converting API game status to UI enum.
 // Used by ScheduleSection, ScoreTicker, TeamDetailPage, GameSheetModal, etc.
 
-export type GameStatusEnum = 'FINAL' | 'LIVE' | 'UPCOMING' | 'EXHIBITION' | 'SUSPENDED' | 'CANCELLED' | 'FORFEIT' | 'DEFAULT';
+export type GameStatusEnum = 'FINAL' | 'LIVE' | 'UPCOMING' | 'EXHIBITION' | 'SUSPENDED' | 'CANCELLED' | 'FORFEIT' | 'DEFAULT' | 'DOUBLE_DEFAULT';
 
 /**
- * Resolve the UI game status from the API's GameStatus string and StandingCategoryCode.
+ * Resolve the UI game status from the API's GameStatus/GameStatusCode string and StandingCategoryCode.
  *
- * @param gameStatus - The GameStatus string from the API (e.g. "Final", "In Progress", "Default", "Completed")
+ * @param gameStatus - The GameStatus string (e.g. "Final", "In Progress", "Default", "Completed")
+ *                     or GameStatusCode string (e.g. "FINL", "DEFW", "DDEF", "FORF")
+ *                     or numeric GameStatusCodeId
  * @param standingCategoryCode - Optional standing category code (e.g. "exhb" for exhibition)
- * @param isExhibition - Optional boolean if exhibition is already determined
  */
 export function resolveGameStatus(
   gameStatus: string | number | undefined | null,
@@ -26,16 +27,42 @@ export function resolveGameStatus(
   // Exhibition takes priority
   if (standingCategoryCode?.toLowerCase() === 'exhb') return 'EXHIBITION';
 
-  // If a numeric GameStatusCodeId is passed, convert to string first
+  // If a numeric GameStatusCodeId is passed, convert via the code lookup
   if (typeof gameStatus === 'number') {
     return resolveGameStatusFromCode(gameStatus);
   }
 
   const s = (gameStatus || '').toLowerCase().trim();
 
-  // Final / completed / played / defaulted
-  if (s === 'final' || s === 'played' || s === 'completed' || s === 'final (ot)' || s === 'final (so)' || s === 'defaulted' || s === 'default') {
+  // ── SportzSoft GameStatusCode strings (exact match) ──
+  if (s === 'finl') return 'FINAL';
+  if (s === 'defw') return 'DEFAULT';
+  if (s === 'ddef') return 'DOUBLE_DEFAULT';
+  if (s === 'forf') return 'FORFEIT';
+  if (s === 'canc') return 'CANCELLED';
+  if (s === 'post') return 'FINAL';          // Postponed — treat as completed
+  if (s === 'n/r' || s === 'nr') return 'FINAL'; // Score not reported — treat as completed
+  if (s === 'tbp') return 'UPCOMING';         // To Be Played
+
+  // ── GameStatusName / free-form strings ──
+  // Final / completed / played
+  if (s === 'final' || s === 'played' || s === 'completed' || s === 'final (ot)' || s === 'final (so)') {
     return 'FINAL';
+  }
+
+  // Defaulted (GameStatusName "Default")
+  if (s === 'defaulted' || s === 'default') {
+    return 'DEFAULT';
+  }
+
+  // Double Default
+  if (s === 'double default' || s === 'doubledefault') {
+    return 'DOUBLE_DEFAULT';
+  }
+
+  // Forfeited
+  if (s === 'forfeited' || s === 'forfeit') {
+    return 'FORFEIT';
   }
 
   // In progress (various period codes from Game Detail API)
@@ -49,10 +76,7 @@ export function resolveGameStatus(
   // Cancelled
   if (s === 'cancelled') return 'CANCELLED';
 
-  // Forfeit
-  if (s === 'forfeit') return 'FORFEIT';
-
-  // Postponed — treat as a final-like completed state
+  // Postponed
   if (s === 'postponed') return 'FINAL';
 
   // Everything else (Not Played, Scheduled, empty, unknown) → UPCOMING
@@ -79,8 +103,10 @@ function resolveGameStatusFromCode(code: number): GameStatusEnum {
   }
   // Suspended
   if (code === 113) return 'SUSPENDED';
-  // Forfeit
-  if (code === 119) return 'FORFEIT';
+  // Default
+  if (code === 119) return 'DEFAULT';     // Was 'FORFEIT' — DEFW and FORF share code 119 in some endpoints
+  // Double Default
+  if (code === 124) return 'DOUBLE_DEFAULT';
   // Cancelled
   if (code === 122) return 'CANCELLED';
   // Postponed
@@ -95,14 +121,14 @@ function resolveGameStatusFromCode(code: number): GameStatusEnum {
  * Final, Forfeit, Default, and Suspended games all have final scores.
  */
 export function hasScores(status: GameStatusEnum): boolean {
-  return status === 'FINAL' || status === 'FORFEIT' || status === 'DEFAULT' || status === 'SUSPENDED' || status === 'LIVE';
+  return status === 'FINAL' || status === 'FORFEIT' || status === 'DEFAULT' || status === 'DOUBLE_DEFAULT' || status === 'SUSPENDED' || status === 'LIVE';
 }
 
 /**
  * Returns true if a game with the given status is completed (not in progress, not upcoming).
  */
 export function isGameComplete(status: GameStatusEnum): boolean {
-  return status === 'FINAL' || status === 'FORFEIT' || status === 'DEFAULT' || status === 'SUSPENDED' || status === 'CANCELLED';
+  return status === 'FINAL' || status === 'FORFEIT' || status === 'DEFAULT' || status === 'DOUBLE_DEFAULT' || status === 'SUSPENDED' || status === 'CANCELLED';
 }
 
 import {

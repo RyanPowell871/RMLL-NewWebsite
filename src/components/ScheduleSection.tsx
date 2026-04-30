@@ -107,6 +107,7 @@ function getStatusBadgeStyle(status: string): string {
     case 'CANCELLED': return 'bg-gray-400 text-white';
     case 'FORFEIT': return 'bg-orange-700 text-white';
     case 'DEFAULT': return 'bg-orange-600 text-white';
+    case 'DOUBLE_DEFAULT': return 'bg-orange-500 text-white';
     default: return 'bg-gray-600 text-white';
   }
 }
@@ -120,8 +121,14 @@ function getStatusLabel(status: string): string {
     case 'CANCELLED': return 'Cancelled';
     case 'FORFEIT': return 'Forfeit';
     case 'DEFAULT': return 'Default';
+    case 'DOUBLE_DEFAULT': return 'Dbl Default';
     default: return status;
   }
+}
+
+/** Returns true if the game has a definitive winner (not double default where no one wins). */
+function hasWinner(status: string): boolean {
+  return isGameComplete(status) && status !== 'DOUBLE_DEFAULT';
 }
 
 export function ScheduleSection() {
@@ -805,7 +812,7 @@ const convertedAllGames = allSeasonGames.map((apiGame) => ({
     
     allSeasonGames.forEach(game => {
       const resolved = resolveGameStatus(game.GameStatus, game.StandingCategoryCode);
-      const isFinal = resolved === 'FINAL' || resolved === 'FORFEIT' || resolved === 'DEFAULT';
+      const isFinal = resolved === 'FINAL' || resolved === 'FORFEIT' || resolved === 'DEFAULT' || resolved === 'DOUBLE_DEFAULT';
       if (!isFinal) return;
       
       const homeScore = game.HomeScore ?? 0;
@@ -999,7 +1006,7 @@ const convertedAllGames = allSeasonGames.map((apiGame) => ({
           bValue = hasScores(b.status) ? (b.homeScore + b.awayScore) : -1;
           break;
         case 'status':
-          const statusOrder: Record<string, number> = { 'LIVE': 0, 'UPCOMING': 1, 'EXHIBITION': 1, 'SUSPENDED': 1, 'CANCELLED': 1, 'FORFEIT': 2, 'DEFAULT': 2, 'FINAL': 2 };
+          const statusOrder: Record<string, number> = { 'LIVE': 0, 'UPCOMING': 1, 'EXHIBITION': 1, 'SUSPENDED': 1, 'CANCELLED': 1, 'FORFEIT': 2, 'DEFAULT': 2, 'DOUBLE_DEFAULT': 2, 'FINAL': 2 };
           aValue = statusOrder[a.status] ?? 3;
           bValue = statusOrder[b.status] ?? 3;
           break;
@@ -1729,8 +1736,8 @@ const convertedAllGames = allSeasonGames.map((apiGame) => ({
                   </thead>
                   <tbody>
                     {filteredGames.map((game, index) => {
-                      const awayWon = isGameComplete(game.status) && game.awayScore > game.homeScore;
-                      const homeWon = isGameComplete(game.status) && game.homeScore > game.awayScore;
+                      const awayWon = hasWinner(game.status) && game.awayScore > game.homeScore;
+                      const homeWon = hasWinner(game.status) && game.homeScore > game.awayScore;
                       const showGameComment = !!(game.gameComments && game.gameComments.trim());
                       const showSchedulingComment = !!(isViewingCurrentSeason && game.schedulingComments && game.schedulingComments.trim());
                       const showComment = showGameComment || showSchedulingComment;
@@ -2017,8 +2024,8 @@ const convertedAllGames = allSeasonGames.map((apiGame) => ({
                           {effectiveLayoutMode === 'grid' && (
                             <div className="hidden lg:grid lg:grid-cols-2 xl:grid-cols-3 gap-4 p-4">
                               {divisionGamesByDate[date].map((game) => {
-                                const awayWon = isGameComplete(game.status) && game.awayScore > game.homeScore;
-                                const homeWon = isGameComplete(game.status) && game.homeScore > game.awayScore;
+                                const awayWon = hasWinner(game.status) && game.awayScore > game.homeScore;
+                                const homeWon = hasWinner(game.status) && game.homeScore > game.awayScore;
                                 
                                 return (
                                   <div 
@@ -2122,8 +2129,8 @@ const convertedAllGames = allSeasonGames.map((apiGame) => ({
                           {/* Card View */}
                           <div className={effectiveLayoutMode === 'grid' ? 'lg:hidden divide-y divide-gray-200' : 'divide-y divide-gray-200'}>
                             {divisionGamesByDate[date].map((game) => {
-                              const awayWon = isGameComplete(game.status) && game.awayScore > game.homeScore;
-                              const homeWon = isGameComplete(game.status) && game.homeScore > game.awayScore;
+                              const awayWon = hasWinner(game.status) && game.awayScore > game.homeScore;
+                              const homeWon = hasWinner(game.status) && game.homeScore > game.awayScore;
                               
                               return (
                                 <div 
@@ -2274,8 +2281,8 @@ const convertedAllGames = allSeasonGames.map((apiGame) => ({
                 {effectiveLayoutMode === 'grid' && (
                   <div className="hidden lg:grid lg:grid-cols-2 xl:grid-cols-3 gap-4 p-4">
                     {gamesByDate![date].map((game) => {
-                      const awayWon = isGameComplete(game.status) && game.awayScore > game.homeScore;
-                      const homeWon = isGameComplete(game.status) && game.homeScore > game.awayScore;
+                      const awayWon = hasWinner(game.status) && game.awayScore > game.homeScore;
+                      const homeWon = hasWinner(game.status) && game.homeScore > game.awayScore;
                       
                       return (
                         <div 
@@ -2382,8 +2389,8 @@ const convertedAllGames = allSeasonGames.map((apiGame) => ({
                 {/* Card View - Mobile & Desktop */}
                 <div className={effectiveLayoutMode === 'grid' ? 'lg:hidden divide-y divide-gray-200' : 'divide-y divide-gray-200'}>
                   {gamesByDate![date].map((game) => {
-                    const awayWon = isGameComplete(game.status) && game.awayScore > game.homeScore;
-                    const homeWon = isGameComplete(game.status) && game.homeScore > game.awayScore;
+                    const awayWon = hasWinner(game.status) && game.awayScore > game.homeScore;
+                    const homeWon = hasWinner(game.status) && game.homeScore > game.awayScore;
                     
                     return (
                       <div 

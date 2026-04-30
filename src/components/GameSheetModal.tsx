@@ -54,7 +54,7 @@ interface Game {
   date: string;
   fullDate?: string;
   time: string;
-  status: 'FINAL' | 'LIVE' | 'UPCOMING' | 'EXHIBITION' | 'SUSPENDED' | 'CANCELLED' | 'FORFEIT' | 'DEFAULT';
+  status: 'FINAL' | 'LIVE' | 'UPCOMING' | 'EXHIBITION' | 'SUSPENDED' | 'CANCELLED' | 'FORFEIT' | 'DEFAULT' | 'DOUBLE_DEFAULT';
   homeLogo: string;
   awayLogo: string;
   division: string;
@@ -777,8 +777,8 @@ export function GameSheetModal({ game, open, onClose }: GameSheetModalProps) {
     
   const periodScores = computePeriodScores(gameDetails?.ScoringStats, homeTeamId, visitorTeamId, gameDetails?.Roster);
   
-  const isAwayWin = isGameComplete(displayGame.status) && displayGame.awayScore > displayGame.homeScore;
-  const isHomeWin = isGameComplete(displayGame.status) && displayGame.homeScore > displayGame.awayScore;
+  const isAwayWin = isGameComplete(displayGame.status) && displayGame.status !== 'DOUBLE_DEFAULT' && displayGame.awayScore > displayGame.homeScore;
+  const isHomeWin = isGameComplete(displayGame.status) && displayGame.status !== 'DOUBLE_DEFAULT' && displayGame.homeScore > displayGame.awayScore;
   
   // Prefer the formatted date; only use fullDate if it's already human-readable (not raw ISO)
   const displayDate = (displayGame.fullDate && !displayGame.fullDate.includes('T'))
@@ -1022,6 +1022,7 @@ export function GameSheetModal({ game, open, onClose }: GameSheetModalProps) {
                     : displayGame.status === 'CANCELLED' ? 'bg-gray-400 text-white'
                     : displayGame.status === 'FORFEIT' ? 'bg-orange-700 text-white'
                     : displayGame.status === 'DEFAULT' ? 'bg-orange-600 text-white'
+                    : displayGame.status === 'DOUBLE_DEFAULT' ? 'bg-orange-500 text-white'
                     : 'bg-blue-600 text-white'
                 }`}
               >
@@ -1029,6 +1030,7 @@ export function GameSheetModal({ game, open, onClose }: GameSheetModalProps) {
                   : displayGame.status === 'LIVE' ? 'LIVE'
                   : displayGame.status === 'UPCOMING' ? 'Upcoming'
                   : displayGame.status === 'EXHIBITION' ? 'Exhibition'
+                  : displayGame.status === 'DOUBLE_DEFAULT' ? 'Dbl Default'
                   : displayGame.status}
               </span>
             </div>

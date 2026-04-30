@@ -234,11 +234,12 @@ export const GAME_STATUS: Record<number, string> = {
   116: 'Completed',
   117: 'Completed',        // Duplicate of 116
   118: 'Final',            // Duplicate of 110
-  119: 'Forfeit',
+  119: 'Default',          // Defaulted (DEFW) — was mapped as Forfeit; DEFW/FORF share code 119
   120: 'Final',            // Duplicate of 110/118
   121: 'Final',            // Another Final variant (some APIs use this)
   122: 'Cancelled',
   123: 'Postponed',
+  124: 'Double Default',   // Double Default (DDEF)
 };
 
 // Define the preferred order for divisions (matches the original hardcoded order)
