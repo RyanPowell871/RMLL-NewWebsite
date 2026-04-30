@@ -38,6 +38,7 @@ interface Game {
   divisionId: number;
   location: string;
   conference?: string; // For Junior B Tier I and II
+  hasScoreData?: boolean; // Whether actual score data exists (not null→0 conversion)
 }
 
 // Helper function to format game date
@@ -285,6 +286,7 @@ export function ScoreTicker() {
       divisionId: apiGame.DivisionId,
       location: apiGame.FacilityCode || apiGame.FacilityName,
       conference: undefined, // Would need to extract from DivisionName if needed
+      hasScoreData: hasScores,
     };
   });
 
@@ -447,8 +449,8 @@ export function ScoreTicker() {
               </div>
             ) : (
               games.map((game, index) => {
-                const isAwayWin = game.awayScore > game.homeScore && isGameComplete(game.status) && game.status !== 'DOUBLE_DEFAULT';
-                const isHomeWin = game.homeScore > game.awayScore && isGameComplete(game.status) && game.status !== 'DOUBLE_DEFAULT';
+                const isAwayWin = game.hasScoreData && game.awayScore > game.homeScore && isGameComplete(game.status) && game.status !== 'DOUBLE_DEFAULT';
+                const isHomeWin = game.hasScoreData && game.homeScore > game.awayScore && isGameComplete(game.status) && game.status !== 'DOUBLE_DEFAULT';
                 const isInProgress = inProgressDivisionIds.has(game.divisionId);
 
                 return (
@@ -507,13 +509,13 @@ export function ScoreTicker() {
                         </div>
                       </div>
                       <span className={`text-xl sm:text-2xl font-bold min-w-[24px] sm:min-w-[28px] text-right ${
-                        !hasScores(game.status)
+                        !game.hasScoreData
                           ? 'text-gray-400'
                           : isAwayWin
                           ? 'text-gray-900'
                           : 'text-gray-500'
                       }`}>
-                        {!hasScores(game.status) ? '-' : game.awayScore ?? 0}
+                        {!game.hasScoreData ? '-' : game.awayScore ?? 0}
                       </span>
                     </div>
 
@@ -529,13 +531,13 @@ export function ScoreTicker() {
                         </div>
                       </div>
                       <span className={`text-xl sm:text-2xl font-bold min-w-[24px] sm:min-w-[28px] text-right ${
-                        !hasScores(game.status)
+                        !game.hasScoreData
                           ? 'text-gray-400'
                           : isHomeWin
                           ? 'text-gray-900'
                           : 'text-gray-500'
                       }`}>
-                        {!hasScores(game.status) ? '-' : game.homeScore ?? 0}
+                        {!game.hasScoreData ? '-' : game.homeScore ?? 0}
                       </span>
                     </div>
                   </div>

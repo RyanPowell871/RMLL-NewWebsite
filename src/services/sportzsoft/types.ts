@@ -20,9 +20,10 @@ export interface Game {
   SchedulingComments: string | null;
   PrivateToTeamId: number | null;
   GameStatusCodeId: number;
-  GameStatusCode?: string;       // e.g. "FINL", "DEFW", "DDEF", "FORF", "CANC", "POST", "N/R", "TBP"
-  GameStatusName?: string;        // e.g. "Final", "Default", "Double Default", "Forfeited", "Cancelled", "Postponed", "Score Not Reported", "To Be Played"
-  DefaultingTeamId?: number;      // Team that takes the loss in a forfeit/default (0 or absent for double default)
+  GameStatusCode?: string;       // e.g. "FINL", "DEFW", "DDEF", "FORF", "CANC", "POST", "N/R", "TBP" (Game Detail endpoint only)
+  GameStatusName?: string;        // e.g. "Final", "Default", "Double Default", "Forfeited", "Cancelled", "Postponed" (Game Detail endpoint only)
+  GameStatus?: string;            // e.g. "Final", "Defaulted", "To Be Played" (Schedule endpoint — authoritative for status resolution)
+  DefaultingTeamId?: number;      // Team that takes the loss in a forfeit/default (0 or absent for double default; Game Detail endpoint only)
   PublishedFlag: boolean;
   StandingCategoryCode: string;
   DivisionId: number;

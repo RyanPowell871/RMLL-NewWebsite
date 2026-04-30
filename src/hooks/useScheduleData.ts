@@ -185,7 +185,7 @@ export function useScheduleData(options: UseScheduleDataOptions): UseScheduleDat
         ...game,
         HomeTeamName: mockTeams.find(t => t.TeamId === game.HomeTeamId)?.TeamName || 'Home Team',
         VisitorTeamName: mockTeams.find(t => t.TeamId === game.VisitorTeamId)?.TeamName || 'Visitor Team',
-        GameStatus: game.GameStatusCode || GAME_STATUS[game.GameStatusCodeId] || game.GameStatus || 'Scheduled',
+        GameStatus: game.GameStatusCode || game.GameStatus || GAME_STATUS[game.GameStatusCodeId] || 'Scheduled',
         DivisionName: DIVISION_NAMES[game.DivisionId] || 'Unknown Division',
         HomeScore: game.GameStatusCodeId === 120 ? Math.floor(Math.random() * 10) + 8 : undefined,
         VisitorScore: game.GameStatusCodeId === 120 ? Math.floor(Math.random() * 10) + 6 : undefined,
@@ -351,7 +351,7 @@ export function useScheduleData(options: UseScheduleDataOptions): UseScheduleDat
             VisitorTeamName: visitorTeam?.TeamName || `Team ${game.VisitorTeamId}`,
             HomeTeamLogoURL: homeTeam?.PrimaryTeamLogoURL,
             VisitorTeamLogoURL: visitorTeam?.PrimaryTeamLogoURL,
-            GameStatus: game.GameStatusCode || GAME_STATUS[game.GameStatusCodeId] || game.GameStatus || 'Scheduled',
+            GameStatus: game.GameStatusCode || game.GameStatus || GAME_STATUS[game.GameStatusCodeId] || 'Scheduled',
             DivisionName: dynamicDivisionNames[game.DivisionId] || teamDivisionNames[game.DivisionId] || DIVISION_NAMES[game.DivisionId] || homeTeam?.DivisionName || 'Unknown Division',
           };
         });

@@ -685,7 +685,9 @@ export function GameSheetModal({ game, open, onClose }: GameSheetModalProps) {
     const details = gameDetails.Game;
 
     // Use shared status resolver from API detail response
-    let status = resolveGameStatus(details.GameStatus, (details as any).StandingCategoryCode);
+    // Prefer GameStatusCode (e.g. "DEFW") or GameStatusName (e.g. "Defaulted") over GameStatus
+    const statusString = (details as any).GameStatusCode || (details as any).GameStatusName || details.GameStatus;
+    let status = resolveGameStatus(statusString, (details as any).StandingCategoryCode);
     // If still upcoming but scores exist in detail response, upgrade to FINAL
     if (status === 'UPCOMING' && details.HomeScore !== null && details.VisitorScore !== null) {
       status = 'FINAL';
