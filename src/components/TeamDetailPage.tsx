@@ -1,11 +1,11 @@
-import { useState, useMemo, useEffect, Fragment } from 'react';
+import { useState, useMemo, useEffect, useRef, Fragment } from 'react';
 import { MapPin, ArrowLeft, Download, Calendar as CalendarIcon, Trophy, Shield, Users, Info, ChevronLeft, ChevronRight, Loader2, ExternalLink, TrendingUp, Clock, User, Facebook, Instagram, Youtube, Globe, MessageSquare, FileText, FileSpreadsheet } from 'lucide-react';
 import { GameSheetModal } from './GameSheetModal';
 import { FacilityMapLink } from './FacilityMapLink';
 import { useTeamRoster } from '../hooks/useTeamRoster';
 import { useSeasons } from '../hooks/useSeasons';
 import { fetchTeams, fetchTeamRoster, fetchPlayerStats, DIVISION_NAMES, getPlayerPhotoUrl } from '../services/sportzsoft';
-import { parseGameTime, formatGameDate, formatGameDateLong, parseDateAsLocal, type Game, type Practice, fetchTeamSchedule, mapStandingCategoryCodeToName, resolveGameStatus } from '../services/sportzsoft';
+import { parseGameTime, formatGameDate, formatGameDateLong, parseDateAsLocal, type Game, type Practice, fetchTeamSchedule, mapStandingCategoryCodeToName, resolveGameStatus, isGameComplete } from '../services/sportzsoft';
 import { fetchTeamRaw, fetchTeamConstraints } from '../services/sportzsoft/api';
 import { useDivisionScheduleStatus } from '../hooks/useDivisionScheduleStatus';
 
@@ -882,6 +882,30 @@ export function TeamDetailPage({ teamId, teamName, season, teamLogo, divisionId,
       .slice(0, 4);
   }, [apiGames]);
 
+  // Sorted games for the banner ticker: completed (newest→oldest) then upcoming (soonest→later)
+  const sortedBannerGames = useMemo(() => {
+    const completed = apiGames.filter(g => isGameComplete(resolveGameStatus(g.GameStatusCodeId, g.StandingCategoryCode)))
+      .sort((a, b) => new Date(b.GameDate).getTime() - new Date(a.GameDate).getTime());
+    const upcoming = apiGames.filter(g => !isGameComplete(resolveGameStatus(g.GameStatusCodeId, g.StandingCategoryCode)))
+      .sort((a, b) => new Date(a.GameDate).getTime() - new Date(b.GameDate).getTime());
+    return [...completed, ...upcoming];
+  }, [apiGames]);
+
+  // Auto-scroll to first upcoming game on initial load
+  const gameTickerRef = useRef<HTMLDivElement>(null);
+  const hasScrolledToUpcoming = useRef(false);
+  useEffect(() => {
+    if (hasScrolledToUpcoming.current || sortedBannerGames.length === 0) return;
+    const firstUpcomingIdx = sortedBannerGames.findIndex(g => !isGameComplete(resolveGameStatus(g.GameStatusCodeId, g.StandingCategoryCode)));
+    if (firstUpcomingIdx <= 0) return; // no upcoming games or already at start
+    hasScrolledToUpcoming.current = true;
+    // Each card is roughly 296px (280 + 16 gap) wide
+    const scrollTo = Math.max(0, (firstUpcomingIdx - 1) * 296);
+    setTimeout(() => {
+      gameTickerRef.current?.scrollTo({ left: scrollTo, behavior: 'smooth' });
+    }, 100);
+  }, [sortedBannerGames]);
+
   // Build dynamic division name lookup from season structure (same pattern as useScheduleData)
   const dynamicDivisionNames = useMemo(() => {
     const map: Record<number, string> = {};
@@ -1646,11 +1670,11 @@ export function TeamDetailPage({ teamId, teamName, season, teamLogo, divisionId,
         </div>
       </div>
 
-      {/* Upcoming Games Ticker */}
+      {/* Games Ticker */}
       <div className="bg-white border-b-2 border-gray-200 py-3 overflow-hidden">
         <div className="max-w-[1600px] mx-auto px-4 sm:px-6">
-          <div className="flex gap-6 overflow-x-auto scrollbar-hide">
-            {apiGames.map((game, i) => {
+          <div ref={gameTickerRef} className="flex gap-6 overflow-x-auto scrollbar-hide">
+            {sortedBannerGames.map((game, i) => {
               const isHomeTeam = game.HomeTeamId === currentTeamId;
               const opponentId = isHomeTeam ? game.VisitorTeamId : game.HomeTeamId;
               const opponent = getTeamName(opponentId);
@@ -1659,12 +1683,13 @@ export function TeamDetailPage({ teamId, teamName, season, teamLogo, divisionId,
                 (isHomeTeam ? `${game.HomeScore}-${game.VisitorScore}` : `${game.VisitorScore}-${game.HomeScore}`) :
                 null;
               const isExhibitionGame = game.StandingCategoryCode?.toLowerCase() === 'exhb';
+              const isCompleted = isGameComplete(resolveGameStatus(game.GameStatusCodeId, game.StandingCategoryCode));
 
               return (
                 <div
                   key={i}
                   className={`flex items-center gap-4 min-w-[280px] px-4 py-2 rounded-lg border cursor-pointer hover:shadow-md transition-all ${
-                    isExhibitionGame ? 'bg-amber-50 border-amber-300' : 'bg-gray-50 border-gray-200'
+                    isExhibitionGame ? 'bg-amber-50 border-amber-300' : isCompleted ? 'bg-gray-100 border-gray-300 opacity-70' : 'bg-gray-50 border-gray-200'
                   }`}
                   onClick={() => handleGameClick(game)}
                 >
@@ -1687,6 +1712,11 @@ export function TeamDetailPage({ teamId, teamName, season, teamLogo, divisionId,
                     <div className="font-bold text-sm">{opponent}</div>
                   </div>
                   {gameResult && !isExhibitionGame ? (
+                    <div className="text-right">
+                      <div className="font-black text-lg" style={{ color: extractedColors.primary }}>{gameResult}</div>
+                      <div className="text-xs text-gray-500">Final</div>
+                    </div>
+                  ) : isCompleted && gameResult ? (
                     <div className="text-right">
                       <div className="font-black text-lg" style={{ color: extractedColors.primary }}>{gameResult}</div>
                       <div className="text-xs text-gray-500">Final</div>
