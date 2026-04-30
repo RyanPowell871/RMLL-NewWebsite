@@ -32,6 +32,7 @@ import {
   hasScores,
   isGameComplete
 } from '../services/sportzsoft';
+import { fetchGameDetails } from '../services/sportzsoft/api';
 import type { EnhancedGame } from '../services/sportzsoft';
 import { exportGamesToCalendar, type GameForCalendar } from '../utils/calendar';
 import shamrocksLogo from 'figma:asset/451bbc9cb0dc69d999248789df7937a5d31b2bc3.png';
@@ -129,24 +130,26 @@ function getStatusLabel(status: string): string {
 }
 
 /** Determine if away team won, considering DefaultingTeamId for default/forfeit games. */
-function isAwayWinner(game: { status: string; awayScore: number; homeScore: number; homeTeamId?: number; visitorTeamId?: number; defaultingTeamId?: number; hasScoreData?: boolean }): boolean {
+function isAwayWinner(game: { status: string; awayScore: number; homeScore: number; homeTeamId?: number; visitorTeamId?: number; defaultingTeamId?: number; hasScoreData?: boolean }, extraDefaultingIds?: Record<string, number>): boolean {
   if (game.status === 'DOUBLE_DEFAULT') return false;
   if (!isGameComplete(game.status)) return false;
+  const dtid = game.defaultingTeamId || (extraDefaultingIds ? extraDefaultingIds[game.id] : undefined);
   // For DEFAULT/FORFEIT games, use DefaultingTeamId (the team that took the loss)
-  if ((game.status === 'DEFAULT' || game.status === 'FORFEIT') && game.defaultingTeamId) {
-    return game.defaultingTeamId === game.homeTeamId; // Away wins if home defaulted
+  if ((game.status === 'DEFAULT' || game.status === 'FORFEIT') && dtid) {
+    return dtid === game.homeTeamId; // Away wins if home defaulted
   }
   // For other complete games, use score comparison
   return (game.hasScoreData !== false) && game.awayScore > game.homeScore;
 }
 
 /** Determine if home team won, considering DefaultingTeamId for default/forfeit games. */
-function isHomeWinner(game: { status: string; awayScore: number; homeScore: number; homeTeamId?: number; visitorTeamId?: number; defaultingTeamId?: number; hasScoreData?: boolean }): boolean {
+function isHomeWinner(game: { status: string; awayScore: number; homeScore: number; homeTeamId?: number; visitorTeamId?: number; defaultingTeamId?: number; hasScoreData?: boolean }, extraDefaultingIds?: Record<string, number>): boolean {
   if (game.status === 'DOUBLE_DEFAULT') return false;
   if (!isGameComplete(game.status)) return false;
+  const dtid = game.defaultingTeamId || (extraDefaultingIds ? extraDefaultingIds[game.id] : undefined);
   // For DEFAULT/FORFEIT games, use DefaultingTeamId (the team that took the loss)
-  if ((game.status === 'DEFAULT' || game.status === 'FORFEIT') && game.defaultingTeamId) {
-    return game.defaultingTeamId === game.visitorTeamId; // Home wins if visitor defaulted
+  if ((game.status === 'DEFAULT' || game.status === 'FORFEIT') && dtid) {
+    return dtid === game.visitorTeamId; // Home wins if visitor defaulted
   }
   // For other complete games, use score comparison
   return (game.hasScoreData !== false) && game.homeScore > game.awayScore;
@@ -908,6 +911,35 @@ const convertedAllGames = allSeasonGames.map((apiGame) => ({
       defaultingTeamId: apiGame.DefaultingTeamId || undefined,
     };
   });
+
+  // Fetch DefaultingTeamId for DEFAULT/FORFEIT games that don't have it from the Schedule API
+  // (the Schedule endpoint doesn't return DefaultingTeamId, but the Game Detail endpoint does)
+  const [defaultingTeamIds, setDefaultingTeamIds] = useState<Record<string, number>>({});
+  useEffect(() => {
+    const defaultGames = convertedGames.filter(g =>
+      (g.status === 'DEFAULT' || g.status === 'FORFEIT') && !g.defaultingTeamId && !defaultingTeamIds[g.id]
+    );
+    if (defaultGames.length === 0) return;
+    let cancelled = false;
+    Promise.all(
+      defaultGames.map(async (g) => {
+        try {
+          const resp = await fetchGameDetails(parseInt(g.id), '', 'B');
+          const dtid = resp?.Response?.Game?.DefaultingTeamId;
+          if (dtid) return { id: g.id, defaultingTeamId: dtid };
+        } catch {}
+        return null;
+      })
+    ).then(results => {
+      if (cancelled) return;
+      const updates: Record<string, number> = {};
+      results.forEach(r => { if (r) updates[r.id] = r.defaultingTeamId; });
+      if (Object.keys(updates).length > 0) {
+        setDefaultingTeamIds(prev => ({ ...prev, ...updates }));
+      }
+    });
+    return () => { cancelled = true; };
+  }, [convertedGames.length]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const actualStandingsCategoryMapping = useMemo(() => {
     if (convertedGames && convertedGames.length > 0) {
@@ -1759,8 +1791,8 @@ const convertedAllGames = allSeasonGames.map((apiGame) => ({
                   </thead>
                   <tbody>
                     {filteredGames.map((game, index) => {
-                      const awayWon = isAwayWinner(game);
-                      const homeWon = isHomeWinner(game);
+                      const awayWon = isAwayWinner(game, defaultingTeamIds);
+                      const homeWon = isHomeWinner(game, defaultingTeamIds);
                       const showGameComment = !!(game.gameComments && game.gameComments.trim());
                       const showSchedulingComment = !!(isViewingCurrentSeason && game.schedulingComments && game.schedulingComments.trim());
                       const showComment = showGameComment || showSchedulingComment;
@@ -2047,8 +2079,8 @@ const convertedAllGames = allSeasonGames.map((apiGame) => ({
                           {effectiveLayoutMode === 'grid' && (
                             <div className="hidden lg:grid lg:grid-cols-2 xl:grid-cols-3 gap-4 p-4">
                               {divisionGamesByDate[date].map((game) => {
-                                const awayWon = isAwayWinner(game);
-                                const homeWon = isHomeWinner(game);
+                                const awayWon = isAwayWinner(game, defaultingTeamIds);
+                                const homeWon = isHomeWinner(game, defaultingTeamIds);
                                 
                                 return (
                                   <div 
@@ -2152,8 +2184,8 @@ const convertedAllGames = allSeasonGames.map((apiGame) => ({
                           {/* Card View */}
                           <div className={effectiveLayoutMode === 'grid' ? 'lg:hidden divide-y divide-gray-200' : 'divide-y divide-gray-200'}>
                             {divisionGamesByDate[date].map((game) => {
-                              const awayWon = isAwayWinner(game);
-                              const homeWon = isHomeWinner(game);
+                              const awayWon = isAwayWinner(game, defaultingTeamIds);
+                              const homeWon = isHomeWinner(game, defaultingTeamIds);
                               
                               return (
                                 <div 
@@ -2304,8 +2336,8 @@ const convertedAllGames = allSeasonGames.map((apiGame) => ({
                 {effectiveLayoutMode === 'grid' && (
                   <div className="hidden lg:grid lg:grid-cols-2 xl:grid-cols-3 gap-4 p-4">
                     {gamesByDate![date].map((game) => {
-                      const awayWon = isAwayWinner(game);
-                      const homeWon = isHomeWinner(game);
+                      const awayWon = isAwayWinner(game, defaultingTeamIds);
+                      const homeWon = isHomeWinner(game, defaultingTeamIds);
                       
                       return (
                         <div 
@@ -2412,8 +2444,8 @@ const convertedAllGames = allSeasonGames.map((apiGame) => ({
                 {/* Card View - Mobile & Desktop */}
                 <div className={effectiveLayoutMode === 'grid' ? 'lg:hidden divide-y divide-gray-200' : 'divide-y divide-gray-200'}>
                   {gamesByDate![date].map((game) => {
-                    const awayWon = isAwayWinner(game);
-                    const homeWon = isHomeWinner(game);
+                    const awayWon = isAwayWinner(game, defaultingTeamIds);
+                    const homeWon = isHomeWinner(game, defaultingTeamIds);
                     
                     return (
                       <div 

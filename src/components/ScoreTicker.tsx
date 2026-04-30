@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { useDivision } from '../contexts/DivisionContext';
+import { fetchGameDetails } from '../services/sportzsoft/api';
 import {
   Select,
   SelectContent,
@@ -292,6 +293,34 @@ export function ScoreTicker() {
     };
   });
 
+  // Fetch DefaultingTeamId for DEFAULT/FORFEIT games from the Game Detail endpoint
+  const [defaultingTeamIds, setDefaultingTeamIds] = useState<Record<string, number>>({});
+  useEffect(() => {
+    const defaultGames = games.filter(g =>
+      (g.status === 'DEFAULT' || g.status === 'FORFEIT') && !g.defaultingTeamId && !defaultingTeamIds[g.id]
+    );
+    if (defaultGames.length === 0) return;
+    let cancelled = false;
+    Promise.all(
+      defaultGames.map(async (g) => {
+        try {
+          const resp = await fetchGameDetails(parseInt(g.id), '', 'B');
+          const dtid = resp?.Response?.Game?.DefaultingTeamId;
+          if (dtid) return { id: g.id, defaultingTeamId: dtid };
+        } catch {}
+        return null;
+      })
+    ).then(results => {
+      if (cancelled) return;
+      const updates: Record<string, number> = {};
+      results.forEach(r => { if (r) updates[r.id] = r.defaultingTeamId; });
+      if (Object.keys(updates).length > 0) {
+        setDefaultingTeamIds(prev => ({ ...prev, ...updates }));
+      }
+    });
+    return () => { cancelled = true; };
+  }, [games.length]); // eslint-disable-line react-hooks/exhaustive-deps
+
   const scroll = (direction: 'left' | 'right') => {
     const container = document.getElementById('score-ticker-container');
     if (container) {
@@ -451,17 +480,18 @@ export function ScoreTicker() {
               </div>
             ) : (
               games.map((game, index) => {
+                const dtid = game.defaultingTeamId || defaultingTeamIds[game.id];
                 const isAwayWin = (() => {
                   if (game.status === 'DOUBLE_DEFAULT' || !isGameComplete(game.status)) return false;
-                  if ((game.status === 'DEFAULT' || game.status === 'FORFEIT') && game.defaultingTeamId) {
-                    return game.defaultingTeamId === game.homeTeamId;
+                  if ((game.status === 'DEFAULT' || game.status === 'FORFEIT') && dtid) {
+                    return dtid === game.homeTeamId;
                   }
                   return (game.hasScoreData !== false) && game.awayScore > game.homeScore;
                 })();
                 const isHomeWin = (() => {
                   if (game.status === 'DOUBLE_DEFAULT' || !isGameComplete(game.status)) return false;
-                  if ((game.status === 'DEFAULT' || game.status === 'FORFEIT') && game.defaultingTeamId) {
-                    return game.defaultingTeamId === game.visitorTeamId;
+                  if ((game.status === 'DEFAULT' || game.status === 'FORFEIT') && dtid) {
+                    return dtid === game.visitorTeamId;
                   }
                   return (game.hasScoreData !== false) && game.homeScore > game.awayScore;
                 })();
