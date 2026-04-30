@@ -8,7 +8,7 @@ import { exportGameSheetPDF, type GameSheetPDFData } from '../utils/gameSheetPdf
 import rmllShieldLogo from '../assets/mainlogo.png';
 import { useGameDetails } from '../hooks/useGameDetails';
 import { useSeasons } from '../hooks/useSeasons';
-import { parseDateAsLocal, DIVISION_NAMES, type ScoringStats, type GoalieStats, type PenaltyStats, type RosterPlayer as APIRosterPlayer } from '../services/sportzsoft';
+import { parseDateAsLocal, DIVISION_NAMES, resolveGameStatus, isGameComplete, type ScoringStats, type GoalieStats, type PenaltyStats, type RosterPlayer as APIRosterPlayer } from '../services/sportzsoft';
 
 // Parse a datetime string's TIME portion as local (avoids UTC timezone shift).
 // SportzSoft returns e.g. "2025-06-15T19:00:00" or "2025-06-15T19:00:00.000Z"
@@ -54,7 +54,7 @@ interface Game {
   date: string;
   fullDate?: string;
   time: string;
-  status: 'FINAL' | 'LIVE' | 'UPCOMING' | 'EXHIBITION';
+  status: 'FINAL' | 'LIVE' | 'UPCOMING' | 'EXHIBITION' | 'SUSPENDED' | 'CANCELLED' | 'FORFEIT' | 'DEFAULT';
   homeLogo: string;
   awayLogo: string;
   division: string;
@@ -683,14 +683,11 @@ export function GameSheetModal({ game, open, onClose }: GameSheetModalProps) {
     if (!gameDetails?.Game) return game;
 
     const details = gameDetails.Game;
-    const statusLower = (details.GameStatus || '').toLowerCase();
 
-    let status = game.status;
-    if (statusLower === 'final' || statusLower === 'played' || statusLower === 'completed') {
-      status = 'FINAL';
-    } else if (statusLower === 'in progress' || statusLower === 'live') {
-      status = 'LIVE';
-    } else if (status === 'UPCOMING' && details.HomeScore !== null && details.VisitorScore !== null) {
+    // Use shared status resolver from API detail response
+    let status = resolveGameStatus(details.GameStatus, (details as any).StandingCategoryCode);
+    // If still upcoming but scores exist in detail response, upgrade to FINAL
+    if (status === 'UPCOMING' && details.HomeScore !== null && details.VisitorScore !== null) {
       status = 'FINAL';
     }
 
@@ -780,8 +777,8 @@ export function GameSheetModal({ game, open, onClose }: GameSheetModalProps) {
     
   const periodScores = computePeriodScores(gameDetails?.ScoringStats, homeTeamId, visitorTeamId, gameDetails?.Roster);
   
-  const isAwayWin = displayGame.status === 'FINAL' && displayGame.awayScore > displayGame.homeScore;
-  const isHomeWin = displayGame.status === 'FINAL' && displayGame.homeScore > displayGame.awayScore;
+  const isAwayWin = isGameComplete(displayGame.status) && displayGame.awayScore > displayGame.homeScore;
+  const isHomeWin = isGameComplete(displayGame.status) && displayGame.homeScore > displayGame.awayScore;
   
   // Prefer the formatted date; only use fullDate if it's already human-readable (not raw ISO)
   const displayDate = (displayGame.fullDate && !displayGame.fullDate.includes('T'))
@@ -1019,14 +1016,20 @@ export function GameSheetModal({ game, open, onClose }: GameSheetModalProps) {
                 className={`text-xs font-bold px-3 py-1 rounded ${
                   displayGame.status === 'LIVE'
                     ? 'bg-red-600 text-white animate-pulse'
-                    : displayGame.status === 'FINAL'
-                    ? 'bg-gray-800 text-white'
-                    : displayGame.status === 'EXHIBITION'
-                    ? 'bg-amber-600 text-white'
+                    : displayGame.status === 'FINAL' ? 'bg-[#4b5baa] text-white'
+                    : displayGame.status === 'EXHIBITION' ? 'bg-amber-600 text-white'
+                    : displayGame.status === 'SUSPENDED' ? 'bg-yellow-600 text-white'
+                    : displayGame.status === 'CANCELLED' ? 'bg-gray-400 text-white'
+                    : displayGame.status === 'FORFEIT' ? 'bg-orange-700 text-white'
+                    : displayGame.status === 'DEFAULT' ? 'bg-orange-600 text-white'
                     : 'bg-blue-600 text-white'
                 }`}
               >
-                {displayGame.status}
+                {displayGame.status === 'FINAL' ? 'Final'
+                  : displayGame.status === 'LIVE' ? 'LIVE'
+                  : displayGame.status === 'UPCOMING' ? 'Upcoming'
+                  : displayGame.status === 'EXHIBITION' ? 'Exhibition'
+                  : displayGame.status}
               </span>
             </div>
           </div>

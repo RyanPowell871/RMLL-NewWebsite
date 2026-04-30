@@ -219,18 +219,34 @@ export const DIVISION_NAMES_DETAILED: Record<number, string> = {
   76905: 'Sr. C South',
 };
 
-// Game Status Code mapping
+// Game Status Code mapping (from SportzSoft API)
+// These map numeric GameStatusCodeId to display strings used throughout the app.
+// The downstream components use resolveGameStatus() to convert to FINAL/LIVE/UPCOMING/EXHIBITION.
 export const GAME_STATUS: Record<number, string> = {
-  112: 'Scheduled',
+  100: 'Not Played',       // Default for future games
+  101: 'Scheduled',        // Game is scheduled
+  102: 'Pre-Game',         // Warmup / pre-game
+  103: 'Period 1',
+  104: 'Period 1 Intermission',
+  105: 'Period 2',
+  106: 'Period 2 Intermission',
+  107: 'Period 3',
+  108: 'Overtime',
+  109: 'Shootout',
+  110: 'Final',            // Regulation final
+  111: 'Final',            // Overtime final
+  112: 'Final',            // Shootout final
+  113: 'Suspended',
   114: 'In Progress',
-  115: 'In Progress', // Some games may use 115
+  115: 'In Progress',     // Duplicate of 114
   116: 'Completed',
-  117: 'Completed',
-  118: 'Final',
-  120: 'Final',
+  117: 'Completed',        // Duplicate of 116
+  118: 'Final',            // Duplicate of 110
+  119: 'Forfeit',
+  120: 'Final',            // Duplicate of 110/118
   122: 'Cancelled',
   123: 'Postponed',
-  // Add more status codes as needed
+  124: 'Default',          // Default/forfeit loss
 };
 
 // Define the preferred order for divisions (matches the original hardcoded order)

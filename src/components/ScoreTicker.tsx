@@ -10,7 +10,7 @@ import {
 } from './ui/select';
 import { GameSheetModal } from './GameSheetModal';
 import { useScheduleData } from '../hooks/useScheduleData';
-import { parseGameTime, buildDivisionGroups } from '../services/sportzsoft';
+import { parseGameTime, buildDivisionGroups, resolveGameStatus, isGameComplete, hasScores } from '../services/sportzsoft';
 import { buildDynamicSubDivisionIds } from '../services/sportzsoft/utils';
 import { SUB_DIVISION_IDS, DIVISION_GROUPS } from '../services/sportzsoft/constants';
 import { useSeasons } from '../hooks/useSeasons';
@@ -188,7 +188,8 @@ export function ScoreTicker() {
       gameDate.setHours(0, 0, 0, 0);
 
       const isExhibition = game.StandingCategoryCode?.toLowerCase() === 'exhb';
-      const isFinal = game.GameStatus === 'Final';
+      const resolvedStatus = resolveGameStatus(game.GameStatus, game.StandingCategoryCode);
+      const isFinal = resolvedStatus === 'FINAL' || resolvedStatus === 'FORFEIT' || resolvedStatus === 'DEFAULT';
       const hasScores = game.HomeScore !== undefined && game.HomeScore !== null &&
                        game.VisitorScore !== undefined && game.VisitorScore !== null;
       const bothScoresZero = hasScores && game.HomeScore === 0 && game.VisitorScore === 0;
@@ -283,11 +284,8 @@ export function ScoreTicker() {
       awayRecord: '',
       date: formatGameDate(apiGame.GameDate),
       fullDate: apiGame.GameDate, // Pass full date for API lookups
-      time: apiGame.GameStatus === 'Final' ? 'FINAL' : apiGame.GameStatus === 'In Progress' ? 'LIVE' : (parseGameTime(apiGame.StartTime) || parseGameTime(apiGame.GameDate)),
-      status: apiGame.GameStatus === 'Final' ? 'FINAL' 
-        : apiGame.GameStatus === 'In Progress' ? 'LIVE' 
-        : (apiGame.StandingCategoryCode?.toLowerCase() === 'exhb') ? 'EXHIBITION'
-        : 'UPCOMING',
+      time: (() => { const s = resolveGameStatus(apiGame.GameStatus, apiGame.StandingCategoryCode); return s === 'FINAL' || s === 'FORFEIT' || s === 'DEFAULT' || s === 'CANCELLED' ? 'FINAL' : s === 'LIVE' ? 'LIVE' : (parseGameTime(apiGame.StartTime) || parseGameTime(apiGame.GameDate)); })(),
+      status: resolveGameStatus(apiGame.GameStatus, apiGame.StandingCategoryCode),
       homeLogo: apiGame.HomeTeamLogoURL || rockiesLogo, // Use API logo URL or fallback to default
       awayLogo: apiGame.VisitorTeamLogoURL || shamrocksLogo, // Use API logo URL or fallback to default
       division: apiGame.DivisionName || 'Unknown',
@@ -456,8 +454,8 @@ export function ScoreTicker() {
               </div>
             ) : (
               games.map((game, index) => {
-                const isAwayWin = game.awayScore > game.homeScore && game.status === 'FINAL';
-                const isHomeWin = game.homeScore > game.awayScore && game.status === 'FINAL';
+                const isAwayWin = game.awayScore > game.homeScore && isGameComplete(game.status);
+                const isHomeWin = game.homeScore > game.awayScore && isGameComplete(game.status);
                 const isInProgress = inProgressDivisionIds.has(game.divisionId);
                 
                 return (
@@ -488,10 +486,14 @@ export function ScoreTicker() {
                           className={`text-[10px] sm:text-xs font-bold px-2 sm:px-2.5 py-0.5 rounded tracking-wider ${
                             game.status === 'LIVE'
                               ? 'bg-red-600 text-white animate-pulse'
-                              : game.status === 'FINAL'
+                              : game.status === 'FINAL' || game.status === 'FORFEIT' || game.status === 'DEFAULT'
                               ? 'bg-gray-800 text-white'
                               : game.status === 'EXHIBITION'
                               ? 'bg-amber-600 text-white'
+                              : game.status === 'SUSPENDED'
+                              ? 'bg-yellow-600 text-white'
+                              : game.status === 'CANCELLED'
+                              ? 'bg-gray-400 text-white'
                               : 'bg-blue-600 text-white'
                           }`}
                         >
@@ -512,13 +514,13 @@ export function ScoreTicker() {
                         </div>
                       </div>
                       <span className={`text-xl sm:text-2xl font-bold min-w-[24px] sm:min-w-[28px] text-right ${
-                        game.status === 'UPCOMING' || game.status === 'EXHIBITION'
-                          ? 'text-gray-400' 
+                        !hasScores(game.status)
+                          ? 'text-gray-400'
                           : isAwayWin
                           ? 'text-gray-900'
                           : 'text-gray-500'
                       }`}>
-                        {game.status === 'UPCOMING' || game.status === 'EXHIBITION' ? '-' : game.awayScore}
+                        {!hasScores(game.status) ? '-' : game.awayScore}
                       </span>
                     </div>
 
@@ -534,13 +536,13 @@ export function ScoreTicker() {
                         </div>
                       </div>
                       <span className={`text-xl sm:text-2xl font-bold min-w-[24px] sm:min-w-[28px] text-right ${
-                        game.status === 'UPCOMING' || game.status === 'EXHIBITION'
-                          ? 'text-gray-400' 
+                        !hasScores(game.status)
+                          ? 'text-gray-400'
                           : isHomeWin
                           ? 'text-gray-900'
                           : 'text-gray-500'
                       }`}>
-                        {game.status === 'UPCOMING' || game.status === 'EXHIBITION' ? '-' : game.homeScore}
+                        {!hasScores(game.status) ? '-' : game.homeScore}
                       </span>
                     </div>
                   </div>

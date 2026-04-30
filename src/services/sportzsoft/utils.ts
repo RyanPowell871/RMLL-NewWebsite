@@ -1,10 +1,79 @@
-import { 
-  Game, 
-  Team, 
-  Season, 
+import {
+  Game,
+  Team,
+  Season,
   ActiveDivisions,
   GameDateRange
 } from './types';
+
+// ── Game Status Resolution ──────────────────────────────────────────────
+// Single source of truth for converting API game status to UI enum.
+// Used by ScheduleSection, ScoreTicker, TeamDetailPage, GameSheetModal, etc.
+
+export type GameStatusEnum = 'FINAL' | 'LIVE' | 'UPCOMING' | 'EXHIBITION' | 'SUSPENDED' | 'CANCELLED' | 'FORFEIT' | 'DEFAULT';
+
+/**
+ * Resolve the UI game status from the API's GameStatus string and StandingCategoryCode.
+ *
+ * @param gameStatus - The GameStatus string from the API (e.g. "Final", "In Progress", "Default", "Completed")
+ * @param standingCategoryCode - Optional standing category code (e.g. "exhb" for exhibition)
+ * @param isExhibition - Optional boolean if exhibition is already determined
+ */
+export function resolveGameStatus(
+  gameStatus: string | undefined | null,
+  standingCategoryCode?: string | undefined | null,
+): GameStatusEnum {
+  // Exhibition takes priority
+  if (standingCategoryCode?.toLowerCase() === 'exhb') return 'EXHIBITION';
+
+  const s = (gameStatus || '').toLowerCase().trim();
+
+  // Final / completed / played
+  if (s === 'final' || s === 'played' || s === 'completed' || s === 'final (ot)' || s === 'final (so)') {
+    return 'FINAL';
+  }
+
+  // In progress (various period codes from API)
+  if (s === 'in progress' || s === 'live' || s === 'in-progress' ||
+      s === 'pre-game' || s === 'period 1' || s === 'period 1 intermission' ||
+      s === 'period 2' || s === 'period 2 intermission' ||
+      s === 'period 3' || s === 'overtime' || s === 'shootout') {
+    return 'LIVE';
+  }
+
+  // Suspended
+  if (s === 'suspended') return 'SUSPENDED';
+
+  // Cancelled
+  if (s === 'cancelled') return 'CANCELLED';
+
+  // Forfeit
+  if (s === 'forfeit') return 'FORFEIT';
+
+  // Default (SportzSoft uses this for forfeit/default losses)
+  if (s === 'default') return 'DEFAULT';
+
+  // Postponed — treat as a final-like completed state
+  if (s === 'postponed') return 'FINAL';
+
+  // Everything else (Not Played, Scheduled, empty, unknown) → UPCOMING
+  return 'UPCOMING';
+}
+
+/**
+ * Returns true if a game with the given status should display scores.
+ * Final, Forfeit, Default, and Suspended games all have final scores.
+ */
+export function hasScores(status: GameStatusEnum): boolean {
+  return status === 'FINAL' || status === 'FORFEIT' || status === 'DEFAULT' || status === 'SUSPENDED' || status === 'LIVE';
+}
+
+/**
+ * Returns true if a game with the given status is completed (not in progress, not upcoming).
+ */
+export function isGameComplete(status: GameStatusEnum): boolean {
+  return status === 'FINAL' || status === 'FORFEIT' || status === 'DEFAULT' || status === 'SUSPENDED' || status === 'CANCELLED';
+}
 
 import {
   DIVISION_GROUPS,

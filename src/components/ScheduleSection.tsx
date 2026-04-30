@@ -27,7 +27,10 @@ import {
   buildStandingsCategoryMappingFromGames,
   getUniqueGameTypesFromGames,
   mapStandingCategoryCodeToName,
-  parseDateAsLocal
+  parseDateAsLocal,
+  resolveGameStatus,
+  hasScores,
+  isGameComplete
 } from '../services/sportzsoft';
 import type { EnhancedGame } from '../services/sportzsoft';
 import { exportGamesToCalendar, type GameForCalendar } from '../utils/calendar';
@@ -92,6 +95,33 @@ interface Game {
   schedulingComments?: string | null; // Scheduling comments from API (only shown when schedule in progress)
   homeTeamDivisionId?: number; // Home team's division — for crossover game detection
   visitorTeamDivisionId?: number; // Visitor team's division — for crossover game detection
+}
+
+// Status badge styling and labels
+function getStatusBadgeStyle(status: string): string {
+  switch (status) {
+    case 'FINAL': return 'bg-[#4b5baa] text-white';
+    case 'LIVE': return 'bg-red-600 text-white';
+    case 'EXHIBITION': return 'bg-amber-600 text-white';
+    case 'SUSPENDED': return 'bg-yellow-600 text-white';
+    case 'CANCELLED': return 'bg-gray-400 text-white';
+    case 'FORFEIT': return 'bg-orange-700 text-white';
+    case 'DEFAULT': return 'bg-orange-600 text-white';
+    default: return 'bg-gray-600 text-white';
+  }
+}
+function getStatusLabel(status: string): string {
+  switch (status) {
+    case 'FINAL': return 'Final';
+    case 'LIVE': return 'LIVE';
+    case 'UPCOMING': return 'Upcoming';
+    case 'EXHIBITION': return 'Exhibition';
+    case 'SUSPENDED': return 'Suspended';
+    case 'CANCELLED': return 'Cancelled';
+    case 'FORFEIT': return 'Forfeit';
+    case 'DEFAULT': return 'Default';
+    default: return status;
+  }
 }
 
 export function ScheduleSection() {
@@ -374,7 +404,7 @@ export function ScheduleSection() {
       game.division,
       game.homeTeam,
       game.awayTeam,
-      game.status === 'FINAL' || game.status === 'LIVE' ? `${game.homeScore}-${game.awayScore}` : '-',
+      hasScores(game.status) ? `${game.homeScore}-${game.awayScore}` : '-',
       game.venue,
       game.status,
       `"${(game.schedulingComments || '').replace(/"/g, '""')}"`,
@@ -455,7 +485,7 @@ export function ScheduleSection() {
                   <td>${game.division}</td>
                   <td>${game.homeTeam}</td>
                   <td>${game.awayTeam}</td>
-                  <td>${game.status === 'FINAL' || game.status === 'LIVE' ? `${game.homeScore}-${game.awayScore}` : '-'}</td>
+                  <td>${hasScores(game.status) ? `${game.homeScore}-${game.awayScore}` : '-'}</td>
                   <td>${game.venue}</td>
                   <td>${game.status}</td>
                 </tr>
@@ -774,8 +804,8 @@ const convertedAllGames = allSeasonGames.map((apiGame) => ({
     if (!allSeasonGames || allSeasonGames.length === 0) return records;
     
     allSeasonGames.forEach(game => {
-      const status = (game.GameStatus || '').toLowerCase();
-      const isFinal = status === 'final' || status === 'played' || status === 'completed';
+      const resolved = resolveGameStatus(game.GameStatus, game.StandingCategoryCode);
+      const isFinal = resolved === 'FINAL' || resolved === 'FORFEIT' || resolved === 'DEFAULT';
       if (!isFinal) return;
       
       const homeScore = game.HomeScore ?? 0;
@@ -834,15 +864,7 @@ const convertedAllGames = allSeasonGames.map((apiGame) => ({
       date: formatGameDate(apiGame.GameDate),
       fullDate: apiGame.GameDate,
       time: parseGameTime(apiGame.StartTime) || parseGameTime(apiGame.GameDate),
-      status: (apiGame.StandingCategoryCode?.toLowerCase() === 'exhb') ? 'EXHIBITION'
-        : (apiGame.GameStatus?.toLowerCase() === 'final' ||
-                apiGame.GameStatus?.toLowerCase() === 'played' ||
-                apiGame.GameStatus?.toLowerCase() === 'completed' ||
-                apiGame.GameStatus?.toLowerCase() === 'postponed') ? 'FINAL'
-        : (apiGame.GameStatus?.toLowerCase() === 'in progress' ||
-                apiGame.GameStatus?.toLowerCase() === 'live' ||
-                apiGame.GameStatus?.toLowerCase() === 'in-progress') ? 'LIVE'
-        : 'UPCOMING',
+      status: resolveGameStatus(apiGame.GameStatus, apiGame.StandingCategoryCode),
       homeLogo: apiGame.HomeTeamLogoURL || getTeamLogo(apiGame.HomeTeamName || 'Home Team', undefined),
       awayLogo: apiGame.VisitorTeamLogoURL || getTeamLogo(apiGame.VisitorTeamName || 'Away Team', undefined),
       division: apiGame.DivisionName || 'Unknown',
@@ -973,11 +995,11 @@ const convertedAllGames = allSeasonGames.map((apiGame) => ({
           bValue = b.awayTeam.toLowerCase();
           break;
         case 'score':
-          aValue = (a.status === 'FINAL' || a.status === 'LIVE') ? (a.homeScore + a.awayScore) : -1;
-          bValue = (b.status === 'FINAL' || b.status === 'LIVE') ? (b.homeScore + b.awayScore) : -1;
+          aValue = hasScores(a.status) ? (a.homeScore + a.awayScore) : -1;
+          bValue = hasScores(b.status) ? (b.homeScore + b.awayScore) : -1;
           break;
         case 'status':
-          const statusOrder: Record<string, number> = { 'LIVE': 0, 'UPCOMING': 1, 'EXHIBITION': 1, 'FINAL': 2 };
+          const statusOrder: Record<string, number> = { 'LIVE': 0, 'UPCOMING': 1, 'EXHIBITION': 1, 'SUSPENDED': 1, 'CANCELLED': 1, 'FORFEIT': 2, 'DEFAULT': 2, 'FINAL': 2 };
           aValue = statusOrder[a.status] ?? 3;
           bValue = statusOrder[b.status] ?? 3;
           break;
@@ -1707,8 +1729,8 @@ const convertedAllGames = allSeasonGames.map((apiGame) => ({
                   </thead>
                   <tbody>
                     {filteredGames.map((game, index) => {
-                      const awayWon = game.status === 'FINAL' && game.awayScore > game.homeScore;
-                      const homeWon = game.status === 'FINAL' && game.homeScore > game.awayScore;
+                      const awayWon = isGameComplete(game.status) && game.awayScore > game.homeScore;
+                      const homeWon = isGameComplete(game.status) && game.homeScore > game.awayScore;
                       const showGameComment = !!(game.gameComments && game.gameComments.trim());
                       const showSchedulingComment = !!(isViewingCurrentSeason && game.schedulingComments && game.schedulingComments.trim());
                       const showComment = showGameComment || showSchedulingComment;
@@ -1748,16 +1770,11 @@ const convertedAllGames = allSeasonGames.map((apiGame) => ({
                             </div>
                           </td>
                           <td className="px-3 py-3 text-xs font-semibold text-gray-700">
-                            {game.status === 'FINAL' || game.status === 'LIVE' ? `${game.homeScore} - ${game.awayScore}` : '-'}
+                            {hasScores(game.status) ? `${game.homeScore} - ${game.awayScore}` : '-'}
                           </td>
                           <td className="px-3 py-3">
-                            <span className={`text-xs font-bold px-2 py-1 rounded ${
-                              game.status === 'FINAL' ? 'bg-[#4b5baa] text-white' : 
-                              game.status === 'LIVE' ? 'bg-red-600 text-white' : 
-                              game.status === 'EXHIBITION' ? 'bg-amber-600 text-white' :
-                              'bg-gray-600 text-white'
-                            }`}>
-                              {game.status === 'FINAL' ? 'Final' : game.status === 'EXHIBITION' ? 'Exhibition' : game.status}
+                            <span className={`text-xs font-bold px-2 py-1 rounded ${getStatusBadgeStyle(game.status)}`}>
+                              {getStatusLabel(game.status)}
                             </span>
                             {isCrossover && (
                               <span className="ml-1 text-[10px] font-bold px-1.5 py-0.5 rounded bg-purple-100 text-purple-700 border border-purple-200">
@@ -1850,7 +1867,7 @@ const convertedAllGames = allSeasonGames.map((apiGame) => ({
                                 <div className="text-[8px] sm:text-[9px] font-bold text-gray-600">
                                   {game.time.replace(' PM', 'p').replace(' AM', 'a')}
                                 </div>
-                                {(game.status === 'FINAL' || game.status === 'LIVE') ? (
+                                {(hasScores(game.status)) ? (
                                   <div className="text-[8px] sm:text-[9px] font-bold" style={{
                                     color: game.status === 'FINAL' ? '#16a34a' : '#dc2626'
                                   }}>
@@ -1925,7 +1942,7 @@ const convertedAllGames = allSeasonGames.map((apiGame) => ({
                                   <div className="text-[7px] sm:text-[8px] font-bold text-gray-600">
                                     {game.time.replace(' PM', 'p').replace(' AM', 'a')}
                                   </div>
-                                  {(game.status === 'FINAL' || game.status === 'LIVE') ? (
+                                  {(hasScores(game.status)) ? (
                                     <div className="text-[7px] sm:text-[8px] font-bold" style={{
                                       color: game.status === 'FINAL' ? '#16a34a' : '#dc2626'
                                     }}>
@@ -2000,8 +2017,8 @@ const convertedAllGames = allSeasonGames.map((apiGame) => ({
                           {effectiveLayoutMode === 'grid' && (
                             <div className="hidden lg:grid lg:grid-cols-2 xl:grid-cols-3 gap-4 p-4">
                               {divisionGamesByDate[date].map((game) => {
-                                const awayWon = game.status === 'FINAL' && game.awayScore > game.homeScore;
-                                const homeWon = game.status === 'FINAL' && game.homeScore > game.awayScore;
+                                const awayWon = isGameComplete(game.status) && game.awayScore > game.homeScore;
+                                const homeWon = isGameComplete(game.status) && game.homeScore > game.awayScore;
                                 
                                 return (
                                   <div 
@@ -2025,14 +2042,10 @@ const convertedAllGames = allSeasonGames.map((apiGame) => ({
                                           className={`text-xs font-bold px-2 py-0.5 rounded ${
                                             game.status === 'LIVE'
                                               ? 'bg-red-600 text-white animate-pulse'
-                                              : game.status === 'FINAL'
-                                              ? 'bg-gray-800 text-white'
-                                              : game.status === 'EXHIBITION'
-                                              ? 'bg-amber-600 text-white'
-                                              : 'bg-blue-600 text-white'
+                                              : getStatusBadgeStyle(game.status)
                                           }`}
                                         >
-                                          {game.status === 'EXHIBITION' ? 'Exhibition' : game.status}
+                                          {getStatusLabel(game.status)}
                                         </span>
                                       </div>
                                     </div>
@@ -2052,7 +2065,7 @@ const convertedAllGames = allSeasonGames.map((apiGame) => ({
                                             {game.awayRecord && <span className="text-xs text-gray-500 font-semibold">({game.awayRecord})</span>}
                                           </div>
                                         </div>
-                                        {(game.status === 'FINAL' || game.status === 'LIVE') && (
+                                        {(hasScores(game.status)) && (
                                           <span className={`text-2xl font-bold min-w-[28px] text-right ${
                                             awayWon ? 'text-green-700' : 'text-gray-400'
                                           }`}>
@@ -2074,7 +2087,7 @@ const convertedAllGames = allSeasonGames.map((apiGame) => ({
                                             {game.homeRecord && <span className="text-xs text-gray-500 font-semibold">({game.homeRecord})</span>}
                                           </div>
                                         </div>
-                                        {(game.status === 'FINAL' || game.status === 'LIVE') && (
+                                        {(hasScores(game.status)) && (
                                           <span className={`text-2xl font-bold min-w-[28px] text-right ${
                                             homeWon ? 'text-green-700' : 'text-gray-400'
                                           }`}>
@@ -2109,8 +2122,8 @@ const convertedAllGames = allSeasonGames.map((apiGame) => ({
                           {/* Card View */}
                           <div className={effectiveLayoutMode === 'grid' ? 'lg:hidden divide-y divide-gray-200' : 'divide-y divide-gray-200'}>
                             {divisionGamesByDate[date].map((game) => {
-                              const awayWon = game.status === 'FINAL' && game.awayScore > game.homeScore;
-                              const homeWon = game.status === 'FINAL' && game.homeScore > game.awayScore;
+                              const awayWon = isGameComplete(game.status) && game.awayScore > game.homeScore;
+                              const homeWon = isGameComplete(game.status) && game.homeScore > game.awayScore;
                               
                               return (
                                 <div 
@@ -2138,14 +2151,10 @@ const convertedAllGames = allSeasonGames.map((apiGame) => ({
                                 className={`text-xs font-bold px-2 py-0.5 rounded inline-block w-fit ${
                                   game.status === 'LIVE'
                                     ? 'bg-red-600 text-white animate-pulse'
-                                    : game.status === 'FINAL'
-                                    ? 'bg-gray-800 text-white'
-                                    : game.status === 'EXHIBITION'
-                                    ? 'bg-amber-600 text-white'
-                                    : 'bg-blue-600 text-white'
+                                    : getStatusBadgeStyle(game.status)
                                 }`}
                               >
-                                {game.status === 'EXHIBITION' ? 'Exhibition' : game.status}
+                                {getStatusLabel(game.status)}
                               </span>
                               {game.homeTeamDivisionId && game.visitorTeamDivisionId && game.homeTeamDivisionId !== game.visitorTeamDivisionId && (
                                 <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-purple-100 text-purple-700 border border-purple-200">
@@ -2175,7 +2184,7 @@ const convertedAllGames = allSeasonGames.map((apiGame) => ({
                                             {game.awayRecord && <span className="text-xs text-gray-500 font-semibold">({game.awayRecord})</span>}
                                           </div>
                                         </div>
-                                        {(game.status === 'FINAL' || game.status === 'LIVE') && (
+                                        {(hasScores(game.status)) && (
                                           <span className={`text-2xl sm:text-3xl font-bold min-w-[32px] text-right ${
                                             awayWon ? 'text-green-700' : 'text-gray-400'
                                           }`}>
@@ -2202,7 +2211,7 @@ const convertedAllGames = allSeasonGames.map((apiGame) => ({
                                             {game.homeRecord && <span className="text-xs text-gray-500 font-semibold">({game.homeRecord})</span>}
                                           </div>
                                         </div>
-                                        {(game.status === 'FINAL' || game.status === 'LIVE') && (
+                                        {(hasScores(game.status)) && (
                                           <span className={`text-2xl sm:text-3xl font-bold min-w-[32px] text-right ${
                                             homeWon ? 'text-green-700' : 'text-gray-400'
                                           }`}>
@@ -2265,8 +2274,8 @@ const convertedAllGames = allSeasonGames.map((apiGame) => ({
                 {effectiveLayoutMode === 'grid' && (
                   <div className="hidden lg:grid lg:grid-cols-2 xl:grid-cols-3 gap-4 p-4">
                     {gamesByDate![date].map((game) => {
-                      const awayWon = game.status === 'FINAL' && game.awayScore > game.homeScore;
-                      const homeWon = game.status === 'FINAL' && game.homeScore > game.awayScore;
+                      const awayWon = isGameComplete(game.status) && game.awayScore > game.homeScore;
+                      const homeWon = isGameComplete(game.status) && game.homeScore > game.awayScore;
                       
                       return (
                         <div 
@@ -2284,14 +2293,10 @@ const convertedAllGames = allSeasonGames.map((apiGame) => ({
                               className={`text-xs font-bold px-2 py-0.5 rounded ${
                                 game.status === 'LIVE'
                                   ? 'bg-red-600 text-white animate-pulse'
-                                  : game.status === 'FINAL'
-                                  ? 'bg-gray-800 text-white'
-                                  : game.status === 'EXHIBITION'
-                                  ? 'bg-amber-600 text-white'
-                                  : 'bg-blue-600 text-white'
+                                  : getStatusBadgeStyle(game.status)
                               }`}
                             >
-                              {game.status === 'EXHIBITION' ? 'Exhibition' : game.status}
+                              {getStatusLabel(game.status)}
                             </span>
                           </div>
 
@@ -2310,7 +2315,7 @@ const convertedAllGames = allSeasonGames.map((apiGame) => ({
                                   {game.awayRecord && <span className="text-xs text-gray-500 font-semibold">({game.awayRecord})</span>}
                                 </div>
                               </div>
-                              {(game.status === 'FINAL' || game.status === 'LIVE') && (
+                              {(hasScores(game.status)) && (
                                 <span className={`text-2xl font-bold min-w-[28px] text-right ${
                                   awayWon ? 'text-green-700' : 'text-gray-400'
                                 }`}>
@@ -2332,7 +2337,7 @@ const convertedAllGames = allSeasonGames.map((apiGame) => ({
                                   {game.homeRecord && <span className="text-xs text-gray-500 font-semibold">({game.homeRecord})</span>}
                                 </div>
                               </div>
-                              {(game.status === 'FINAL' || game.status === 'LIVE') && (
+                              {(hasScores(game.status)) && (
                                 <span className={`text-2xl font-bold min-w-[28px] text-right ${
                                   homeWon ? 'text-green-700' : 'text-gray-400'
                                 }`}>
@@ -2377,8 +2382,8 @@ const convertedAllGames = allSeasonGames.map((apiGame) => ({
                 {/* Card View - Mobile & Desktop */}
                 <div className={effectiveLayoutMode === 'grid' ? 'lg:hidden divide-y divide-gray-200' : 'divide-y divide-gray-200'}>
                   {gamesByDate![date].map((game) => {
-                    const awayWon = game.status === 'FINAL' && game.awayScore > game.homeScore;
-                    const homeWon = game.status === 'FINAL' && game.homeScore > game.awayScore;
+                    const awayWon = isGameComplete(game.status) && game.awayScore > game.homeScore;
+                    const homeWon = isGameComplete(game.status) && game.homeScore > game.awayScore;
                     
                     return (
                       <div 
@@ -2400,14 +2405,10 @@ const convertedAllGames = allSeasonGames.map((apiGame) => ({
                               className={`text-xs font-bold px-2 py-0.5 rounded inline-block w-fit ${
                                 game.status === 'LIVE'
                                   ? 'bg-red-600 text-white animate-pulse'
-                                  : game.status === 'FINAL'
-                                  ? 'bg-gray-800 text-white'
-                                  : game.status === 'EXHIBITION'
-                                  ? 'bg-amber-600 text-white'
-                                  : 'bg-blue-600 text-white'
+                                  : getStatusBadgeStyle(game.status)
                               }`}
                             >
-                              {game.status === 'EXHIBITION' ? 'Exhibition' : game.status}
+                              {getStatusLabel(game.status)}
                             </span>
                           </div>
 
@@ -2431,7 +2432,7 @@ const convertedAllGames = allSeasonGames.map((apiGame) => ({
                                   {game.awayRecord && <span className="text-xs text-gray-500 font-semibold">({game.awayRecord})</span>}
                                 </div>
                               </div>
-                              {(game.status === 'FINAL' || game.status === 'LIVE') && (
+                              {(hasScores(game.status)) && (
                                 <span className={`text-2xl sm:text-3xl font-bold min-w-[32px] text-right ${
                                   awayWon ? 'text-green-700' : 'text-gray-400'
                                 }`}>
@@ -2458,7 +2459,7 @@ const convertedAllGames = allSeasonGames.map((apiGame) => ({
                                   {game.homeRecord && <span className="text-xs text-gray-500 font-semibold">({game.homeRecord})</span>}
                                 </div>
                               </div>
-                              {(game.status === 'FINAL' || game.status === 'LIVE') && (
+                              {(hasScores(game.status)) && (
                                 <span className={`text-2xl sm:text-3xl font-bold min-w-[32px] text-right ${
                                   homeWon ? 'text-green-700' : 'text-gray-400'
                                 }`}>

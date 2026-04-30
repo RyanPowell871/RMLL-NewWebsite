@@ -5,7 +5,7 @@ import { FacilityMapLink } from './FacilityMapLink';
 import { useTeamRoster } from '../hooks/useTeamRoster';
 import { useSeasons } from '../hooks/useSeasons';
 import { fetchTeams, fetchTeamRoster, fetchPlayerStats, DIVISION_NAMES, getPlayerPhotoUrl } from '../services/sportzsoft';
-import { parseGameTime, formatGameDate, formatGameDateLong, parseDateAsLocal, type Game, type Practice, fetchTeamSchedule, mapStandingCategoryCodeToName } from '../services/sportzsoft';
+import { parseGameTime, formatGameDate, formatGameDateLong, parseDateAsLocal, type Game, type Practice, fetchTeamSchedule, mapStandingCategoryCodeToName, resolveGameStatus } from '../services/sportzsoft';
 import { fetchTeamRaw, fetchTeamConstraints } from '../services/sportzsoft/api';
 import { useDivisionScheduleStatus } from '../hooks/useDivisionScheduleStatus';
 
@@ -1134,19 +1134,9 @@ export function TeamDetailPage({ teamId, teamName, season, teamLogo, divisionId,
   const handleGameClick = (game: any) => {
     const isHomeTeam = game.HomeTeamId === currentTeamId;
     const opponentId = isHomeTeam ? game.VisitorTeamId : game.HomeTeamId;
-    
-    // Construct Game object for modal
-    const isGameFinal = 
-      game.GameStatus === 'Final' || 
-      game.GameStatus === 'FINAL' || 
-      game.GameStatus === 'Played' || 
-      (game.HomeScore !== null && game.VisitorScore !== null && new Date(game.GameDate) < new Date());
 
-    const isGameLive = 
-      game.GameStatus === 'In Progress' || 
-      game.GameStatus === 'Live';
-
-    const isExhibition = game.StandingCategoryCode?.toLowerCase() === 'exhb';
+    // Construct Game object for modal — use shared status resolver
+    const resolvedStatus = resolveGameStatus(game.GameStatus, game.StandingCategoryCode);
 
     const modalGame = {
       id: game.GameId ? game.GameId.toString() : '',
@@ -1160,7 +1150,7 @@ export function TeamDetailPage({ teamId, teamName, season, teamLogo, divisionId,
       date: formatGameDate(game.GameDate),
       fullDate: formatGameDateLong(game.GameDate),
       time: parseGameTime(game.StartTime),
-      status: isExhibition ? 'EXHIBITION' as const : isGameFinal ? 'FINAL' : isGameLive ? 'LIVE' : 'UPCOMING',
+      status: resolvedStatus,
       homeLogo: game.HomeTeamLogoURL || teamLogosMap[game.HomeTeamId] || '',
       awayLogo: game.VisitorTeamLogoURL || teamLogosMap[game.VisitorTeamId] || '',
       division: game.DivisionName || resolveDivisionName(game.DivisionId) || divisionName,
