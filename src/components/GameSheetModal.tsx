@@ -135,28 +135,35 @@ interface GameSheetModalProps {
 // Compute REAL period scores from ScoringStats data
 // Each ScoringStats entry represents one goal with Period, TeamId fields
 // Uses roster to reliably determine which team scored (goal.TeamId can be unreliable)
+// gameStatusCodeId: if 111 (OT final) or 112 (Shootout final), always show OT column
 const computePeriodScores = (
   scoringStats: any[] | undefined,
   homeTeamId: number,
   visitorTeamId: number,
-  roster?: any[]
+  roster?: any[],
+  gameStatusCodeId?: number
 ): PeriodScore[] => {
+  // GameStatusCodeId 111 = Overtime final, 112 = Shootout final
+  const isOTGame = gameStatusCodeId === 111 || gameStatusCodeId === 112;
+
   if (!scoringStats || scoringStats.length === 0 || homeTeamId === 0) {
     // No real data available — return zeros (don't fabricate)
-    return [
+    const base = [
       { period: '1', homeScore: 0, awayScore: 0 },
       { period: '2', homeScore: 0, awayScore: 0 },
       { period: '3', homeScore: 0, awayScore: 0 },
     ];
+    if (isOTGame) base.push({ period: 'OT', homeScore: 0, awayScore: 0 });
+    return base;
   }
 
   // Count goals per period per team
   const periodMap: Record<number, { home: number; away: number }> = {};
-  
+
   scoringStats.forEach(goal => {
     const period = goal.Period || 0;
     if (!periodMap[period]) periodMap[period] = { home: 0, away: 0 };
-    
+
     // Determine scoring team: look up the scorer in the roster first (most reliable)
     const scorer = roster?.find((r: any) => (r.PlayerId || r.PersonId) === goal.PlayerId);
     let scoringTeamId: string;
@@ -167,7 +174,7 @@ const computePeriodScores = (
     } else {
       scoringTeamId = String(goal.TeamId || '');
     }
-    
+
     if (scoringTeamId === String(homeTeamId)) {
       periodMap[period].home++;
     } else if (scoringTeamId === String(visitorTeamId)) {
@@ -184,10 +191,10 @@ const computePeriodScores = (
       awayScore: periodMap[p]?.away || 0,
     });
   }
-  
-  // Check for OT periods (4+)
+
+  // Check for OT periods (4+) or OT game status
   const otPeriods = Object.keys(periodMap).map(Number).filter(p => p > 3).sort((a, b) => a - b);
-  if (otPeriods.length > 0) {
+  if (otPeriods.length > 0 || isOTGame) {
     let otHome = 0, otAway = 0;
     otPeriods.forEach(p => {
       otHome += periodMap[p]?.home || 0;
@@ -796,7 +803,7 @@ export function GameSheetModal({ game, open, onClose }: GameSheetModalProps) {
     transformGoalieStats(gameDetails.GoalieStats, visitorTeamId) :
     [];
     
-  const periodScores = computePeriodScores(gameDetails?.ScoringStats, homeTeamId, visitorTeamId, gameDetails?.Roster);
+  const periodScores = computePeriodScores(gameDetails?.ScoringStats, homeTeamId, visitorTeamId, gameDetails?.Roster, (gameDetails?.Game as any)?.GameStatusCodeId);
   
   // Get DefaultingTeamId from game details (available from Game Detail API)
   const defaultingTeamId = (gameDetails?.Game as any)?.DefaultingTeamId || undefined;
