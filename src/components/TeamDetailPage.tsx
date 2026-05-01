@@ -1190,9 +1190,9 @@ export function TeamDetailPage({ teamId, teamName, season, teamLogo, divisionId,
     
     // Sort games by date asc for streak calculation
     const completedGames = apiGames
-      .filter(g => g.HomeScore !== null && g.VisitorScore !== null)
+      .filter(g => g.HomeScore !== null && g.VisitorScore !== null && g.StandingCategoryCode?.toLowerCase() !== 'exhb')
       .sort((a, b) => new Date(a.GameDate).getTime() - new Date(b.GameDate).getTime());
-      
+
     completedGames.forEach(game => {
       const isHome = game.HomeTeamId === currentTeamId;
       const teamScore = isHome ? game.HomeScore! : game.VisitorScore!;
@@ -1929,7 +1929,7 @@ export function TeamDetailPage({ teamId, teamName, season, teamLogo, divisionId,
                       {(() => {
                         if (!apiGames.length) return <div className="text-gray-400 italic text-sm text-center py-4">No games played yet</div>;
                         const completedGames = apiGames
-                          .filter(g => g.HomeScore !== null && g.VisitorScore !== null)
+                          .filter(g => g.HomeScore !== null && g.VisitorScore !== null && g.StandingCategoryCode?.toLowerCase() !== 'exhb')
                           .sort((a, b) => new Date(b.GameDate).getTime() - new Date(a.GameDate).getTime());
 
                         if (completedGames.length === 0) return <div className="text-gray-400 italic text-sm text-center py-4">No completed games yet</div>;
