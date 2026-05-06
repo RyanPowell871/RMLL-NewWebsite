@@ -135,16 +135,25 @@ interface GameSheetModalProps {
 // Compute REAL period scores from ScoringStats data
 // Each ScoringStats entry represents one goal with Period, TeamId fields
 // Uses roster to reliably determine which team scored (goal.TeamId can be unreliable)
-// gameStatusCodeId: if 111 (OT final) or 112 (Shootout final), always show OT column
 const computePeriodScores = (
   scoringStats: any[] | undefined,
   homeTeamId: number,
   visitorTeamId: number,
   roster?: any[],
-  gameStatusCodeId?: number
+  goalieStats?: any[],
+  gameStatusCodeId?: number,
+  statusString?: string
 ): PeriodScore[] => {
-  // GameStatusCodeId 111 = Overtime final, 112 = Shootout final
-  const isOTGame = gameStatusCodeId === 111 || gameStatusCodeId === 112;
+  // Detect OT game via multiple methods:
+  // 1. GameStatusCodeId: 111 = Overtime final, 112 = Shootout final
+  const isOTByCode = gameStatusCodeId === 111 || gameStatusCodeId === 112;
+  // 2. Status string contains "OT" or "Overtime" or "Shootout"
+  const isOTByStatus = statusString ? /\b(ot|overtime|shootout)\b/i.test(statusString) : false;
+  // 3. GoalieStats have entries with PeriodIn > 3 (means goalie played in OT)
+  const isOTByGoalie = !isOTByCode && !isOTByStatus && goalieStats
+    ? goalieStats.some((g: any) => g.PeriodIn > 3)
+    : false;
+  const isOTGame = isOTByCode || isOTByStatus || isOTByGoalie;
 
   if (!scoringStats || scoringStats.length === 0 || homeTeamId === 0) {
     // No real data available — return zeros (don't fabricate)
@@ -711,11 +720,19 @@ export function GameSheetModal({ game, open, onClose }: GameSheetModalProps) {
     const details = gameDetails.Game;
 
     // Use shared status resolver from API detail response
-    // Prefer GameStatusCode (e.g. "DEFW") or GameStatusName (e.g. "Defaulted") over GameStatus
-    const statusString = (details as any).GameStatusCode || (details as any).GameStatusName || details.GameStatus;
+    // Prefer GameStatusCodeId (numeric, most precise), then GameStatusCode (e.g. "DEFW"),
+    // then GameStatusName (e.g. "Defaulted"), then GameStatus string
+    const gameStatusCodeId = (details as any).GameStatusCodeId;
+    const statusString = gameStatusCodeId
+      ? gameStatusCodeId
+      : ((details as any).GameStatusCode || (details as any).GameStatusName || details.GameStatus);
     let status = resolveGameStatus(statusString, (details as any).StandingCategoryCode);
     // If still upcoming but scores exist in detail response, upgrade to FINAL
     if (status === 'UPCOMING' && details.HomeScore !== null && details.VisitorScore !== null) {
+      status = 'FINAL';
+    }
+    // If still upcoming but ScoringStats exist (game was played), upgrade to FINAL
+    if (status === 'UPCOMING' && gameDetails?.ScoringStats && gameDetails.ScoringStats.length > 0) {
       status = 'FINAL';
     }
 
@@ -782,13 +799,50 @@ export function GameSheetModal({ game, open, onClose }: GameSheetModalProps) {
     transformRosterWithScoring(gameDetails.Roster, gameDetails.ScoringStats, gameDetails.PenaltyStats, visitorTeamId) :
     [];
     
+  // Build a combined status string from multiple API sources for OT detection
+  const combinedStatusString = [
+    (gameDetails?.Game as any)?.GameStatusCode,
+    (gameDetails?.Game as any)?.GameStatusName,
+    gameDetails?.Game?.GameStatus,
+  ].filter(Boolean).join(' ');
+
+  // Compute authoritative scores from ScoringStats as a fallback.
+  // The displayGame scores come from HomeScore/VisitorScore which can be 0/null
+  // when the API doesn't populate them. ScoringStats counts are ground truth.
+  const computedScores = useMemo(() => {
+    if (!gameDetails?.ScoringStats || !homeTeamId || !visitorTeamId) return null;
+    let home = 0, away = 0;
+    gameDetails.ScoringStats.forEach((goal: any) => {
+      const scorer = gameDetails.Roster?.find((r: any) => (r.PlayerId || r.PersonId) === goal.PlayerId);
+      let scoringTeamId: string;
+      if (scorer?.TeamId) {
+        scoringTeamId = String(scorer.TeamId);
+      } else if (goal.ScoringTeamId) {
+        scoringTeamId = String(goal.ScoringTeamId);
+      } else {
+        scoringTeamId = String(goal.TeamId || '');
+      }
+      if (scoringTeamId === String(homeTeamId)) home++;
+      else if (scoringTeamId === String(visitorTeamId)) away++;
+    });
+    return { home, away };
+  }, [gameDetails?.ScoringStats, gameDetails?.Roster, homeTeamId, visitorTeamId]);
+
+  // Use computed scores when displayGame scores are both 0/missing for a completed game
+  const effectiveHomeScore = (displayGame.homeScore || 0) === 0 && (displayGame.awayScore || 0) === 0 && computedScores && isGameComplete(displayGame.status)
+    ? computedScores.home
+    : displayGame.homeScore;
+  const effectiveAwayScore = (displayGame.homeScore || 0) === 0 && (displayGame.awayScore || 0) === 0 && computedScores && isGameComplete(displayGame.status)
+    ? computedScores.away
+    : displayGame.awayScore;
+
   const homeStats = gameDetails?.GoalieStats && homeTeamId !== 0 ?
     calculateTeamStats(gameDetails.GoalieStats, gameDetails.PenaltyStats, homeTeamId, visitorTeamId) :
-    generateTeamStats(displayGame.homeScore, displayGame.awayScore);
+    generateTeamStats(effectiveHomeScore, effectiveAwayScore);
   const awayStats = gameDetails?.GoalieStats && visitorTeamId !== 0 ?
     calculateTeamStats(gameDetails.GoalieStats, gameDetails.PenaltyStats, visitorTeamId, homeTeamId) :
-    generateTeamStats(displayGame.awayScore, displayGame.homeScore);
-    
+    generateTeamStats(effectiveAwayScore, effectiveHomeScore);
+
   const homePenalties = gameDetails?.PenaltyStats && homeTeamId !== 0 ?
     transformPenalties(gameDetails.PenaltyStats, gameDetails.Roster, homeTeamId) :
     [];
@@ -802,9 +856,14 @@ export function GameSheetModal({ game, open, onClose }: GameSheetModalProps) {
   const awayGoalies = gameDetails?.GoalieStats && visitorTeamId !== 0 ?
     transformGoalieStats(gameDetails.GoalieStats, visitorTeamId) :
     [];
-    
-  const periodScores = computePeriodScores(gameDetails?.ScoringStats, homeTeamId, visitorTeamId, gameDetails?.Roster, (gameDetails?.Game as any)?.GameStatusCodeId);
-  
+
+  const periodScores = computePeriodScores(
+    gameDetails?.ScoringStats, homeTeamId, visitorTeamId,
+    gameDetails?.Roster, gameDetails?.GoalieStats,
+    (gameDetails?.Game as any)?.GameStatusCodeId,
+    combinedStatusString
+  );
+
   // Get DefaultingTeamId from game details (available from Game Detail API)
   const defaultingTeamId = (gameDetails?.Game as any)?.DefaultingTeamId || undefined;
 
@@ -813,14 +872,14 @@ export function GameSheetModal({ game, open, onClose }: GameSheetModalProps) {
     if ((displayGame.status === 'DEFAULT' || displayGame.status === 'FORFEIT') && defaultingTeamId) {
       return defaultingTeamId === homeTeamId;
     }
-    return displayGame.awayScore > displayGame.homeScore;
+    return effectiveAwayScore > effectiveHomeScore;
   })();
   const isHomeWin = (() => {
     if (displayGame.status === 'DOUBLE_DEFAULT' || !isGameComplete(displayGame.status)) return false;
     if ((displayGame.status === 'DEFAULT' || displayGame.status === 'FORFEIT') && defaultingTeamId) {
       return defaultingTeamId === visitorTeamId;
     }
-    return displayGame.homeScore > displayGame.awayScore;
+    return effectiveHomeScore > effectiveAwayScore;
   })();
   
   // Prefer the formatted date; only use fullDate if it's already human-readable (not raw ISO)
@@ -1120,7 +1179,7 @@ export function GameSheetModal({ game, open, onClose }: GameSheetModalProps) {
                     isHomeWin ? 'text-green-700' : 'text-gray-400'
                   }`}
                 >
-                  {displayGame.homeScore}
+                  {effectiveHomeScore}
                 </span>
               )}
             </div>
@@ -1164,7 +1223,7 @@ export function GameSheetModal({ game, open, onClose }: GameSheetModalProps) {
                     isAwayWin ? 'text-green-700' : 'text-gray-400'
                   }`}
                 >
-                  {displayGame.awayScore}
+                  {effectiveAwayScore}
                 </span>
               )}
             </div>
@@ -1214,14 +1273,14 @@ export function GameSheetModal({ game, open, onClose }: GameSheetModalProps) {
                           {periodScores.map((ps) => (
                             <td key={ps.period} className="px-3 py-2 text-center text-xs font-bold">{ps.homeScore}</td>
                           ))}
-                          <td className="px-3 py-2 text-center text-sm font-black bg-yellow-50">{displayGame.homeScore}</td>
+                          <td className="px-3 py-2 text-center text-sm font-black bg-yellow-50">{effectiveHomeScore}</td>
                         </tr>
                         <tr className="bg-white">
                           <td className="px-3 py-2 text-xs font-bold">{displayGame.awayTeam}</td>
                           {periodScores.map((ps) => (
                             <td key={ps.period} className="px-3 py-2 text-center text-xs font-bold">{ps.awayScore}</td>
                           ))}
-                          <td className="px-3 py-2 text-center text-sm font-black bg-yellow-50">{displayGame.awayScore}</td>
+                          <td className="px-3 py-2 text-center text-sm font-black bg-yellow-50">{effectiveAwayScore}</td>
                         </tr>
                       </tbody>
                     </table>
